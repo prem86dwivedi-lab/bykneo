@@ -1,0 +1,639 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from './context/AuthContext';
+import { useSocket, BACKEND_URL } from './context/SocketContext';
+import { Navbar } from './components/Navbar';
+import { DrawerMenu } from './components/DrawerMenu';
+import { InteractiveMap } from './components/InteractiveMap';
+import { LoginScreen } from './screens/auth/LoginScreen';
+
+// Passenger Screens
+import { BookRideScreen } from './screens/passenger/BookRideScreen';
+import { FindingDriverScreen } from './screens/passenger/FindingDriverScreen';
+import { LiveTrackingScreen } from './screens/passenger/LiveTrackingScreen';
+import { RideCompleteModal } from './screens/passenger/RideCompleteModal';
+import { MyRidesScreen } from './screens/passenger/MyRidesScreen';
+import { WalletScreen } from './screens/passenger/WalletScreen';
+import { ProfileScreen } from './screens/passenger/ProfileScreen';
+
+// Driver Screens
+import { DriverHomeScreen } from './screens/driver/DriverHomeScreen';
+import { IncomingRequestModal } from './screens/driver/IncomingRequestModal';
+import { DriverTripScreen } from './screens/driver/DriverTripScreen';
+import { DriverEarningsScreen } from './screens/driver/DriverEarningsScreen';
+import { DriverProfileScreen } from './screens/driver/DriverProfileScreen';
+import { CaptainKycScreen } from './screens/driver/CaptainKycScreen';
+import { InstallPwaBanner } from './components/InstallPwaBanner';
+import { sendPwaNotification, requestNotificationPermission } from './utils/notification';
+import { ShieldCheck, X } from 'lucide-react';
+
+export function App() {
+  const { user, driverProfile, activeRole, loading } = useAuth();
+  const { socket, connected } = useSocket();
+
+  // Navigation State
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState('main'); // 'main', 'my_rides', 'wallet', 'profile', 'earnings', 'driver_profile'
+
+  // Map & Booking State
+  const [pickup, setPickup] = useState({
+    name: 'Locating GPS...',
+    lat: 23.2599,
+    lng: 77.4126
+  });
+  const [drop, setDrop] = useState(null);
+  const [selectedVehicleId, setSelectedVehicleId] = useState('bike');
+  const [selectingMode, setSelectingMode] = useState(null); // 'pickup' | 'drop' | null
+  const [estimatedFare, setEstimatedFare] = useState(null);
+
+  // Active Ride & Request State
+  const [activeRide, setActiveRide] = useState(null);
+  const [findingDriver, setFindingDriver] = useState(false);
+  const [incomingRequest, setIncomingRequest] = useState(null);
+  const [showRideCompletedModal, setShowRideCompletedModal] = useState(false);
+  const [lastCompletedRide, setLastCompletedRide] = useState(null);
+  const [driverKycToast, setDriverKycToast] = useState(null);
+
+  // Driver Online State
+  const [isDriverOnline, setIsDriverOnline] = useState(false);
+  const [driverGpsLocation, setDriverGpsLocation] = useState({
+    lat: 23.2599,
+    lng: 77.4126
+  });
+  // Active Serviceable Cities & Geofencing State
+  const [activeCities, setActiveCities] = useState([]);
+  const [nearbyDrivers, setNearbyDrivers] = useState([]);
+
+  // Calculate distance in KM
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Helper to check if coordinates are within an active geofence
+  const getZoneStatus = (lat, lng) => {
+    if (!activeCities || activeCities.length === 0) {
+      return { isServiceable: true, matchedCity: null, activeCities: [] };
+    }
+    if (!lat || !lng) {
+      return { isServiceable: true, matchedCity: null, activeCities };
+    }
+    const matched = activeCities.find((c) => {
+      const dist = calculateDistance(lat, lng, Number(c.lat), Number(c.lng));
+      return dist <= (Number(c.radius_km) || 30);
+    });
+    return {
+      isServiceable: !!matched,
+      matchedCity: matched || null,
+      activeCities
+    };
+  };
+
+  // Fetch active serviceable cities from backend
+  const fetchActiveCities = () => {
+    fetch(`${BACKEND_URL}/api/cities/active`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.cities) {
+          setActiveCities(data.cities);
+        }
+      })
+      .catch(console.error);
+  };
+
+  // Auto-detect real device GPS on initial load
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = Number(position.coords.latitude.toFixed(6));
+          const lng = Number(position.coords.longitude.toFixed(6));
+
+          let locName = 'Current Location';
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+              { headers: { 'Accept-Language': 'en,hi' } }
+            );
+            const data = await res.json();
+            if (data && data.display_name) {
+              locName = data.display_name.split(',').slice(0, 3).join(', ');
+            }
+          } catch (e) {
+            console.warn('GPS reverse geocode error:', e);
+          }
+
+          setPickup({
+            name: locName,
+            lat,
+            lng
+          });
+          setDriverGpsLocation({ lat, lng });
+        },
+        (err) => {
+          console.log('GPS autodetect pending permission / skipped:', err.message);
+        },
+        { enableHighAccuracy: true, timeout: 6000 }
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchActiveCities();
+  }, []);
+
+  // Fetch online drivers for map
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/drivers/online`)
+      .then(res => res.json())
+      .then(data => setNearbyDrivers(data.drivers || []))
+      .catch(console.error);
+  }, []);
+
+  // Fetch active ongoing ride on load
+  useEffect(() => {
+    if (!user) return;
+    fetch(`${BACKEND_URL}/api/rides/active?userId=${user.id}&role=${activeRole}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.activeRide) {
+          setActiveRide(data.activeRide);
+          if (data.activeRide.status === 'REQUESTED') {
+            setFindingDriver(true);
+          }
+        }
+      })
+      .catch(console.error);
+  }, [user, activeRole]);
+
+  // Socket.IO Event Listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    // 0. Live Admin Geofenced Cities Update
+    socket.on('admin:cities_updated', ({ cities }) => {
+      console.log('🔄 Admin updated serviceable cities via Socket:', cities);
+      if (Array.isArray(cities)) {
+        setActiveCities(cities.filter(c => c.is_active !== false));
+      }
+    });
+
+    // 1. Rider: Captain Matched
+    socket.on('ride:matched', ({ ride, driver }) => {
+      console.log('✅ Captain Matched:', driver);
+      setActiveRide(ride);
+      setFindingDriver(false);
+      setDriverGpsLocation({ lat: driver.lat, lng: driver.lng });
+    });
+
+    // 2. Rider: Driver Live Location Stream
+    socket.on('ride:driver_location', ({ lat, lng }) => {
+      setDriverGpsLocation({ lat, lng });
+    });
+
+    // 3. Driver: Incoming Request Alert
+    socket.on('driver:incoming_request', ({ ride }) => {
+      if (activeRole === 'driver' && isDriverOnline && !activeRide) {
+        console.log('🔔 Incoming ride request:', ride);
+        setIncomingRequest(ride);
+      }
+    });
+
+    // 4. Request Cancelled
+    socket.on('ride:request_cancelled', ({ rideId }) => {
+      if (incomingRequest?.id === rideId) {
+        setIncomingRequest(null);
+      }
+    });
+
+    // 5. Driver: Assigned Successfully
+    socket.on('ride:assigned_success', ({ ride }) => {
+      setActiveRide(ride);
+      setIncomingRequest(null);
+    });
+
+    // 6. Ride Arrived
+    socket.on('ride:driver_arrived', ({ ride }) => {
+      setActiveRide(ride);
+    });
+
+    // 7. Ride Started
+    socket.on('ride:started', ({ ride }) => {
+      setActiveRide(ride);
+    });
+
+    // 8. Ride Completed
+    socket.on('ride:completed', ({ ride }) => {
+      setLastCompletedRide(ride);
+      setActiveRide(null);
+      setFindingDriver(false);
+      if (activeRole === 'passenger') {
+        setShowRideCompletedModal(true);
+      }
+    });
+
+    // 9. Captain KYC Approval / Rejection Real-Time Push Notification
+    socket.on('driver:kyc_status_updated', ({ status, rejectionReason, driver }) => {
+      console.log('🛡️ Received driver:kyc_status_updated:', status);
+      if (status === 'approved') {
+        sendPwaNotification(
+          '🎉 Bykneo Captain KYC Approved!',
+          'Your documents have been verified by Admin. You are now authorized to Go Online and accept rides.'
+        );
+        setDriverKycToast({
+          type: 'success',
+          title: '🎉 KYC Approved & Activated!',
+          message: 'Your documents have been verified by Admin. You can now Go Online and accept rides.'
+        });
+      } else if (status === 'rejected') {
+        sendPwaNotification(
+          '⚠️ Captain KYC Update: Action Needed',
+          `Reason: ${rejectionReason || 'Please review and re-upload your documents.'}`
+        );
+        setDriverKycToast({
+          type: 'rejected',
+          title: '❌ KYC Verification Rejected',
+          message: rejectionReason || 'Please review and re-upload clear DL, RC, or Aadhaar photos.'
+        });
+      }
+    });
+
+    return () => {
+      socket.off('ride:matched');
+      socket.off('ride:driver_location');
+      socket.off('driver:incoming_request');
+      socket.off('ride:request_cancelled');
+      socket.off('ride:assigned_success');
+      socket.off('ride:driver_arrived');
+      socket.off('ride:started');
+      socket.off('ride:completed');
+      socket.off('driver:kyc_status_updated');
+    };
+  }, [socket, activeRole, isDriverOnline, activeRide, incomingRequest]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white text-sm font-bold">
+        Loading Bykneo...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  // Handle Location selection tap on map or pin drag with instant reverse geocoding
+  const handleLocationSelect = async ({ lat, lng, type, name }) => {
+    let finalName = name;
+    
+    if (!finalName || finalName.startsWith('Custom Location')) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en,hi' } }
+        );
+        const data = await res.json();
+        if (data && data.display_name) {
+          finalName = data.display_name.split(',').slice(0, 3).join(', ');
+        }
+      } catch (e) {
+        console.warn('Reverse geocode error:', e);
+      }
+    }
+
+    const loc = {
+      name: finalName || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+      lat,
+      lng
+    };
+
+    if (type === 'pickup') setPickup(loc);
+    else if (type === 'drop') setDrop(loc);
+    setSelectingMode(null);
+  };
+
+  // PASSENGER: Request Ride with Selected Vehicle Category
+  const handleRequestRide = async (paymentMode, selectedVehicle = null) => {
+    if (!pickup || !drop || !estimatedFare) return;
+
+    const chosenVeh = selectedVehicle || estimatedFare.vehicles?.[0] || {
+      id: 'bike',
+      name: 'Bykneo Bike',
+      category: 'BIKE',
+      fare: estimatedFare.fare
+    };
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/rides/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rider_id: user.id,
+          rider_name: user.name,
+          rider_phone: user.phone,
+          pickup_name: pickup.name,
+          pickup_lat: pickup.lat,
+          pickup_lng: pickup.lng,
+          drop_name: drop.name,
+          drop_lat: drop.lat,
+          drop_lng: drop.lng,
+          vehicle_id: chosenVeh.id,
+          vehicle_name: chosenVeh.name,
+          vehicle_category: chosenVeh.category || 'BIKE',
+          fare: chosenVeh.fare || estimatedFare.fare,
+          distance_km: estimatedFare.distance_km,
+          duration_mins: estimatedFare.duration_mins,
+          payment_mode: paymentMode
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setActiveRide(data.ride);
+        setFindingDriver(true);
+
+        // Broadcast through socket to all online drivers
+        socket.emit('ride:request_broadcast', data.ride);
+      }
+    } catch (e) {
+      console.error('Error booking ride:', e);
+    }
+  };
+
+  // PASSENGER: Cancel Ride
+  const handleCancelRide = (rideId) => {
+    fetch(`${BACKEND_URL}/api/rides/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rideId,
+        reason: 'Cancelled by Passenger',
+        cancelledBy: 'rider'
+      })
+    }).catch(console.error);
+
+    socket.emit('ride:cancel', {
+      rideId,
+      reason: 'Cancelled by Passenger',
+      cancelledBy: 'rider'
+    });
+
+    setActiveRide(null);
+    setFindingDriver(false);
+  };
+
+  // CAPTAIN: Accept Incoming Ride
+  const handleAcceptRide = (rideId) => {
+    if (!driverProfile) return;
+    socket.emit('driver:accept_ride', {
+      rideId,
+      driverId: driverProfile.id
+    });
+  };
+
+  // CAPTAIN: Reject Incoming Ride
+  const handleRejectRide = (rideId) => {
+    setIncomingRequest(null);
+  };
+
+  // CAPTAIN: Driver Arrived at Pickup
+  const handleDriverArrived = (rideId) => {
+    socket.emit('driver:arrived_pickup', { rideId });
+  };
+
+  // CAPTAIN: Start Ride with OTP
+  const handleStartRide = (rideId, enteredOtp, callback) => {
+    socket.emit('driver:start_ride', { rideId, enteredOtp }, callback);
+  };
+
+  // CAPTAIN: Complete Ride
+  const handleCompleteRide = (rideId) => {
+    socket.emit('driver:complete_ride', { rideId });
+  };
+
+  // CAPTAIN: Toggle Online / Offline
+  const handleToggleDriverOnline = async () => {
+    const newStatus = !isDriverOnline;
+    setIsDriverOnline(newStatus);
+    if (driverProfile) {
+      fetch(`${BACKEND_URL}/api/drivers/toggle-online`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driverId: driverProfile.id,
+          isOnline: newStatus
+        })
+      }).catch(console.error);
+    }
+  };
+
+  // Full Screen Sub-Views (My Rides, Wallet, Profile, Earnings)
+  if (currentScreen === 'my_rides') {
+    return <MyRidesScreen onBack={() => setCurrentScreen('main')} />;
+  }
+  if (currentScreen === 'wallet') {
+    return <WalletScreen onBack={() => setCurrentScreen('main')} />;
+  }
+  if (currentScreen === 'profile') {
+    return <ProfileScreen onBack={() => setCurrentScreen('main')} />;
+  }
+  if (currentScreen === 'earnings') {
+    return <DriverEarningsScreen onBack={() => setCurrentScreen('main')} />;
+  }
+  if (currentScreen === 'driver_profile') {
+    return (
+      <DriverProfileScreen
+        onBack={() => setCurrentScreen('main')}
+        onOpenKyc={() => setCurrentScreen('driver_kyc')}
+      />
+    );
+  }
+
+  if (currentScreen === 'driver_kyc') {
+    return (
+      <CaptainKycScreen
+        driverProfile={driverProfile}
+        onBack={() => setCurrentScreen('main')}
+        onKycSubmitted={() => {
+          setCurrentScreen('main');
+        }}
+      />
+    );
+  }
+
+  const isCaptain = activeRole === 'driver';
+
+  const currentZoneStatus = isCaptain
+    ? getZoneStatus(driverGpsLocation?.lat, driverGpsLocation?.lng)
+    : getZoneStatus(pickup?.lat, pickup?.lng);
+
+  return (
+    <div className="relative w-full h-screen overflow-hidden bg-gray-950 font-sans">
+      {/* 0. PWA 1-Tap Mobile Install Banner */}
+      <InstallPwaBanner />
+
+      {/* 1. Top Navbar */}
+      <Navbar
+        onOpenMenu={() => setDrawerOpen(true)}
+        zoneStatus={currentZoneStatus}
+      />
+
+      {/* 2. Slide-out Drawer Menu */}
+      <DrawerMenu
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        currentScreen={currentScreen}
+        onNavigate={(screenId) => {
+          if (screenId === 'book_ride' || screenId === 'driver_home') {
+            setCurrentScreen('main');
+          } else {
+            setCurrentScreen(screenId);
+          }
+        }}
+        isDriverOnline={isDriverOnline}
+        onToggleDriverOnline={handleToggleDriverOnline}
+      />
+
+      {/* 3. Central Interactive Map */}
+      <InteractiveMap
+        pickup={
+          isCaptain
+            ? activeRide
+              ? { lat: activeRide.pickup_lat, lng: activeRide.pickup_lng }
+              : null
+            : pickup
+        }
+        drop={
+          isCaptain
+            ? activeRide
+              ? { lat: activeRide.drop_lat, lng: activeRide.drop_lng }
+              : null
+            : drop
+        }
+        driverLocation={driverGpsLocation}
+        nearbyDrivers={isCaptain ? [] : nearbyDrivers}
+        selectedVehicleId={selectedVehicleId}
+        onLocationSelect={handleLocationSelect}
+        selectingMode={selectingMode}
+        isCaptain={isCaptain}
+      />
+
+      {/* 4. PASSENGER EXPERIENCE */}
+      {!isCaptain && (
+        <>
+          {/* Default State: Booking Sheet */}
+          {!activeRide && !findingDriver && (
+            <BookRideScreen
+              pickup={pickup}
+              drop={drop}
+              setPickup={setPickup}
+              setDrop={setDrop}
+              selectedVehicleId={selectedVehicleId}
+              setSelectedVehicleId={setSelectedVehicleId}
+              onStartSearchMode={(mode) => setSelectingMode(mode)}
+              onRequestRide={handleRequestRide}
+              estimatedFare={estimatedFare}
+              setEstimatedFare={setEstimatedFare}
+              zoneStatus={currentZoneStatus}
+              activeCity={currentZoneStatus?.matchedCity || null}
+              activeCities={activeCities}
+            />
+          )}
+
+          {/* Searching State: Radar Animation */}
+          {findingDriver && (
+            <FindingDriverScreen
+              ride={activeRide}
+              onCancel={() => handleCancelRide(activeRide?.id)}
+            />
+          )}
+
+          {/* Active Trip State: Live Approaching / In Progress */}
+          {activeRide && !findingDriver && (
+            <LiveTrackingScreen
+              ride={activeRide}
+              onCancelRide={handleCancelRide}
+            />
+          )}
+
+          {/* Trip Completed Rating Modal */}
+          {showRideCompletedModal && (
+            <RideCompleteModal
+              ride={lastCompletedRide}
+              onClose={() => setShowRideCompletedModal(false)}
+            />
+          )}
+        </>
+      )}
+
+      {/* 5. CAPTAIN (DRIVER) EXPERIENCE */}
+      {isCaptain && (
+        <>
+          {/* Floating Captain KYC Live Push Notification Banner */}
+          {driverKycToast && (
+            <div className="fixed top-20 left-3 right-3 z-50 max-w-sm mx-auto bg-gray-900/95 backdrop-blur-2xl border-2 border-brand-yellow p-3.5 rounded-2xl shadow-2xl animate-in slide-in-from-top duration-300 flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-brand-yellow text-gray-950 flex items-center justify-center font-black shrink-0 mt-0.5 shadow-md">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-black text-white">{driverKycToast.title}</div>
+                  <div className="text-[11px] text-gray-300 mt-0.5">{driverKycToast.message}</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setDriverKycToast(null)}
+                className="p-1 text-gray-400 hover:text-white rounded-lg active:scale-95 transition shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Driver Home & Online/Offline Bar */}
+          {!activeRide && (
+            <DriverHomeScreen
+              isOnline={isDriverOnline}
+              onToggleOnline={handleToggleDriverOnline}
+              activeRide={activeRide}
+              driverLocation={driverGpsLocation}
+              setDriverLocation={setDriverGpsLocation}
+              zoneStatus={currentZoneStatus}
+              onOpenKyc={() => setCurrentScreen('driver_kyc')}
+            />
+          )}
+
+          {/* Incoming Ride Request Alert Modal */}
+          {incomingRequest && !activeRide && (
+            <IncomingRequestModal
+              request={incomingRequest}
+              onAccept={handleAcceptRide}
+              onReject={handleRejectRide}
+            />
+          )}
+
+          {/* Active Captain Navigation & Trip Lifecycle */}
+          {activeRide && (
+            <DriverTripScreen
+              ride={activeRide}
+              onDriverArrived={handleDriverArrived}
+              onStartRide={handleStartRide}
+              onCompleteRide={handleCompleteRide}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+export default App;

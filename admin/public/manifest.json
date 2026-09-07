@@ -1,0 +1,19 @@
+{
+  "short_name": "Bykneo Admin",
+  "name": "Bykneo Admin Control Panel",
+  "description": "Bykneo Central Operations, Fleet Management & Captain KYC Verification Portal",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0B0F19",
+  "background_color": "#0B0F19",
+  "categories": ["business", "management", "navigation"],
+  "lang": "en-IN"
+}

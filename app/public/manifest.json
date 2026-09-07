@@ -1,0 +1,25 @@
+{
+  "short_name": "Bykneo",
+  "name": "Bykneo - Fast Bike, Auto & Cab Rides",
+  "description": "Book fast, safe, and affordable Bike, Auto, and Cab rides across Madhya Pradesh.",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#09090b",
+  "background_color": "#09090b",
+  "categories": ["travel", "navigation", "transportation"],
+  "lang": "en-IN"
+}

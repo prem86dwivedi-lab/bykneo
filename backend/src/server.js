@@ -47,6 +47,20 @@ app.get('/api/cities/active', (req, res) => {
   });
 });
 
+// Root Welcome endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    app: 'Bykneo API & Real-time Server',
+    message: '🚀 Bykneo Real-time Backend is running smoothly',
+    endpoints: {
+      health: '/api/health',
+      active_cities: '/api/cities/active'
+    },
+    time: new Date().toISOString()
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({

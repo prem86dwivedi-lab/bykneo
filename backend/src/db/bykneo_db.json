@@ -60,7 +60,7 @@
       "phone": "6598569869",
       "name": "New Captain",
       "email": "6598569869@bykneo.com",
-      "role": "driver",
+      "role": "passenger",
       "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=6598569869",
       "wallet_balance": 500,
       "rating": 5,
@@ -745,7 +745,7 @@
     "vehicle_pricing": {
       "bike_lite": {
         "name": "Bike Lite",
-        "base_fare": 20,
+        "base_fare": 23,
         "rate_per_km": 6
       },
       "bike": {
@@ -765,12 +765,12 @@
       },
       "cab_economy": {
         "name": "Cab Economy",
-        "base_fare": 65,
+        "base_fare": 55,
         "rate_per_km": 13.5
       },
       "cab_premium": {
         "name": "Cab Premium",
-        "base_fare": 85,
+        "base_fare": 70,
         "rate_per_km": 17
       }
     }

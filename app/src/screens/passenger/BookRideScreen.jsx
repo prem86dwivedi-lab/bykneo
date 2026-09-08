@@ -19,7 +19,16 @@ import {
   User,
   Percent,
   Clock,
-  Edit2
+  Edit2,
+  Shield,
+  Fuel,
+  Activity,
+  Train,
+  Utensils,
+  ShoppingBag,
+  GraduationCap,
+  Landmark,
+  Compass
 } from 'lucide-react';
 
 // Real View Vehicle Icons (Compact Size Matching User Reference)
@@ -189,7 +198,96 @@ export const BookRideScreen = ({
     }
   }, [pickup, drop]);
 
-  // Robust City-Anchored Local Search Engine with Strict Geofence & Race-Condition Guard
+// Global POI Category Map for Worldwide Locality & Sub-Area Search
+const POI_CATEGORY_MAP = [
+  {
+    type: 'police',
+    label: 'Police Station',
+    regex: /\b(police\s*station|police\s*thana|police\s*chowki|police\s*post|police|thana|chowki|kotwali)\b/i
+  },
+  {
+    type: 'fuel',
+    label: 'Petrol Pump / Fuel',
+    regex: /\b(petrol\s*pump|gas\s*station|petrol\s*station|fuel\s*station|petrol|diesel|cng|fuel|charging\s*station|ev\s*charging)\b/i
+  },
+  {
+    type: 'hospital',
+    label: 'Hospital / Medical',
+    regex: /\b(hospital|clinic|nursing\s*home|dispensary|pharmacy|chemist|medical|doctor)\b/i
+  },
+  {
+    type: 'station',
+    label: 'Station / Metro / Bus',
+    regex: /\b(railway\s*station|train\s*station|metro\s*station|metro|subway|bus\s*stand|bus\s*stop|bus\s*depot|airport|terminal)\b/i
+  },
+  {
+    type: 'junction',
+    label: 'Chauraha / Square',
+    regex: /\b(chauraha|tiraha|square|circle|roundabout|junction|crossing|flyover|bypass)\b/i
+  },
+  {
+    type: 'food',
+    label: 'Restaurant / Cafe',
+    regex: /\b(restaurant|hotel|dhaba|cafe|bhojanalaya|food\s*court|bakery|sweets|mess|bar)\b/i
+  },
+  {
+    type: 'mall',
+    label: 'Mall / Market',
+    regex: /\b(mall|bazaar|market|supermarket|mart|store|plaza|shopping\s*center)\b/i
+  },
+  {
+    type: 'bank',
+    label: 'Bank / ATM',
+    regex: /\b(bank|atm|sbi|hdfc|icici|axis|pnb|branch)\b/i
+  },
+  {
+    type: 'education',
+    label: 'College / School',
+    regex: /\b(college|school|university|campus|institute|vidyalaya|coaching)\b/i
+  },
+  {
+    type: 'religious',
+    label: 'Temple / Mosque / Church',
+    regex: /\b(temple|mandir|masjid|mosque|church|gurudwara|ashram)\b/i
+  }
+];
+
+const renderPlaceIcon = (type) => {
+  switch (type) {
+    case 'police':
+      return <Shield className="w-3 h-3 text-blue-400" />;
+    case 'fuel':
+      return <Fuel className="w-3 h-3 text-amber-400" />;
+    case 'hospital':
+    case 'medical':
+      return <Activity className="w-3 h-3 text-red-400" />;
+    case 'station':
+    case 'metro':
+    case 'bus':
+      return <Train className="w-3 h-3 text-purple-400" />;
+    case 'food':
+    case 'restaurant':
+      return <Utensils className="w-3 h-3 text-orange-400" />;
+    case 'mall':
+    case 'shop':
+      return <ShoppingBag className="w-3 h-3 text-pink-400" />;
+    case 'bank':
+    case 'atm':
+      return <CreditCard className="w-3 h-3 text-emerald-400" />;
+    case 'education':
+    case 'college':
+    case 'school':
+      return <GraduationCap className="w-3 h-3 text-indigo-400" />;
+    case 'religious':
+      return <Landmark className="w-3 h-3 text-yellow-400" />;
+    case 'junction':
+      return <Compass className="w-3 h-3 text-cyan-400" />;
+    default:
+      return <MapPin className="w-3 h-3 text-brand-yellow" />;
+  }
+};
+
+  // Worldwide Smart Locality & Sub-Area Compound Search Engine with Deep Fallback
   const handleSearchAddress = (query, type) => {
     if (type === 'pickup') setPickupQuery(query);
     else setDropQuery(query);
@@ -216,16 +314,16 @@ export const BookRideScreen = ({
       const cityLng = Number(currentCity?.lng || pickup?.lng || 77.4126);
       const radiusKm = currentCityRadius;
 
-      const addResult = (title, subtitle, fullName, lat, lng, typeTag) => {
+      const addResult = (title, subtitle, fullName, lat, lng, typeTag, isSynthesized = false) => {
         if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
         const distFromCity = calculateDistance(cityLat, cityLng, lat, lng);
 
-        // STRICT GEOFENCE FILTER: Discard any results outside operational city radius (+20% buffer)
-        if (distFromCity > radiusKm * 1.2) return;
+        // STRICT GEOFENCE FILTER: Discard any results outside operational city radius (+30% buffer)
+        if (distFromCity > radiusKm * 1.3) return;
 
         const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-        if (!seenCoords.has(key)) {
-          seenCoords.add(key);
+        if (!seenCoords.has(key) || isSynthesized) {
+          if (!seenCoords.has(key)) seenCoords.add(key);
           const distFromPickup = pickup?.lat
             ? calculateDistance(pickup.lat, pickup.lng, lat, lng)
             : distFromCity;
@@ -236,7 +334,8 @@ export const BookRideScreen = ({
             lat,
             lng,
             type: typeTag || 'locality',
-            distanceKm: Number(distFromPickup.toFixed(1))
+            distanceKm: Number(distFromPickup.toFixed(1)),
+            isSynthesized
           });
         }
       };
@@ -247,108 +346,63 @@ export const BookRideScreen = ({
           ? qClean
           : `${qClean}, ${cityName}`;
 
+        // 1. Detect Category & Landmark Keyword Pattern
+        let detectedCategory = null;
+        let localityCandidate = qClean;
+        let landmarkCandidate = '';
+
+        for (const cat of POI_CATEGORY_MAP) {
+          const match = qClean.match(cat.regex);
+          if (match) {
+            detectedCategory = cat;
+            landmarkCandidate = match[0];
+            localityCandidate = qClean.replace(cat.regex, ' ').replace(/\s+/g, ' ').trim();
+            break;
+          }
+        }
+
         const promises = [];
 
-        // 1. Detect Category / Amenity Searches (e.g. "petrol pump", "hospital", "atm", "hotel", "station", "mall")
-        const isFuelQuery = /(petrol|petroll|pump|fuel|diesel|cng|gas\s*station)/i.test(qClean);
-        const isHospitalQuery = /(hospital|clinic|doctor|medical|nursing\s*home|dispensary)/i.test(qClean);
-        const isAtmQuery = /(atm|bank|cash)/i.test(qClean);
-        const isFoodQuery = /(restaurant|hotel|dhaba|cafe|bhojanalaya|food)/i.test(qClean);
-        const isStationQuery = /(railway|station|bus\s*stand|bus\s*stop|metro)/i.test(qClean);
-        const isMallQuery = /(mall|supermarket|mart|bazaar|market)/i.test(qClean);
+        // 2. Direct Photon Proximity Search
+        promises.push(
+          fetch(
+            `https://photon.komoot.io/api/?q=${encodeURIComponent(qClean)}&lat=${cityLat}&lon=${cityLng}&limit=20`,
+            { signal: AbortSignal.timeout(3500) }
+          )
+            .then((res) => res.json())
+            .then((data) => {
+              if (data && data.features) {
+                data.features.forEach((f) => {
+                  const p = f.properties;
+                  const [lng, lat] = f.geometry.coordinates;
+                  const sub = [p.district || p.city, p.state].filter(Boolean).join(', ');
+                  addResult(
+                    p.name,
+                    sub || cityName,
+                    p.name + (sub ? ', ' + sub : ''),
+                    lat,
+                    lng,
+                    p.osm_value || 'locality'
+                  );
+                });
+              }
+            })
+            .catch(() => {})
+        );
 
-        if (isFuelQuery) {
-          // Broad multi-brand search for ALL local petrol pumps
-          const fuelKeywords = [
-            'fuel',
-            'petrol pump',
-            'Indian Oil',
-            'Bharat Petroleum',
-            'HP Petrol',
-            'Nayara Petrol',
-            'Reliance Petrol'
-          ];
-          fuelKeywords.forEach((fk) => {
-            promises.push(
-              fetch(
-                `https://photon.komoot.io/api/?q=${encodeURIComponent(fk)}&lat=${cityLat}&lon=${cityLng}&limit=25`,
-                { signal: AbortSignal.timeout(3500) }
-              )
-                .then((res) => res.json())
-                .then((data) => {
-                  (data.features || []).forEach((f) => {
-                    const p = f.properties;
-                    const [lng, lat] = f.geometry.coordinates;
-                    addResult(
-                      p.name,
-                      [p.district || p.city, p.state].filter(Boolean).join(', '),
-                      p.name,
-                      lat,
-                      lng,
-                      'fuel'
-                    );
-                  });
-                })
-                .catch(() => {})
-            );
-          });
-        } else if (isHospitalQuery) {
-          const hospKeywords = ['hospital', 'clinic', 'multispeciality hospital', 'care hospital'];
-          hospKeywords.forEach((hk) => {
-            promises.push(
-              fetch(
-                `https://photon.komoot.io/api/?q=${encodeURIComponent(hk)}&lat=${cityLat}&lon=${cityLng}&limit=20`,
-                { signal: AbortSignal.timeout(3500) }
-              )
-                .then((res) => res.json())
-                .then((data) => {
-                  (data.features || []).forEach((f) => {
-                    const p = f.properties;
-                    const [lng, lat] = f.geometry.coordinates;
-                    addResult(
-                      p.name,
-                      [p.district || p.city, p.state].filter(Boolean).join(', '),
-                      p.name,
-                      lat,
-                      lng,
-                      'hospital'
-                    );
-                  });
-                })
-                .catch(() => {})
-            );
-          });
-        } else if (isAtmQuery) {
-          const atmKeywords = ['atm', 'bank', 'SBI ATM', 'HDFC Bank', 'ICICI Bank'];
-          atmKeywords.forEach((ak) => {
-            promises.push(
-              fetch(
-                `https://photon.komoot.io/api/?q=${encodeURIComponent(ak)}&lat=${cityLat}&lon=${cityLng}&limit=20`,
-                { signal: AbortSignal.timeout(3500) }
-              )
-                .then((res) => res.json())
-                .then((data) => {
-                  (data.features || []).forEach((f) => {
-                    const p = f.properties;
-                    const [lng, lat] = f.geometry.coordinates;
-                    addResult(
-                      p.name,
-                      [p.district || p.city, p.state].filter(Boolean).join(', '),
-                      p.name,
-                      lat,
-                      lng,
-                      'bank'
-                    );
-                  });
-                })
-                .catch(() => {})
-            );
-          });
-        } else {
-          // Standard Photon Proximity Search
+        // 3. Extracted Locality & Sub-Area Compound Search (The Core Worldwide Fallback)
+        if (
+          localityCandidate &&
+          localityCandidate.length >= 2 &&
+          localityCandidate.toLowerCase() !== qClean.toLowerCase()
+        ) {
+          const locWithCity = localityCandidate.toLowerCase().includes(cityName.toLowerCase())
+            ? localityCandidate
+            : `${localityCandidate}, ${cityName}`;
+
           promises.push(
             fetch(
-              `https://photon.komoot.io/api/?q=${encodeURIComponent(qClean)}&lat=${cityLat}&lon=${cityLng}&limit=20`,
+              `https://photon.komoot.io/api/?q=${encodeURIComponent(locWithCity)}&lat=${cityLat}&lon=${cityLng}&limit=12`,
               { signal: AbortSignal.timeout(3500) }
             )
               .then((res) => res.json())
@@ -357,22 +411,75 @@ export const BookRideScreen = ({
                   data.features.forEach((f) => {
                     const p = f.properties;
                     const [lng, lat] = f.geometry.coordinates;
+                    const sub = [p.district || p.city, p.state].filter(Boolean).join(', ');
+
+                    // Synthesize High-Confidence Specific Landmark Entry for exact POI
+                    if (detectedCategory) {
+                      const formattedPoiTitle = `${p.name} (${detectedCategory.label})`;
+                      addResult(
+                        formattedPoiTitle,
+                        `Near ${detectedCategory.label} • ${sub || cityName}`,
+                        `${p.name}, ${landmarkCandidate}, ${sub || cityName}`,
+                        lat,
+                        lng,
+                        detectedCategory.type,
+                        true
+                      );
+                    }
+
+                    // Also add pure locality entry
+                    addResult(
+                      p.name,
+                      sub || cityName,
+                      p.name + (sub ? ', ' + sub : ''),
+                      lat,
+                      lng,
+                      'locality'
+                    );
+                  });
+                }
+              })
+              .catch(() => {})
+          );
+        }
+
+        // 4. Broad Amenity Discovery for Generic Queries (e.g. "petrol pump", "hospital", "atm")
+        if (detectedCategory && localityCandidate.length < 2) {
+          const catKeywords = {
+            fuel: ['petrol pump', 'Indian Oil', 'Bharat Petroleum', 'HP Petrol', 'fuel'],
+            hospital: ['hospital', 'clinic', 'medical', 'care hospital'],
+            bank: ['atm', 'bank', 'SBI ATM', 'HDFC Bank', 'ICICI Bank'],
+            station: ['railway station', 'metro station', 'bus stand']
+          };
+
+          const kws = catKeywords[detectedCategory.type] || [detectedCategory.label];
+          kws.forEach((kw) => {
+            promises.push(
+              fetch(
+                `https://photon.komoot.io/api/?q=${encodeURIComponent(kw)}&lat=${cityLat}&lon=${cityLng}&limit=15`,
+                { signal: AbortSignal.timeout(3500) }
+              )
+                .then((res) => res.json())
+                .then((data) => {
+                  (data.features || []).forEach((f) => {
+                    const p = f.properties;
+                    const [lng, lat] = f.geometry.coordinates;
                     addResult(
                       p.name,
                       [p.district || p.city, p.state].filter(Boolean).join(', '),
                       p.name,
                       lat,
                       lng,
-                      p.osm_value || 'locality'
+                      detectedCategory.type
                     );
                   });
-                }
-              })
-              .catch((e) => console.warn('Photon error:', e))
-          );
+                })
+                .catch(() => {})
+            );
+          });
         }
 
-        // 1. Google Places API (New) - Hyper-Accurate Rapido / Uber Grade Search
+        // 5. Google Places API (New) - Hyper-Accurate Global Search
         const googleKey = 'AIzaSyC9NTGzjoVScyb6DOhFQGEZe8rL4JiApmE';
         const googleUrl = 'https://places.googleapis.com/v1/places:searchText';
         promises.push(
@@ -414,16 +521,19 @@ export const BookRideScreen = ({
                 });
               }
             })
-            .catch((e) => console.warn('Google Places error:', e))
+            .catch(() => {})
         );
 
-        // Nominatim with City Context
+        // 6. Worldwide Nominatim Search (No country restrictions)
         promises.push(
           fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
               qWithCity
-            )}&countrycodes=in&limit=15&addressdetails=1`,
-            { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3500) }
+            )}&limit=15&addressdetails=1`,
+            {
+              headers: { 'Accept-Language': 'en,hi', 'User-Agent': 'Bykneo-App/1.0' },
+              signal: AbortSignal.timeout(3500)
+            }
           )
             .then((res) => res.json())
             .then((data) => {
@@ -441,46 +551,10 @@ export const BookRideScreen = ({
                 });
               }
             })
-            .catch((e) => console.warn('Nominatim error:', e))
+            .catch(() => {})
         );
 
         await Promise.allSettled(promises);
-
-        // Sub-Token Area Fallback for compound queries (e.g. "piplani petrol pump")
-        if (combined.length === 0 && qClean.includes(' ')) {
-          const words = qClean.split(/\s+/).filter((w) => w.length > 2);
-          for (const w of words) {
-            if (
-              ['petrol', 'pump', 'station', 'road', 'nagar', 'chauraha', 'tiraha', 'near'].includes(
-                w.toLowerCase()
-              )
-            ) {
-              continue;
-            }
-            try {
-              const res = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-                  w + ', ' + cityName
-                )}&countrycodes=in&limit=8&addressdetails=1`,
-                { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3000) }
-              );
-              const data = await res.json();
-              if (Array.isArray(data)) {
-                data.forEach((item) => {
-                  const parts = item.display_name.split(',');
-                  addResult(
-                    parts[0]?.trim(),
-                    parts.slice(1, 3).join(', ').trim(),
-                    item.display_name,
-                    Number(item.lat),
-                    Number(item.lon),
-                    item.type || 'locality'
-                  );
-                });
-              }
-            } catch (e) {}
-          }
-        }
       } catch (err) {
         console.error('Search error:', err);
       }
@@ -488,8 +562,36 @@ export const BookRideScreen = ({
       // CRITICAL: Prevent Race Condition overwrites
       if (currentSeq !== searchSeqRef.current) return;
 
-      // STRICT ASCENDING DISTANCE SORT (Nearest location to rider appears at #1)
-      combined.sort((a, b) => a.distanceKm - b.distanceKm);
+      // Smart Lexical & Proximity Sorting:
+      // Priority 1: Direct search match
+      // Priority 2: Locality match (e.g. "piplani" in "piplani police station")
+      // Priority 3: Ascending distance from rider
+      const locLower = (localityCandidate || '').toLowerCase().trim();
+      const qLower = query.toLowerCase().trim();
+
+      combined.sort((a, b) => {
+        const aTitle = (a.title || '').toLowerCase();
+        const aSub = (a.subtitle || '').toLowerCase();
+        const bTitle = (b.title || '').toLowerCase();
+        const bSub = (b.subtitle || '').toLowerCase();
+
+        // 1. Direct query match
+        const aFullMatch = aTitle.includes(qLower);
+        const bFullMatch = bTitle.includes(qLower);
+        if (aFullMatch && !bFullMatch) return -1;
+        if (!aFullMatch && bFullMatch) return 1;
+
+        // 2. Locality candidate match boost
+        if (locLower && locLower.length >= 3) {
+          const aLocMatch = aTitle.includes(locLower) || aSub.includes(locLower);
+          const bLocMatch = bTitle.includes(locLower) || bSub.includes(locLower);
+          if (aLocMatch && !bLocMatch) return -1;
+          if (!aLocMatch && bLocMatch) return 1;
+        }
+
+        // 3. Proximity distance sort
+        return a.distanceKm - b.distanceKm;
+      });
 
       setSuggestions(combined);
       setSearchingAddress(false);
@@ -748,7 +850,7 @@ export const BookRideScreen = ({
                   className="w-full text-left p-2 rounded-xl hover:bg-gray-800 text-[11px] text-gray-200 hover:text-white flex items-start gap-2 transition group border border-transparent hover:border-brand-yellow/30"
                 >
                   <div className="p-1 rounded-lg bg-gray-800 group-hover:bg-brand-yellow/20 text-brand-yellow shrink-0 mt-0.5 transition">
-                    <MapPin className="w-3 h-3" />
+                    {renderPlaceIcon(item.type)}
                   </div>
                   <div className="truncate flex-1">
                     <div className="flex items-center justify-between gap-1">

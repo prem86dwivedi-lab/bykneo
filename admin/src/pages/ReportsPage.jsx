@@ -9,7 +9,11 @@ import {
   Sliders,
   DollarSign,
   TrendingUp,
-  Car
+  Car,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  X
 } from 'lucide-react';
 
 const DEFAULT_VEHICLE_PRICING = {
@@ -74,7 +78,8 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
     vehicle_pricing: settings?.vehicle_pricing || DEFAULT_VEHICLE_PRICING
   });
 
-  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null); // { type: 'success' | 'error', message: string }
 
   useEffect(() => {
     if (settings) {
@@ -108,14 +113,38 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await fetch(`${BACKEND_URL}/api/admin/settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-    setSaved(true);
-    if (onUpdateSettings) onUpdateSettings();
-    setTimeout(() => setSaved(false), 2500);
+    setSaving(true);
+    setToast(null);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setToast({
+          type: 'success',
+          message: 'Vehicle Pricing & Platform Settings Saved Live to Cloud Database!'
+        });
+        if (onUpdateSettings) onUpdateSettings();
+      } else {
+        setToast({
+          type: 'error',
+          message: data.error || 'Server returned an error while saving settings.'
+        });
+      }
+    } catch (err) {
+      console.error('Settings save error:', err);
+      setToast({
+        type: 'error',
+        message: `Failed to connect to backend: ${err.message}`
+      });
+    } finally {
+      setSaving(false);
+      setTimeout(() => setToast(null), 4000);
+    }
   };
 
   const vehicleList = [
@@ -128,7 +157,33 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-4xl">
+    <div className="space-y-4 sm:space-y-6 max-w-4xl relative">
+      {/* Floating Animated Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-5 right-5 z-50 max-w-md p-4 rounded-2xl shadow-2xl border backdrop-blur-2xl flex items-center justify-between gap-3 animate-in slide-in-from-top duration-300 ${
+            toast.type === 'success'
+              ? 'bg-emerald-950/95 border-emerald-500 text-emerald-200'
+              : 'bg-red-950/95 border-red-500 text-red-200'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+            )}
+            <span className="text-xs font-bold">{toast.message}</span>
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            className="p-1 hover:bg-white/10 rounded-lg transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div>
         <h2 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
           <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-brand-yellow shrink-0" />
@@ -303,9 +358,17 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
         {/* Submit Save Button */}
         <button
           type="submit"
-          className="w-full py-3 sm:py-3.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/15 active:scale-[0.98] transition"
+          disabled={saving}
+          className="w-full py-3 sm:py-3.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/15 active:scale-[0.98] transition disabled:opacity-50"
         >
-          {saved ? 'Vehicle Pricing & Settings Saved Successfully!' : 'Save & Update All Vehicle Pricing'}
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Saving Settings to Live Cloud Database...</span>
+            </>
+          ) : (
+            <span>Save & Update All Vehicle Pricing</span>
+          )}
         </button>
       </form>
     </div>

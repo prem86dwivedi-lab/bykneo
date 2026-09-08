@@ -15,8 +15,23 @@ import { Bell, ShieldCheck, X, Menu } from 'lucide-react';
 
 const getBackendUrl = () => {
   if (import.meta.env.VITE_BACKEND_URL) return import.meta.env.VITE_BACKEND_URL;
-  if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost') {
-    return `http://${window.location.hostname}:5000`;
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // Cloudflare Pages, Render, or any live production domain
+    if (
+      hostname.includes('pages.dev') ||
+      hostname.includes('onrender.com') ||
+      (!hostname.includes('localhost') &&
+        !hostname.includes('127.0.0.1') &&
+        !hostname.startsWith('192.168.') &&
+        !hostname.startsWith('10.'))
+    ) {
+      return 'https://bykneo-backend.onrender.com';
+    }
+    // Local network Wi-Fi IP
+    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `http://${hostname}:5000`;
+    }
   }
   return 'http://localhost:5000';
 };

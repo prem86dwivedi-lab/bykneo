@@ -62,22 +62,23 @@ export const RideCompleteModal = ({ ride, onClose }) => {
         </div>
 
         {/* Rating Stars */}
-        <div>
-          <div className="text-xs font-bold text-gray-300 mb-2">
-            Rate Captain {ride?.driver_name || 'Vikram'}
+        <div className="space-y-1.5">
+          <div className="text-xs font-bold text-gray-300">
+            Rate Captain <span className="text-brand-yellow">{ride?.driver_name || 'Captain'}</span>
           </div>
-          <div className="flex justify-center gap-2">
+          <div className="flex justify-center gap-2 py-1">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
+                type="button"
                 onClick={() => setRating(star)}
                 className="p-1 hover:scale-125 transition active:scale-95"
               >
                 <Star
-                  className={`w-7 h-7 ${
+                  className={`w-8 h-8 ${
                     star <= rating
                       ? 'text-brand-yellow fill-brand-yellow'
-                      : 'text-gray-700'
+                      : 'text-gray-750'
                   }`}
                 />
               </button>
@@ -85,21 +86,63 @@ export const RideCompleteModal = ({ ride, onClose }) => {
           </div>
         </div>
 
-        {/* Feedback Input */}
-        <input
-          type="text"
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          placeholder="Leave a compliment (e.g. Smooth riding, on time)"
-          className="w-full bg-gray-850 border border-gray-800 focus:border-brand-yellow rounded-xl py-2.5 px-3 text-xs text-white placeholder-gray-500 focus:outline-none"
-        />
+        {/* Quick Compliment Tags */}
+        <div className="flex flex-wrap gap-1.5 justify-center py-1">
+          {[
+            '⚡ Fast & On Time',
+            '🛵 Smooth Ride',
+            '🌟 Polite Captain',
+            '🛡️ Safe Driving',
+            '✨ Clean Bike'
+          ].map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => setFeedback(tag)}
+              className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition active:scale-95 ${
+                feedback === tag
+                  ? 'bg-brand-yellow text-gray-950 border-brand-yellow font-black shadow-md'
+                  : 'bg-gray-850 hover:bg-gray-800 text-gray-300 border-gray-750'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+
+        {/* Feedback Input with Strict Dark Styling & Visible Text */}
+        <div className="relative">
+          <input
+            type="text"
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="Write a compliment (e.g. Great ride, on time)"
+            style={{
+              backgroundColor: '#030712',
+              color: '#ffffff',
+              WebkitTextFillColor: '#ffffff',
+              caretColor: '#facc15'
+            }}
+            className="w-full bg-gray-950 border-2 border-gray-750 focus:border-brand-yellow rounded-xl py-3 px-3.5 text-xs text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-yellow shadow-inner"
+          />
+        </div>
 
         <button
           onClick={handleSubmitReview}
-          className="w-full py-3.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/15 active:scale-[0.98] transition"
+          disabled={submitted}
+          className="w-full py-3.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/20 active:scale-[0.98] transition disabled:opacity-80"
         >
-          {submitted ? 'Thank You!' : 'Done & Submit Rating'}
-          <ArrowRight className="w-4 h-4" />
+          {submitted ? (
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-gray-950" />
+              <span>Thank you! Rating Submitted ⭐</span>
+            </span>
+          ) : (
+            <>
+              <span>Done & Submit Rating</span>
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
         </button>
       </div>
     </div>

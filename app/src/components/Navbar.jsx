@@ -78,7 +78,7 @@ export const Navbar = ({ onOpenMenu, zoneStatus }) => {
               />
               <span>
                 {isServiceable
-                  ? `Service Active • ${matchedCity.name} (${matchedCity.radius_km} KM Zone)`
+                  ? `Service Active • ${matchedCity.name}`
                   : `Outside Service Zone • Launching Soon`}
               </span>
             </div>

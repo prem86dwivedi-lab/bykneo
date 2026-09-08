@@ -50,7 +50,7 @@ export const DriverEarningsScreen = ({ onBack }) => {
         </div>
 
         <div className="text-4xl font-black text-brand-yellow">
-          ₹{earningsData?.today_earnings || '0.00'}
+          ₹{Math.round(Number(earningsData?.today_earnings || 0))}
         </div>
 
         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-800">

@@ -14,9 +14,24 @@ export const DriverHomeScreen = ({
 }) => {
   const { user, driverProfile } = useAuth();
   const { socket } = useSocket();
-  const [todayEarnings, setTodayEarnings] = useState(driverProfile?.today_earnings || 780.00);
+  const [todayEarnings, setTodayEarnings] = useState(
+    Math.round(Number(driverProfile?.today_earnings || 0))
+  );
   const [showOutsideZoneModal, setShowOutsideZoneModal] = useState(false);
   const [showKycRequiredModal, setShowKycRequiredModal] = useState(false);
+
+  // Sync today's earnings from backend API
+  useEffect(() => {
+    if (!driverProfile?.id) return;
+    fetch(`${BACKEND_URL}/api/drivers/earnings/${driverProfile.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.today_earnings !== undefined) {
+          setTodayEarnings(Math.round(Number(data.today_earnings)));
+        }
+      })
+      .catch(() => {});
+  }, [driverProfile]);
 
   const isServiceable = zoneStatus?.isServiceable !== false && !!zoneStatus?.matchedCity;
   const matchedCity = zoneStatus?.matchedCity;
@@ -104,7 +119,9 @@ export const DriverHomeScreen = ({
           {/* Right: Today's Earnings */}
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-[8px] text-gray-400 font-bold leading-none">TODAY</span>
-            <span className="text-[10px] font-black text-brand-yellow leading-none">₹{todayEarnings}</span>
+            <span className="text-[10px] font-black text-brand-yellow leading-none">
+              ₹{Math.round(Number(todayEarnings || 0))}
+            </span>
           </div>
         </div>
       </div>
@@ -169,7 +186,7 @@ export const DriverHomeScreen = ({
             </div>
 
             <p className="text-[11px] text-gray-300 leading-relaxed">
-              Your device GPS is outside Bykneo's active service zones. Captains can only go online and receive rides inside our operational geofenced zones:
+              Your device GPS is outside Bykneo's active service zones. Captains can only go online and receive rides inside our operational zones:
             </p>
 
             <div className="space-y-1.5 max-h-48 overflow-y-auto">
@@ -178,12 +195,7 @@ export const DriverHomeScreen = ({
                   key={c.id || c.name}
                   className="w-full p-2.5 rounded-xl bg-gray-850 border border-gray-750 flex items-center justify-between"
                 >
-                  <div>
-                    <div className="text-[11px] font-bold text-white">📍 {c.name}</div>
-                    <div className="text-[9px] text-brand-yellow font-semibold">
-                      Operating Radius: {c.radius_km} KM
-                    </div>
-                  </div>
+                  <div className="text-[11px] font-bold text-white">📍 {c.name}</div>
                   <span className="text-[9px] bg-gray-800 text-gray-300 font-bold px-1.5 py-0.5 rounded">
                     Active Zone
                   </span>

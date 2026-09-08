@@ -93,7 +93,7 @@ export const registerSocketHandlers = (io) => {
     });
 
     // 4. Driver accepts ride
-    socket.on('driver:accept_ride', ({ rideId, driverId }) => {
+    socket.on('driver:accept_ride', ({ rideId, driverId, lat, lng }) => {
       const ride = db.find('rides', r => r.id === rideId);
       const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId);
 
@@ -103,6 +103,17 @@ export const registerSocketHandlers = (io) => {
         return;
       }
 
+      // Update driver current location if provided
+      if (lat && lng) {
+        db.update('drivers', driver.id, {
+          lat: Number(lat),
+          lng: Number(lng),
+          last_ping: new Date().toISOString()
+        });
+        driver.lat = Number(lat);
+        driver.lng = Number(lng);
+      }
+
       // Update ride with driver details
       const updatedRide = db.update('rides', rideId, {
         driver_id: driver.id,
@@ -110,7 +121,10 @@ export const registerSocketHandlers = (io) => {
         driver_phone: driver.phone,
         vehicle_model: driver.vehicle_model,
         vehicle_number: driver.vehicle_number,
-        driver_rating: driver.rating,
+        vehicle_category: driver.vehicle_category || ride.vehicle_category || 'BIKE',
+        vehicle_id: driver.vehicle_id || ride.vehicle_id || 'bike',
+        driver_avatar: driver.avatar || driver.selfie_photo || null,
+        driver_rating: driver.rating || 4.9,
         status: 'ACCEPTED',
         accepted_at: new Date().toISOString()
       });
@@ -118,7 +132,7 @@ export const registerSocketHandlers = (io) => {
       // Mark driver as busy (is_available: false)
       db.update('drivers', driver.id, { is_available: false });
 
-      console.log(`✅ Ride ${rideId} accepted by Captain ${driver.name}`);
+      console.log(`✅ Ride ${rideId} accepted by Captain ${driver.name} at (${driver.lat}, ${driver.lng})`);
 
       // Notify passenger
       io.to(`user:${ride.rider_id}`).emit('ride:matched', {
@@ -129,14 +143,22 @@ export const registerSocketHandlers = (io) => {
           phone: driver.phone,
           vehicle_model: driver.vehicle_model,
           vehicle_number: driver.vehicle_number,
-          rating: driver.rating,
+          vehicle_category: driver.vehicle_category || 'BIKE',
+          vehicle_id: driver.vehicle_id || 'bike',
+          avatar: driver.avatar || driver.selfie_photo,
+          rating: driver.rating || 4.9,
           lat: driver.lat,
-          lng: driver.lng
+          lng: driver.lng,
+          heading: driver.heading || 0
         }
       });
 
-      // Notify driver room
+      // Notify driver room & sender socket
       io.to(`driver:${driver.id}`).emit('ride:assigned_success', { ride: updatedRide });
+      if (driver.user_id) {
+        io.to(`user:${driver.user_id}`).emit('ride:assigned_success', { ride: updatedRide });
+      }
+      socket.emit('ride:assigned_success', { ride: updatedRide });
 
       // Notify other drivers to dismiss the incoming request modal
       socket.broadcast.to('drivers:online').emit('ride:request_cancelled', { rideId });
@@ -151,7 +173,18 @@ export const registerSocketHandlers = (io) => {
       if (!ride) return;
 
       const updated = db.update('rides', rideId, { status: 'ARRIVED' });
+      console.log(`📍 Captain arrived at pickup for ride ${rideId}`);
+
+      // Broadcast to passenger, driver rooms, and admins
       io.to(`user:${ride.rider_id}`).emit('ride:driver_arrived', { ride: updated });
+      if (ride.driver_id) {
+        io.to(`driver:${ride.driver_id}`).emit('ride:driver_arrived', { ride: updated });
+        const drv = db.find('drivers', d => d.id === ride.driver_id);
+        if (drv?.user_id) {
+          io.to(`user:${drv.user_id}`).emit('ride:driver_arrived', { ride: updated });
+        }
+      }
+      socket.emit('ride:driver_arrived', { ride: updated });
       io.to('admins').emit('admin:ride_updated', { ride: updated });
     });
 
@@ -163,8 +196,9 @@ export const registerSocketHandlers = (io) => {
         return;
       }
 
-      if (ride.otp !== String(enteredOtp).trim()) {
-        if (callback) callback({ success: false, message: 'Incorrect OTP! Ask passenger for 4-digit start OTP.' });
+      if (String(ride.otp || '').trim() !== String(enteredOtp || '').trim()) {
+        console.log(`❌ Invalid OTP: entered=${enteredOtp}, expected=${ride.otp}`);
+        if (callback) callback({ success: false, message: 'Incorrect 4-Digit PIN! Please check with passenger.' });
         return;
       }
 
@@ -173,10 +207,14 @@ export const registerSocketHandlers = (io) => {
         started_at: new Date().toISOString()
       });
 
+      console.log(`🚀 Ride ${rideId} OTP verified & started!`);
       if (callback) callback({ success: true, ride: updated });
 
       io.to(`user:${ride.rider_id}`).emit('ride:started', { ride: updated });
-      io.to(`driver:${ride.driver_id}`).emit('ride:started', { ride: updated });
+      if (ride.driver_id) {
+        io.to(`driver:${ride.driver_id}`).emit('ride:started', { ride: updated });
+      }
+      socket.emit('ride:started', { ride: updated });
       io.to('admins').emit('admin:ride_updated', { ride: updated });
     });
 
@@ -201,7 +239,7 @@ export const registerSocketHandlers = (io) => {
           db.update('drivers', driver.id, {
             is_available: true,
             total_rides: (driver.total_rides || 0) + 1,
-            today_earnings: (driver.today_earnings || 0) + driverEarning
+            today_earnings: Math.round((driver.today_earnings || 0) + driverEarning)
           });
 
           // Record payment transaction
@@ -221,7 +259,10 @@ export const registerSocketHandlers = (io) => {
 
       console.log(`🏁 Ride ${rideId} completed!`);
       io.to(`user:${ride.rider_id}`).emit('ride:completed', { ride: updated });
-      io.to(`driver:${ride.driver_id}`).emit('ride:completed', { ride: updated });
+      if (ride.driver_id) {
+        io.to(`driver:${ride.driver_id}`).emit('ride:completed', { ride: updated });
+      }
+      socket.emit('ride:completed', { ride: updated });
       io.to('admins').emit('admin:ride_updated', { ride: updated });
     });
 
@@ -237,12 +278,18 @@ export const registerSocketHandlers = (io) => {
         cancelled_at: new Date().toISOString()
       });
 
+      console.log(`🚫 Ride ${rideId} cancelled by ${cancelledBy}: ${reason}`);
+
       if (ride.driver_id) {
         db.update('drivers', ride.driver_id, { is_available: true });
-        io.to(`driver:${ride.driver_id}`).emit('ride:cancelled_by_other', { ride: updated });
+        io.to(`driver:${ride.driver_id}`).emit('ride:cancelled_by_other', { ride: updated, cancelledBy, reason });
+        const drv = db.find('drivers', d => d.id === ride.driver_id);
+        if (drv?.user_id) {
+          io.to(`user:${drv.user_id}`).emit('ride:cancelled_by_other', { ride: updated, cancelledBy, reason });
+        }
       }
 
-      io.to(`user:${ride.rider_id}`).emit('ride:cancelled_by_other', { ride: updated });
+      io.to(`user:${ride.rider_id}`).emit('ride:cancelled_by_other', { ride: updated, cancelledBy, reason });
       io.to('drivers:online').emit('ride:request_cancelled', { rideId });
       io.to('admins').emit('admin:ride_updated', { ride: updated });
     });

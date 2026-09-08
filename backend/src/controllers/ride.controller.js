@@ -42,21 +42,41 @@ export const getRoadDistanceAndDuration = async (pickup_lat, pickup_lng, drop_la
 export const estimateFare = async (req, res) => {
   const { pickup_lat, pickup_lng, drop_lat, drop_lng } = req.body;
   const settings = db.data.settings || {};
-  const cities = (db.get('cities') || []).filter(c => c.is_active);
+  const activeCities = (db.get('cities') || []).filter(c => c.is_active);
 
-  // Check Geofencing
-  let isServiceable = true;
+  // Check Geofencing & Active City Service Status
+  let isServiceable = false;
   let matchedCity = null;
 
-  if (settings.geofencing_enabled && cities.length > 0 && pickup_lat && pickup_lng) {
-    matchedCity = cities.find(c => {
+  if (activeCities.length > 0 && pickup_lat && pickup_lng) {
+    matchedCity = activeCities.find(c => {
       const dist = calculateDistance(pickup_lat, pickup_lng, c.lat, c.lng);
-      return dist <= (c.radius_km || 30);
+      return dist <= (Number(c.radius_km) || 30);
     });
 
-    if (!matchedCity) {
-      isServiceable = false;
+    if (matchedCity) {
+      isServiceable = true;
     }
+  }
+
+  // If geofencing is explicitly disabled in admin settings, allow all
+  if (settings.geofencing_enabled === false) {
+    isServiceable = true;
+  }
+
+  // If not serviceable (City OFF or Outside Active City Zone), return 0 vehicles and no fare
+  if (!isServiceable) {
+    return res.json({
+      is_serviceable: false,
+      matched_city: null,
+      active_cities: activeCities.map(c => ({ name: c.name, radius_km: c.radius_km })),
+      distance_km: 0,
+      duration_mins: 0,
+      is_road_route: false,
+      fare: null,
+      vehicles: [],
+      message: 'Bykneo is launching soon in this area! Our fleet is currently offline in this zone.'
+    });
   }
 
   const routeInfo = await getRoadDistanceAndDuration(pickup_lat, pickup_lng, drop_lat, drop_lng);
@@ -190,7 +210,7 @@ export const estimateFare = async (req, res) => {
   return res.json({
     is_serviceable: isServiceable,
     matched_city: matchedCity ? matchedCity.name : null,
-    active_cities: cities.map(c => ({ name: c.name, radius_km: c.radius_km })),
+    active_cities: activeCities.map(c => ({ name: c.name, radius_km: c.radius_km })),
     distance_km: distance,
     duration_mins: duration,
     is_road_route: routeInfo.isRoadRoute,
@@ -331,6 +351,20 @@ export const cancelRide = (req, res) => {
   // Free up driver if assigned
   if (ride.driver_id) {
     db.update('drivers', ride.driver_id, { is_available: true });
+  }
+
+  const io = req.app.get('io');
+  if (io) {
+    if (ride.driver_id) {
+      io.to(`driver:${ride.driver_id}`).emit('ride:cancelled_by_other', { ride: updated, cancelledBy, reason });
+      const drv = db.find('drivers', d => d.id === ride.driver_id);
+      if (drv?.user_id) {
+        io.to(`user:${drv.user_id}`).emit('ride:cancelled_by_other', { ride: updated, cancelledBy, reason });
+      }
+    }
+    io.to(`user:${ride.rider_id}`).emit('ride:cancelled_by_other', { ride: updated, cancelledBy, reason });
+    io.to('drivers:online').emit('ride:request_cancelled', { rideId });
+    io.to('admins').emit('admin:ride_updated', { ride: updated });
   }
 
   return res.json({ success: true, ride: updated });

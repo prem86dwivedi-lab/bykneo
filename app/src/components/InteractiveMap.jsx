@@ -15,7 +15,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
   if (isAuto) {
     // 🛺 High-Visibility Indian Auto-Rickshaw Top View (Breadth reduced to 18px)
     return `
-      <div style="transform: rotate(${heading}deg); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); width: 18px; height: 26px; display: flex; align-items: center; justify-content: center; pointer-events: auto;">
+      <div style="transform: rotate(${heading}deg); width: 18px; height: 26px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
         <svg width="18" height="26" viewBox="0 0 18 26" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.85));">
           <!-- Directional Road Shadow -->
           <ellipse cx="9" cy="14" rx="7" ry="10" fill="rgba(0,0,0,0.4)" />
@@ -61,7 +61,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
     const bodyColor = isPremium ? '#F59E0B' : '#FBBF24';
     const roofColor = isPremium ? '#09090b' : '#18181b';
     return `
-      <div style="transform: rotate(${heading}deg); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); width: 20px; height: 34px; display: flex; align-items: center; justify-content: center; pointer-events: auto;">
+      <div style="transform: rotate(${heading}deg); width: 20px; height: 34px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
         <svg width="20" height="34" viewBox="0 0 20 34" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));">
           <!-- Directional Road Shadow -->
           <ellipse cx="10" cy="18" rx="8" ry="13" fill="rgba(0,0,0,0.45)" />
@@ -116,7 +116,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
   const mainColor = isLite ? '#10B981' : '#FACC15';
   const accentColor = isLite ? '#059669' : '#EAB308';
   return `
-    <div style="transform: rotate(${heading}deg); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); width: 30px; height: 42px; display: flex; align-items: center; justify-content: center; pointer-events: auto;">
+    <div style="transform: rotate(${heading}deg); width: 30px; height: 42px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
       <svg width="30" height="42" viewBox="0 0 30 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 7px rgba(0,0,0,0.85));">
         <!-- Directional Road Shadow -->
         <ellipse cx="15" cy="22" rx="7" ry="16" fill="rgba(0,0,0,0.35)" />
@@ -225,7 +225,9 @@ export const InteractiveMap = ({
   selectedVehicleId = 'bike',
   onLocationSelect = null,
   selectingMode = null,
-  isCaptain = false
+  isCaptain = false,
+  isServiceable = true,
+  activeRide = null
 }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -278,6 +280,12 @@ export const InteractiveMap = ({
     nearby: [],
     polyline: null
   });
+
+  const simFleetRef = useRef([]);
+  const simMarkersRef = useRef([]);
+  const realMarkersRef = useRef({});
+  const animFrameRef = useRef(null);
+  const lastAnchorRef = useRef(null);
 
   // Initialize Map Once
   useEffect(() => {
@@ -423,8 +431,9 @@ export const InteractiveMap = ({
   // Store real road network coordinates from OSRM
   const localRoadsRef = useRef([]);
   const currentRouteCoordsRef = useRef([]);
+  const [roadBranches, setRoadBranches] = useState([]);
 
-  // Fetch local real road network around pickup point
+  // Fetch real physical road polylines around pickup location using OSRM
   useEffect(() => {
     if (!pickup?.lat || !pickup?.lng) return;
 
@@ -433,13 +442,14 @@ export const InteractiveMap = ({
 
     const fetchRoads = async () => {
       const branches = [];
+      // Probes in multiple directions (North, South, East, West, NW, SE along highways and streets)
       const testOffsets = [
-        [0.005, 0.003],
-        [-0.004, 0.005],
-        [0.004, -0.005],
-        [-0.005, -0.004],
-        [0.007, 0.0],
-        [-0.006, 0.001]
+        [0.009, 0.002],   // North highway corridor
+        [-0.009, -0.002], // South highway corridor
+        [0.002, 0.008],   // East cross avenue
+        [-0.002, -0.008], // West connector road
+        [0.007, -0.006],  // Northwest arterial
+        [-0.007, 0.006]   // Southeast arterial
       ];
 
       for (const [dLat, dLng] of testOffsets) {
@@ -455,12 +465,13 @@ export const InteractiveMap = ({
             }
           }
         } catch (e) {
-          // ignore
+          // Ignore individual probe error
         }
       }
 
       if (!isCancelled && branches.length > 0) {
         localRoadsRef.current = branches;
+        setRoadBranches(branches);
       }
     };
 
@@ -476,8 +487,38 @@ export const InteractiveMap = ({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    if (pickup && drop && pickup.lat && drop.lat) {
-      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${pickup.lng},${pickup.lat};${drop.lng},${drop.lat}?overview=full&geometries=geojson`;
+    let routeOrigin = null;
+    let routeDestination = null;
+    let routeColor = '#3B82F6';
+
+    // Route Selection based on Ride State
+    if (activeRide) {
+      if (activeRide.status === 'IN_PROGRESS') {
+        // In-Trip: Driver / Pickup -> Drop
+        routeOrigin = driverLocation && driverLocation.lat ? driverLocation : pickup;
+        routeDestination = drop;
+        routeColor = '#3B82F6';
+      } else {
+        // Approaching Pickup: Driver -> Pickup
+        if (driverLocation && driverLocation.lat && pickup && pickup.lat) {
+          routeOrigin = driverLocation;
+          routeDestination = pickup;
+          routeColor = '#F59E0B'; // Amber / Gold for approaching driver
+        } else {
+          routeOrigin = pickup;
+          routeDestination = drop;
+          routeColor = '#3B82F6';
+        }
+      }
+    } else if (pickup && drop && pickup.lat && drop.lat) {
+      // Standard Booking Mode: Pickup -> Drop
+      routeOrigin = pickup;
+      routeDestination = drop;
+      routeColor = '#3B82F6';
+    }
+
+    if (routeOrigin && routeDestination && routeOrigin.lat && routeDestination.lat) {
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${routeOrigin.lng},${routeOrigin.lat};${routeDestination.lng},${routeDestination.lat}?overview=full&geometries=geojson`;
 
       fetch(osrmUrl)
         .then(res => res.json())
@@ -488,9 +529,10 @@ export const InteractiveMap = ({
 
             if (markersRef.current.polyline) {
               markersRef.current.polyline.setLatLngs(coordinates);
+              markersRef.current.polyline.setStyle({ color: routeColor, weight: 5, opacity: 0.95 });
             } else {
               markersRef.current.polyline = L.polyline(coordinates, {
-                color: '#3B82F6',
+                color: routeColor,
                 weight: 5,
                 opacity: 0.95,
                 lineJoin: 'round'
@@ -500,18 +542,26 @@ export const InteractiveMap = ({
             const bounds = L.latLngBounds(coordinates);
             map.fitBounds(bounds, { padding: [70, 70] });
           } else {
-            const fallback = [[pickup.lat, pickup.lng], [drop.lat, drop.lng]];
+            const fallback = [[routeOrigin.lat, routeOrigin.lng], [routeDestination.lat, routeDestination.lng]];
             currentRouteCoordsRef.current = fallback;
-            if (markersRef.current.polyline) markersRef.current.polyline.setLatLngs(fallback);
-            else markersRef.current.polyline = L.polyline(fallback, { color: '#3B82F6', weight: 4 }).addTo(map);
+            if (markersRef.current.polyline) {
+              markersRef.current.polyline.setLatLngs(fallback);
+              markersRef.current.polyline.setStyle({ color: routeColor });
+            } else {
+              markersRef.current.polyline = L.polyline(fallback, { color: routeColor, weight: 4 }).addTo(map);
+            }
             map.fitBounds(fallback, { padding: [70, 70] });
           }
         })
         .catch(() => {
-          const fallback = [[pickup.lat, pickup.lng], [drop.lat, drop.lng]];
+          const fallback = [[routeOrigin.lat, routeOrigin.lng], [routeDestination.lat, routeDestination.lng]];
           currentRouteCoordsRef.current = fallback;
-          if (markersRef.current.polyline) markersRef.current.polyline.setLatLngs(fallback);
-          else markersRef.current.polyline = L.polyline(fallback, { color: '#3B82F6', weight: 4 }).addTo(map);
+          if (markersRef.current.polyline) {
+            markersRef.current.polyline.setLatLngs(fallback);
+            markersRef.current.polyline.setStyle({ color: routeColor });
+          } else {
+            markersRef.current.polyline = L.polyline(fallback, { color: routeColor, weight: 4 }).addTo(map);
+          }
           map.fitBounds(fallback, { padding: [70, 70] });
         });
     } else if (markersRef.current.polyline) {
@@ -519,30 +569,60 @@ export const InteractiveMap = ({
       markersRef.current.polyline = null;
       currentRouteCoordsRef.current = [];
     }
-  }, [pickup, drop]);
+  }, [pickup, drop, driverLocation, activeRide]);
 
-  // Update Active Driver Live GPS Location
+  // Update Active Driver Live GPS Location (Real Satellite GPS updates)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    if (driverLocation && driverLocation.lat && driverLocation.lng) {
-      const activeVehicleIcon = createVehicleMarkerIcon(selectedVehicleId);
+    if (driverLocation && driverLocation.lat && driverLocation.lng && isServiceable) {
+      const vehId = activeRide?.vehicle_id || driverLocation.category?.toLowerCase() || selectedVehicleId;
+      const heading = driverLocation.heading || 0;
+      const activeVehicleIcon = createVehicleMarkerIcon(vehId, heading);
+
+      const pLat = pickup?.lat;
+      const pLng = pickup?.lng;
+      let distMeters = 999;
+      if (pLat && pLng) {
+        const dLat = (driverLocation.lat - pLat) * 111320;
+        const dLng = (driverLocation.lng - pLng) * 111320 * Math.cos((pLat * Math.PI) / 180);
+        distMeters = Math.sqrt(dLat * dLat + dLng * dLng);
+      }
+
+      const driverName = activeRide?.driver_name || driverLocation.name || 'Captain Partner';
+      const vehicleInfo = activeRide?.vehicle_model || driverLocation.model || 'Bykneo Vehicle';
+      const plateInfo = activeRide?.vehicle_number || driverLocation.number || '';
+
+      const popupContent = `
+        <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 170px; padding: 2px;">
+          <div style="font-weight: 800; font-size: 12.5px; color: #111;">Captain ${driverName}</div>
+          <div style="font-size: 11px; color: #4b5563; font-weight: 600;">${vehicleInfo} • ${plateInfo}</div>
+          <div style="font-size: 10px; color: #059669; font-weight: 700; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+            ${distMeters <= 1000 ? `Live GPS (~${distMeters.toFixed(0)}m away)` : `Live GPS (~${(distMeters / 1000).toFixed(1)} km away)`}
+          </div>
+        </div>
+      `;
 
       if (markersRef.current.driver) {
         markersRef.current.driver.setLatLng([driverLocation.lat, driverLocation.lng]);
         markersRef.current.driver.setIcon(activeVehicleIcon);
+        markersRef.current.driver.setPopupContent(popupContent);
       } else {
-        markersRef.current.driver = L.marker([driverLocation.lat, driverLocation.lng], { icon: activeVehicleIcon })
+        markersRef.current.driver = L.marker([driverLocation.lat, driverLocation.lng], {
+          icon: activeVehicleIcon,
+          zIndexOffset: 1000
+        })
           .addTo(map)
-          .bindPopup('<b>Your Bykneo Captain (Live GPS)</b>');
+          .bindPopup(popupContent);
       }
 
-      // If in Captain mode and no active navigation to drop, center map on Captain GPS location when moved
+      // If in Captain mode and no active destination, center map on Captain GPS location
       if (isCaptain && (!drop || !drop.lat)) {
         const currentCenter = map.getCenter();
-        const distMeters = currentCenter ? currentCenter.distanceTo([driverLocation.lat, driverLocation.lng]) : 999;
-        if (distMeters > 15) {
+        const distFromCenter = currentCenter ? currentCenter.distanceTo([driverLocation.lat, driverLocation.lng]) : 999;
+        if (distFromCenter > 20) {
           map.flyTo([driverLocation.lat, driverLocation.lng], 19, { duration: 1.0, easeLinearity: 0.25 });
         }
       }
@@ -550,181 +630,411 @@ export const InteractiveMap = ({
       map.removeLayer(markersRef.current.driver);
       markersRef.current.driver = null;
     }
-  }, [driverLocation, selectedVehicleId, isCaptain, drop]);
+  }, [driverLocation, selectedVehicleId, isCaptain, drop, isServiceable, activeRide, pickup]);
 
-  // Continuous 60 FPS Pure Road-Snapped Vehicle Movement (STRICTLY ON ASPHALT ROADS ONLY)
+  // Authentic Vehicle Model & Captain Details Generator (Indistinguishable from real drivers)
+  const getAuthenticDriverProfile = (category, index) => {
+    const drivers = [
+      { name: 'Vikram Singh', rating: '4.88', rides: '420+' },
+      { name: 'Ramesh Patel', rating: '4.85', rides: '280+' },
+      { name: 'Amit Sharma', rating: '4.92', rides: '510+' },
+      { name: 'Sunil Verma', rating: '4.81', rides: '190+' },
+      { name: 'Praveen Tiwari', rating: '4.90', rides: '340+' }
+    ];
+    const models = {
+      bike: ['Honda Activa 6G', 'Bajaj Pulsar 150', 'Hero Splendor Plus', 'TVS Jupiter', 'Honda Shine'],
+      auto: ['Bajaj RE Compact Auto', 'Piaggio Ape City', 'Mahindra Treo Electric', 'Bajaj Maxima Z'],
+      cab_economy: ['Maruti Suzuki WagonR', 'Swift Dzire', 'Hyundai Aura', 'Tata Tigor'],
+      cab_premium: ['Honda City VX', 'Hyundai Verna SX', 'Toyota Urban Cruiser', 'Maruti Ciaz Alpha']
+    };
+    const d = drivers[index % drivers.length];
+    const catKey = category.includes('cab_premium')
+      ? 'cab_premium'
+      : category.includes('cab')
+      ? 'cab_economy'
+      : category.includes('auto')
+      ? 'auto'
+      : 'bike';
+    const modelList = models[catKey] || models.bike;
+    const model = modelList[index % modelList.length];
+    return { ...d, model };
+  };
+
+  // Realistic Continuous Street Circuits (Closed loops around city blocks — NO ping-pong / NO snapping)
+  const getContinuousStreetCircuits = (pLat, pLng) => {
+    return [
+      // Circuit 1: Northeast Urban Block (~200m to ~600m) - Continuous 6-waypoint loop
+      [
+        [pLat + 0.0018, pLng + 0.0015],
+        [pLat + 0.0035, pLng + 0.0032],
+        [pLat + 0.0048, pLng + 0.0022],
+        [pLat + 0.0042, pLng + 0.0005],
+        [pLat + 0.0028, pLng + 0.0002],
+        [pLat + 0.0018, pLng + 0.0015]
+      ],
+      // Circuit 2: Southwest Commercial Sector (~180m to ~550m) - Continuous 6-waypoint loop
+      [
+        [pLat - 0.0012, pLng - 0.0015],
+        [pLat - 0.0028, pLng - 0.0038],
+        [pLat - 0.0045, pLng - 0.0032],
+        [pLat - 0.0040, pLng - 0.0010],
+        [pLat - 0.0025, pLng - 0.0002],
+        [pLat - 0.0012, pLng - 0.0015]
+      ],
+      // Circuit 3: East Arterial Boulevard (~350m to ~800m) - Continuous 6-waypoint loop
+      [
+        [pLat + 0.0005, pLng + 0.0030],
+        [pLat + 0.0015, pLng + 0.0060],
+        [pLat + 0.0028, pLng + 0.0055],
+        [pLat + 0.0022, pLng + 0.0025],
+        [pLat + 0.0012, pLng + 0.0018],
+        [pLat + 0.0005, pLng + 0.0030]
+      ],
+      // Circuit 4: Northwest Residential Avenue (~300m to ~700m) - Continuous 6-waypoint loop
+      [
+        [pLat + 0.0028, pLng - 0.0010],
+        [pLat + 0.0048, pLng - 0.0030],
+        [pLat + 0.0058, pLng - 0.0045],
+        [pLat + 0.0065, pLng - 0.0025],
+        [pLat + 0.0045, pLng - 0.0002],
+        [pLat + 0.0028, pLng - 0.0010]
+      ],
+      // Circuit 5: Southeast Transit Ring (~380m to ~850m) - Continuous 6-waypoint loop
+      [
+        [pLat - 0.0022, pLng + 0.0020],
+        [pLat - 0.0040, pLng + 0.0045],
+        [pLat - 0.0055, pLng + 0.0038],
+        [pLat - 0.0050, pLng + 0.0015],
+        [pLat - 0.0032, pLng + 0.0008],
+        [pLat - 0.0022, pLng + 0.0020]
+      ]
+    ];
+  };
+
+  // 1. Sync Real Online Drivers on Map (Authentic Live Captain Cards)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Clean old markers
-    markersRef.current.nearby.forEach((m) => map.removeLayer(m));
-    markersRef.current.nearby = [];
+    if (!isServiceable || isCaptain || activeRide) {
+      Object.values(realMarkersRef.current).forEach((m) => map.removeLayer(m));
+      realMarkersRef.current = {};
+      return;
+    }
+
+    const currentDriverIds = new Set();
+    const pLat = pickup?.lat || center[0];
+    const pLng = pickup?.lng || center[1];
+
+    if (Array.isArray(nearbyDrivers)) {
+      nearbyDrivers.forEach((d) => {
+        if (!d.lat || !d.lng || d.is_online === false) return;
+        const dId = d.id || `${d.lat}_${d.lng}`;
+        currentDriverIds.add(dId);
+
+        const dLat = Number(d.lat);
+        const dLng = Number(d.lng);
+        const distM = Math.hypot((dLat - pLat) * 111320, (dLng - pLng) * 111320 * Math.cos(((pLat + dLat) / 2 * Math.PI) / 180));
+        const etaMins = Math.max(1, Math.round(distM / 350));
+
+        const popupHtml = `
+          <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 175px; padding: 2px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+              <b style="font-size: 12.5px; color: #111;">Captain ${d.name || 'Partner'}</b>
+              <span style="font-size: 10.5px; font-weight: 800; color: #d97706; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">★ ${d.rating || '4.85'}</span>
+            </div>
+            <div style="font-size: 11px; color: #4b5563; margin-bottom: 3px;">${d.vehicle_model || 'Bykneo Vehicle'}</div>
+            <div style="font-size: 10px; color: #059669; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+              Available • ${etaMins} min away
+            </div>
+          </div>
+        `;
+
+        if (realMarkersRef.current[dId]) {
+          realMarkersRef.current[dId].setLatLng([dLat, dLng]);
+          realMarkersRef.current[dId].setPopupContent(popupHtml);
+        } else {
+          const m = L.marker([dLat, dLng], {
+            icon: createVehicleMarkerIcon(d.vehicle_category?.toLowerCase() || selectedVehicleId, d.heading || 0)
+          })
+            .addTo(map)
+            .bindPopup(popupHtml);
+          realMarkersRef.current[dId] = m;
+        }
+      });
+    }
+
+    // Remove any offline real drivers
+    Object.keys(realMarkersRef.current).forEach((id) => {
+      if (!currentDriverIds.has(id)) {
+        map.removeLayer(realMarkersRef.current[id]);
+        delete realMarkersRef.current[id];
+      }
+    });
+  }, [nearbyDrivers, isServiceable, isCaptain, activeRide, selectedVehicleId, pickup, center]);
+
+  // 2. Update Simulation Vehicle Icons & Popups when selected vehicle type changes
+  useEffect(() => {
+    if (simMarkersRef.current.length > 0 && simFleetRef.current.length > 0) {
+      simMarkersRef.current.forEach((marker, i) => {
+        const v = simFleetRef.current[i];
+        if (marker && v) {
+          const profile = getAuthenticDriverProfile(selectedVehicleId, i);
+          v.vehicleModel = profile.model;
+          marker.setIcon(createVehicleMarkerIcon(selectedVehicleId, v.heading || 0));
+
+          const etaMins = Math.max(2, Math.round(v.distM / 350) || 3);
+          marker.setPopupContent(`
+            <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 175px; padding: 2px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                <b style="font-size: 12.5px; color: #111;">Captain ${v.name}</b>
+                <span style="font-size: 10.5px; font-weight: 800; color: #d97706; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">★ ${v.rating}</span>
+              </div>
+              <div style="font-size: 11px; color: #4b5563; margin-bottom: 3px;">${v.vehicleModel}</div>
+              <div style="font-size: 10px; color: #059669; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+                Available • ${etaMins} min away
+              </div>
+            </div>
+          `);
+        }
+      });
+    }
+  }, [selectedVehicleId]);
+
+  // 3. Persistent, Organic Simulated Fleet & Smooth Continuous Animation Loop
+  // (VEHICLES DRIVE STRICTLY ON REAL ASPHALT ROADS & HIGHWAYS FETCHED VIA OSRM)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // Count real online drivers currently in zone
+    const realDriversCount = Array.isArray(nearbyDrivers)
+      ? nearbyDrivers.filter((d) => d.lat && d.lng && d.is_online !== false).length
+      : 0;
+
+    // Target total fleet on screen = 4.
+    // If you have >= 4 real online drivers, simulation count = 0 (100% REAL DRIVERS ONLY)
+    const targetSimCount = Math.max(0, 4 - realDriversCount);
+
+    // If not serviceable, in Captain mode, actively on a ride, or full real drivers available, stop simulation
+    if (!isServiceable || isCaptain || activeRide || targetSimCount === 0) {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      simMarkersRef.current.forEach((m) => map.removeLayer(m));
+      simMarkersRef.current = [];
+      simFleetRef.current = [];
+      lastAnchorRef.current = null;
+      return;
+    }
 
     const pLat = pickup?.lat || center[0];
     const pLng = pickup?.lng || center[1];
 
-    // Collect all available paved road polylines
-    const availablePaths = [];
-    if (currentRouteCoordsRef.current && currentRouteCoordsRef.current.length >= 3) {
-      availablePaths.push(currentRouteCoordsRef.current);
-      // Also slice route into smaller road branches
-      const mid = Math.floor(currentRouteCoordsRef.current.length / 2);
-      availablePaths.push(currentRouteCoordsRef.current.slice(0, mid + 1));
-      availablePaths.push(currentRouteCoordsRef.current.slice(Math.max(0, mid - 2)));
-    }
-    if (localRoadsRef.current && localRoadsRef.current.length > 0) {
-      availablePaths.push(...localRoadsRef.current);
-    }
-
-    // Default road fallback directly aligned with Bhopal's real Raisina / Patel Nagar road corridor
-    if (availablePaths.length === 0) {
-      availablePaths.push([
-        [pLat, pLng],
-        [pLat + 0.0018, pLng + 0.0005],
-        [pLat + 0.0035, pLng - 0.0008],
-        [pLat + 0.0052, pLng - 0.0012]
-      ]);
-      availablePaths.push([
-        [pLat, pLng],
-        [pLat - 0.0015, pLng + 0.0012],
-        [pLat - 0.0032, pLng + 0.0028],
-        [pLat - 0.0048, pLng + 0.0035]
-      ]);
+    // Check if we need to initialize or re-anchor simulation (initial start or relocation > 2km or new road branches)
+    let needsReanchor = false;
+    if (!lastAnchorRef.current || simFleetRef.current.length !== targetSimCount) {
+      needsReanchor = true;
+    } else {
+      const distFromAnchor = Math.hypot(
+        (pLat - lastAnchorRef.current.lat) * 111320,
+        (pLng - lastAnchorRef.current.lng) * 111320
+      );
+      if (distFromAnchor > 2000) {
+        needsReanchor = true;
+      }
     }
 
-    const driverNames = ['Vikram', 'Ramesh', 'Amit', 'Sunil', 'Praveen', 'Deepak'];
-    const ratings = [4.9, 4.85, 4.95, 4.8, 4.92, 4.88];
+    // Prefer real OSRM road branches around the pickup point
+    const activeRoadBranches = roadBranches.length >= 2 ? roadBranches : localRoadsRef.current;
 
-    // Initialize 6 vehicles snapped directly onto road paths
-    const fleet = [];
-    for (let i = 0; i < 6; i++) {
-      const roadPath = availablePaths[i % availablePaths.length];
-      const startSeg = Math.min(i % Math.max(1, roadPath.length - 1), roadPath.length - 2);
-      const p1 = roadPath[startSeg];
-      const p2 = roadPath[startSeg + 1] || roadPath[startSeg];
+    if (needsReanchor || (activeRoadBranches.length > 0 && simFleetRef.current.some(v => !v.isOsrmRoad))) {
+      // Clean previous simulation markers
+      simMarkersRef.current.forEach((m) => map.removeLayer(m));
+      simMarkersRef.current = [];
 
-      const initialHeading = ((Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180) / Math.PI + 360) % 360;
+      lastAnchorRef.current = { lat: pLat, lng: pLng };
 
-      fleet.push({
-        id: `f${i}`,
-        name: driverNames[i],
-        rating: ratings[i],
-        path: roadPath,
-        segmentIndex: startSeg,
-        progress: (i * 0.25) % 0.9,
-        direction: i % 2 === 0 ? 1 : -1,
-        speed: 0.00028 + (i % 3) * 0.00006,
-        lat: p1[0],
-        lng: p1[1],
-        heading: initialHeading
-      });
+      // Use real OSRM road branches or snap fallback
+      const availableRoads = activeRoadBranches.length > 0
+        ? activeRoadBranches
+        : getContinuousStreetCircuits(pLat, pLng);
+
+      const newFleet = [];
+      const newMarkers = [];
+
+      for (let i = 0; i < targetSimCount; i++) {
+        const path = availableRoads[i % availableRoads.length];
+        if (!path || path.length < 2) continue;
+
+        const profile = getAuthenticDriverProfile(selectedVehicleId, i);
+        const segIdx = Math.min(i, path.length - 2);
+        const p1 = path[segIdx];
+        const p2 = path[segIdx + 1];
+        const dLat = p2[0] - p1[0];
+        const dLng = p2[1] - p1[1];
+        const initialHeading = ((Math.atan2(dLng, dLat) * 180) / Math.PI + 360) % 360;
+
+        const initialProgress = 0.2 + (i * 0.25) % 0.6;
+        const initialLat = p1[0] + dLat * initialProgress;
+        const initialLng = p1[1] + dLng * initialProgress;
+        const distM = Math.hypot((initialLat - pLat) * 111320, (initialLng - pLng) * 111320 * Math.cos(((pLat + initialLat) / 2 * Math.PI) / 180));
+        const etaMins = Math.max(2, Math.round(distM / 350) || 3);
+
+        const vehicle = {
+          id: `driver_${profile.name.toLowerCase().replace(/\s+/g, '_')}_${i}`,
+          name: profile.name,
+          rating: profile.rating,
+          vehicleModel: profile.model,
+          path: path,
+          segmentIndex: segIdx,
+          progress: initialProgress,
+          direction: i % 2 === 0 ? 1 : -1,
+          speed: 0.000055 + (i % 3) * 0.000012, // Realistic city cruising speed (~20-26 km/h)
+          pauseRemaining: 0,
+          distM: distM,
+          lat: initialLat,
+          lng: initialLng,
+          heading: initialHeading,
+          isOsrmRoad: activeRoadBranches.length > 0
+        };
+
+        const popupHtml = `
+          <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 175px; padding: 2px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+              <b style="font-size: 12.5px; color: #111;">Captain ${vehicle.name}</b>
+              <span style="font-size: 10.5px; font-weight: 800; color: #d97706; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">★ ${vehicle.rating}</span>
+            </div>
+            <div style="font-size: 11px; color: #4b5563; margin-bottom: 3px;">${vehicle.vehicleModel}</div>
+            <div style="font-size: 10px; color: #059669; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+              Available • ${etaMins} min away
+            </div>
+          </div>
+        `;
+
+        const marker = L.marker([initialLat, initialLng], {
+          icon: createVehicleMarkerIcon(selectedVehicleId, initialHeading)
+        })
+          .addTo(map)
+          .bindPopup(popupHtml);
+
+        newFleet.push(vehicle);
+        newMarkers.push(marker);
+      }
+
+      simFleetRef.current = newFleet;
+      simMarkersRef.current = newMarkers;
     }
 
-    const vehicleNameMap = {
-      bike_lite: 'Bike Lite',
-      bike: 'Bykneo Bike',
-      auto_lite: 'Auto Lite',
-      auto: 'Bykneo Auto',
-      cab_economy: 'Cab Economy',
-      cab_premium: 'Cab Premium'
-    };
-    const vehName = vehicleNameMap[selectedVehicleId] || 'Bykneo Vehicle';
+    // Start continuous animation loop if not already running
+    if (!animFrameRef.current) {
+      let lastTime = performance.now();
 
-    // Create Leaflet markers for each vehicle
-    const markers = fleet.map((v) => {
-      const marker = L.marker([v.lat, v.lng], {
-        icon: createVehicleMarkerIcon(selectedVehicleId, v.heading)
-      })
-        .addTo(map)
-        .bindPopup(`<b>Captain ${v.name}</b><br/>✨ ${vehName}<br/>⭐ ${v.rating} (1-3 mins away)`);
-      return marker;
-    });
+      const animateLoop = (now) => {
+        const dt = Math.min((now - lastTime) / 1000, 0.05); // Capped delta-time for buttery smooth 60fps
+        lastTime = now;
 
-    markersRef.current.nearby = markers;
+        const fleet = simFleetRef.current;
+        const markers = simMarkersRef.current;
 
-    let animId;
-    let lastTime = performance.now();
+        fleet.forEach((v, index) => {
+          const path = v.path;
+          if (!path || path.length < 2) return;
 
-    const animateLoop = (now) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.08); // seconds elapsed
-      lastTime = now;
+          // If vehicle is paused at traffic signal / intersection
+          if (v.pauseRemaining > 0) {
+            v.pauseRemaining -= dt;
+            return;
+          }
 
-      fleet.forEach((v, index) => {
-        const path = v.path;
-        if (!path || path.length < 2) return;
+          const curDir = v.direction > 0 ? 1 : -1;
+          const pFrom = curDir > 0 ? path[v.segmentIndex] : path[v.segmentIndex + 1];
+          const pTo = curDir > 0 ? path[v.segmentIndex + 1] : path[v.segmentIndex];
 
-        const maxSeg = path.length - 2;
-        let seg = Math.max(0, Math.min(v.segmentIndex, maxSeg));
-        let nextSeg = v.direction > 0 ? seg + 1 : seg;
-        let prevSeg = v.direction > 0 ? seg : seg + 1;
+          if (!pFrom || !pTo) return;
 
-        const pStart = path[prevSeg];
-        const pEnd = path[nextSeg];
+          const dLat = pTo[0] - pFrom[0];
+          const dLng = pTo[1] - pFrom[1];
+          const segDist = Math.max(0.00005, Math.hypot(dLat, dLng));
 
-        if (!pStart || !pEnd) return;
+          v.progress += (v.speed / segDist) * dt;
 
-        // Calculate segment Euclidean distance in degrees
-        const dLat = pEnd[0] - pStart[0];
-        const dLng = pEnd[1] - pStart[1];
-        const segDist = Math.max(0.00005, Math.sqrt(dLat * dLat + dLng * dLng));
-
-        // Advance along road segment
-        v.progress += (v.speed / segDist) * dt;
-
-        if (v.progress >= 1.0) {
-          v.progress = 0.0;
-          if (v.direction > 0) {
-            if (seg >= maxSeg) {
-              v.direction = -1; // U-turn at road end
-              v.segmentIndex = maxSeg;
+          // Seamless transition along road waypoints
+          if (v.progress >= 1.0) {
+            v.progress = 0.0;
+            if (v.direction > 0) {
+              if (v.segmentIndex >= path.length - 2) {
+                v.direction = -1; // Smoothly reverse along the road
+                if (Math.random() < 0.30) v.pauseRemaining = 2.5 + Math.random() * 3.0;
+              } else {
+                v.segmentIndex++;
+              }
             } else {
-              v.segmentIndex++;
-            }
-          } else {
-            if (seg <= 0) {
-              v.direction = 1; // U-turn at road start
-              v.segmentIndex = 0;
-            } else {
-              v.segmentIndex--;
+              if (v.segmentIndex <= 0) {
+                v.direction = 1; // Smoothly forward along the road
+                if (Math.random() < 0.30) v.pauseRemaining = 2.5 + Math.random() * 3.0;
+              } else {
+                v.segmentIndex--;
+              }
             }
           }
-        }
 
-        // Interpolate position 100% strictly on the road line
-        v.lat = pStart[0] + dLat * v.progress;
-        v.lng = pStart[1] + dLng * v.progress;
+          // Smooth coordinate interpolation strictly on real road asphalt
+          const activeFrom = v.direction > 0 ? path[v.segmentIndex] : path[v.segmentIndex + 1];
+          const activeTo = v.direction > 0 ? path[v.segmentIndex + 1] : path[v.segmentIndex];
 
-        // Heading is mathematically locked to road segment angle
-        const targetHeading = ((Math.atan2(dLng, dLat) * 180) / Math.PI + 360) % 360;
-        let diff = (targetHeading - v.heading + 540) % 360 - 180;
-        v.heading = (v.heading + diff * 8.0 * dt + 360) % 360;
+          if (activeFrom && activeTo) {
+            v.lat = activeFrom[0] + (activeTo[0] - activeFrom[0]) * v.progress;
+            v.lng = activeFrom[1] + (activeTo[1] - activeFrom[1]) * v.progress;
 
-        const marker = markers[index];
-        if (marker) {
-          marker.setLatLng([v.lat, v.lng]);
+            // Smooth shortest-path heading calculation (NO 360-degree spins, natural steering)
+            const curDLat = activeTo[0] - activeFrom[0];
+            const curDLng = activeTo[1] - activeFrom[1];
+            const targetHeading = ((Math.atan2(curDLng, curDLat) * 180) / Math.PI + 360) % 360;
 
-          const iconEl = marker.getElement();
-          if (iconEl) {
-            const innerDiv = iconEl.firstElementChild;
-            if (innerDiv) {
-              innerDiv.style.transform = `rotate(${v.heading.toFixed(1)}deg)`;
+            // Shortest-turn angular difference (always between -180 and +180 deg)
+            const diff = ((targetHeading - v.heading) % 360 + 540) % 360 - 180;
+
+            // Natural realistic steering rate (max 75 deg/sec turn rate)
+            const maxTurnStep = 75 * dt;
+            const turnDelta = Math.sign(diff) * Math.min(Math.abs(diff * 3.5 * dt), maxTurnStep);
+            v.heading += turnDelta;
+
+            const marker = markers[index];
+            if (marker) {
+              marker.setLatLng([v.lat, v.lng]);
+
+              const iconEl = marker.getElement();
+              if (iconEl) {
+                const innerDiv = iconEl.firstElementChild;
+                if (innerDiv) {
+                  innerDiv.style.transform = `rotate(${v.heading.toFixed(1)}deg)`;
+                }
+              }
             }
           }
-        }
-      });
+        });
 
-      animId = requestAnimationFrame(animateLoop);
-    };
+        animFrameRef.current = requestAnimationFrame(animateLoop);
+      };
 
-    animId = requestAnimationFrame(animateLoop);
+      animFrameRef.current = requestAnimationFrame(animateLoop);
+    }
+  }, [isServiceable, isCaptain, activeRide, pickup, center, nearbyDrivers, roadBranches]);
 
+  // Clean up animation on unmount
+  useEffect(() => {
     return () => {
-      cancelAnimationFrame(animId);
-      markers.forEach((m) => map.removeLayer(m));
-      markersRef.current.nearby = [];
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
     };
-  }, [selectedVehicleId, pickup, drop]);
+  }, []);
 
   // GPS Locate Me Button Handler - Zooms to 50-meter street-level precision (Zoom 19)
   const handleLocateMe = () => {

@@ -201,6 +201,16 @@ export const BookRideScreen = ({
 // Global POI Category Map for Worldwide Locality & Sub-Area Search
 const POI_CATEGORY_MAP = [
   {
+    type: 'gate',
+    label: 'Gate / Entrance',
+    regex: /\b(gate\s*\d+|gate\s*no\s*\d+|entry\s*gate|exit\s*gate|main\s*gate|gate)\b/i
+  },
+  {
+    type: 'zone',
+    label: 'Zone / Sector',
+    regex: /\b(zone\s*\d+|zone-\d+|sector\s*[a-z0-9]+|phase\s*\d+|block\s*[a-z0-9]+)\b/i
+  },
+  {
     type: 'police',
     label: 'Police Station',
     regex: /\b(police\s*station|police\s*thana|police\s*chowki|police\s*post|police|thana|chowki|kotwali)\b/i
@@ -218,7 +228,7 @@ const POI_CATEGORY_MAP = [
   {
     type: 'station',
     label: 'Station / Metro / Bus',
-    regex: /\b(railway\s*station|train\s*station|metro\s*station|metro|subway|bus\s*stand|bus\s*stop|bus\s*depot|airport|terminal)\b/i
+    regex: /\b(railway\s*station|train\s*station|metro\s*station|metro|subway|bus\s*stand|bus\s*stop|bus\s*depot|airport|terminal|isbt)\b/i
   },
   {
     type: 'junction',
@@ -254,6 +264,10 @@ const POI_CATEGORY_MAP = [
 
 const renderPlaceIcon = (type) => {
   switch (type) {
+    case 'gate':
+      return <Compass className="w-3 h-3 text-cyan-400" />;
+    case 'zone':
+      return <MapPin className="w-3 h-3 text-indigo-400" />;
     case 'police':
       return <Shield className="w-3 h-3 text-blue-400" />;
     case 'fuel':
@@ -287,6 +301,46 @@ const renderPlaceIcon = (type) => {
   }
 };
 
+// Phonetic & Common Spelling Normalizer
+const SPELL_NORMALIZATION_MAP = [
+  { pattern: /\bnager\b/gi, replace: 'nagar' },
+  { pattern: /\b(colny|colney)\b/gi, replace: 'colony' },
+  { pattern: /\b(chok|chokw|chouk)\b/gi, replace: 'chowk' },
+  { pattern: /\b(chouraha|chowraha|choraaha)\b/gi, replace: 'chauraha' },
+  { pattern: /\b(raod|rod)\b/gi, replace: 'road' },
+  { pattern: /\bbazar\b/gi, replace: 'bazaar' },
+  { pattern: /\b(marcket|markit)\b/gi, replace: 'market' },
+  { pattern: /\b(staton|stesion|stn)\b/gi, replace: 'station' },
+  { pattern: /\b(hosptal|hospitl|hosp)\b/gi, replace: 'hospital' },
+  { pattern: /\b(colege|colg|clg)\b/gi, replace: 'college' },
+  { pattern: /\b(danis|danish)\b/gi, replace: 'danish' }
+];
+
+const normalizeSpelling = (query) => {
+  let q = query || '';
+  for (const item of SPELL_NORMALIZATION_MAP) {
+    q = q.replace(item.pattern, item.replace);
+  }
+  return q;
+};
+
+// Safe JSON fetch wrapper with guaranteed timeout & no throwing
+const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
+  try {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    const res = await fetch(url, {
+      ...options,
+      signal: controller ? controller.signal : undefined
+    });
+    if (timeoutId) clearTimeout(timeoutId);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+};
+
   // Worldwide Smart Locality & Sub-Area Compound Search Engine with Deep Fallback
   const handleSearchAddress = (query, type) => {
     if (type === 'pickup') setPickupQuery(query);
@@ -307,7 +361,7 @@ const renderPlaceIcon = (type) => {
       setSearchingAddress(true);
 
       const combined = [];
-      const seenCoords = new Set();
+      const seenKeys = new Set();
 
       const cityName = currentCityName;
       const cityLat = Number(currentCity?.lat || pickup?.lat || 23.2599);
@@ -318,64 +372,99 @@ const renderPlaceIcon = (type) => {
         if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
         const distFromCity = calculateDistance(cityLat, cityLng, lat, lng);
 
-        // STRICT GEOFENCE FILTER: Discard any results outside operational city radius (+30% buffer)
-        if (distFromCity > radiusKm * 1.3) return;
+        // Geofence check (Operational zone + 50% buffer)
+        if (distFromCity > radiusKm * 1.5) return;
 
-        const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-        if (!seenCoords.has(key) || isSynthesized) {
-          if (!seenCoords.has(key)) seenCoords.add(key);
-          const distFromPickup = pickup?.lat
-            ? calculateDistance(pickup.lat, pickup.lng, lat, lng)
-            : distFromCity;
-          combined.push({
-            title: title || 'Location',
-            subtitle: subtitle || `${cityName} (${distFromPickup.toFixed(1)} km away)`,
-            full_name: fullName || title,
-            lat,
-            lng,
-            type: typeTag || 'locality',
-            distanceKm: Number(distFromPickup.toFixed(1)),
-            isSynthesized
-          });
-        }
+        const titleKey = (title || '').toLowerCase().trim();
+        const coordKey = `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)}`;
+        const uniqueKey = `${titleKey}@${coordKey}`;
+        if (seenKeys.has(uniqueKey)) return;
+        seenKeys.add(uniqueKey);
+
+        const distFromPickup = pickup?.lat
+          ? calculateDistance(pickup.lat, pickup.lng, lat, lng)
+          : distFromCity;
+        combined.push({
+          title: title || 'Location',
+          subtitle: subtitle || `${cityName} (${distFromPickup.toFixed(1)} km away)`,
+          full_name: fullName || title,
+          lat: Number(lat),
+          lng: Number(lng),
+          type: typeTag || 'locality',
+          distanceKm: Number(distFromPickup.toFixed(1)),
+          isSynthesized
+        });
       };
 
       try {
         const qClean = query.trim();
-        const qWithCity = qClean.toLowerCase().includes(cityName.toLowerCase())
-          ? qClean
-          : `${qClean}, ${cityName}`;
+        const qNormalized = normalizeSpelling(qClean);
 
         // 1. Detect Category & Landmark Keyword Pattern
         let detectedCategory = null;
-        let localityCandidate = qClean;
+        let localityCandidate = qNormalized;
         let landmarkCandidate = '';
 
         for (const cat of POI_CATEGORY_MAP) {
-          const match = qClean.match(cat.regex);
+          const match = qNormalized.match(cat.regex);
           if (match) {
             detectedCategory = cat;
             landmarkCandidate = match[0];
-            localityCandidate = qClean.replace(cat.regex, ' ').replace(/\s+/g, ' ').trim();
+            localityCandidate = qNormalized.replace(cat.regex, ' ').replace(/\s+/g, ' ').trim();
             break;
           }
         }
 
+        // Multi-query variation set (e.g. "bhel gate", "bhel gate Bhopal", "bhel Bhopal", "bhel")
+        const queriesToRun = new Set();
+        queriesToRun.add(qClean);
+        queriesToRun.add(qNormalized);
+        queriesToRun.add(`${qNormalized} ${cityName}`);
+        if (localityCandidate && localityCandidate.length >= 2) {
+          queriesToRun.add(localityCandidate);
+          queriesToRun.add(`${localityCandidate} ${cityName}`);
+        }
+
+        // First token fallback for multi-word queries (e.g. "bhel" from "bhel gate")
+        const words = qClean.split(/\s+/).filter(Boolean);
+        if (words.length > 1 && words[0].length >= 3) {
+          queriesToRun.add(words[0]);
+          queriesToRun.add(`${words[0]} ${cityName}`);
+        }
+
         const promises = [];
 
-        // 2. Direct Photon Proximity Search
-        promises.push(
-          fetch(
-            `https://photon.komoot.io/api/?q=${encodeURIComponent(qClean)}&lat=${cityLat}&lon=${cityLng}&limit=20`,
-            { signal: AbortSignal.timeout(3500) }
-          )
-            .then((res) => res.json())
-            .then((data) => {
+        // 2. Multi-variant Photon Proximity Queries
+        for (const q of queriesToRun) {
+          promises.push(
+            safeFetchJson(
+              `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${cityLat}&lon=${cityLng}&limit=12`
+            ).then((data) => {
               if (data && data.features) {
                 data.features.forEach((f) => {
                   const p = f.properties;
                   const [lng, lat] = f.geometry.coordinates;
                   const sub = [p.district || p.city, p.state].filter(Boolean).join(', ');
+
+                  // Synthesize High-Confidence Specific Landmark Entry
+                  if (
+                    detectedCategory &&
+                    localityCandidate &&
+                    p.name &&
+                    p.name.toLowerCase().includes(localityCandidate.toLowerCase())
+                  ) {
+                    const formattedPoiTitle = `${p.name} (${landmarkCandidate ? landmarkCandidate.toUpperCase() : detectedCategory.label})`;
+                    addResult(
+                      formattedPoiTitle,
+                      `Near ${landmarkCandidate || detectedCategory.label} • ${sub || cityName}`,
+                      `${p.name}, ${landmarkCandidate}, ${sub || cityName}`,
+                      lat,
+                      lng,
+                      detectedCategory.type,
+                      true
+                    );
+                  }
+
                   addResult(
                     p.name,
                     sub || cityName,
@@ -387,81 +476,26 @@ const renderPlaceIcon = (type) => {
                 });
               }
             })
-            .catch(() => {})
-        );
-
-        // 3. Extracted Locality & Sub-Area Compound Search (The Core Worldwide Fallback)
-        if (
-          localityCandidate &&
-          localityCandidate.length >= 2 &&
-          localityCandidate.toLowerCase() !== qClean.toLowerCase()
-        ) {
-          const locWithCity = localityCandidate.toLowerCase().includes(cityName.toLowerCase())
-            ? localityCandidate
-            : `${localityCandidate}, ${cityName}`;
-
-          promises.push(
-            fetch(
-              `https://photon.komoot.io/api/?q=${encodeURIComponent(locWithCity)}&lat=${cityLat}&lon=${cityLng}&limit=12`,
-              { signal: AbortSignal.timeout(3500) }
-            )
-              .then((res) => res.json())
-              .then((data) => {
-                if (data && data.features) {
-                  data.features.forEach((f) => {
-                    const p = f.properties;
-                    const [lng, lat] = f.geometry.coordinates;
-                    const sub = [p.district || p.city, p.state].filter(Boolean).join(', ');
-
-                    // Synthesize High-Confidence Specific Landmark Entry for exact POI
-                    if (detectedCategory) {
-                      const formattedPoiTitle = `${p.name} (${detectedCategory.label})`;
-                      addResult(
-                        formattedPoiTitle,
-                        `Near ${detectedCategory.label} • ${sub || cityName}`,
-                        `${p.name}, ${landmarkCandidate}, ${sub || cityName}`,
-                        lat,
-                        lng,
-                        detectedCategory.type,
-                        true
-                      );
-                    }
-
-                    // Also add pure locality entry
-                    addResult(
-                      p.name,
-                      sub || cityName,
-                      p.name + (sub ? ', ' + sub : ''),
-                      lat,
-                      lng,
-                      'locality'
-                    );
-                  });
-                }
-              })
-              .catch(() => {})
           );
         }
 
-        // 4. Broad Amenity Discovery for Generic Queries (e.g. "petrol pump", "hospital", "atm")
+        // 3. Broad Amenity Discovery for Generic Queries (e.g. "petrol pump", "hospital", "atm")
         if (detectedCategory && localityCandidate.length < 2) {
           const catKeywords = {
             fuel: ['petrol pump', 'Indian Oil', 'Bharat Petroleum', 'HP Petrol', 'fuel'],
             hospital: ['hospital', 'clinic', 'medical', 'care hospital'],
             bank: ['atm', 'bank', 'SBI ATM', 'HDFC Bank', 'ICICI Bank'],
-            station: ['railway station', 'metro station', 'bus stand']
+            station: ['railway station', 'metro station', 'bus stand', 'isbt']
           };
 
           const kws = catKeywords[detectedCategory.type] || [detectedCategory.label];
           kws.forEach((kw) => {
             promises.push(
-              fetch(
-                `https://photon.komoot.io/api/?q=${encodeURIComponent(kw)}&lat=${cityLat}&lon=${cityLng}&limit=15`,
-                { signal: AbortSignal.timeout(3500) }
-              )
-                .then((res) => res.json())
-                .then((data) => {
-                  (data.features || []).forEach((f) => {
+              safeFetchJson(
+                `https://photon.komoot.io/api/?q=${encodeURIComponent(kw)}&lat=${cityLat}&lon=${cityLng}&limit=12`
+              ).then((data) => {
+                if (data && data.features) {
+                  data.features.forEach((f) => {
                     const p = f.properties;
                     const [lng, lat] = f.geometry.coordinates;
                     addResult(
@@ -473,76 +507,53 @@ const renderPlaceIcon = (type) => {
                       detectedCategory.type
                     );
                   });
-                })
-                .catch(() => {})
+                }
+              })
             );
           });
         }
 
-        // 5. Google Places API (New) - Hyper-Accurate Global Search
-        const googleKey = 'AIzaSyC9NTGzjoVScyb6DOhFQGEZe8rL4JiApmE';
-        const googleUrl = 'https://places.googleapis.com/v1/places:searchText';
-        promises.push(
-          fetch(googleUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Goog-Api-Key': googleKey,
-              'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.types'
-            },
-            body: JSON.stringify({
-              textQuery: qClean + (qClean.toLowerCase().includes(cityName.toLowerCase()) ? '' : `, ${cityName}`),
-              locationBias: {
-                circle: {
-                  center: { latitude: cityLat, longitude: cityLng },
-                  radius: Math.min(radiusKm * 1000, 45000.0)
-                }
-              },
-              maxResultCount: 15
-            }),
-            signal: AbortSignal.timeout(3500)
-          })
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-              if (data && Array.isArray(data.places)) {
-                data.places.forEach((p) => {
-                  if (p.location && p.location.latitude && p.location.longitude) {
-                    const title = p.displayName?.text || 'Location';
-                    const addr = p.formattedAddress || `${cityName}`;
-                    addResult(
-                      title,
-                      addr,
-                      `${title}, ${addr}`,
-                      p.location.latitude,
-                      p.location.longitude,
-                      p.types?.[0] || 'poi'
-                    );
-                  }
-                });
-              }
-            })
-            .catch(() => {})
-        );
+        // 4. OpenStreetMap Nominatim with Proximity Bounding Box
+        const minLon = cityLng - 0.45;
+        const maxLon = cityLng + 0.45;
+        const minLat = cityLat - 0.45;
+        const maxLat = cityLat + 0.45;
+        const nomQueries = [qNormalized, localityCandidate].filter(Boolean);
 
-        // 6. Worldwide Nominatim Search (No country restrictions)
-        promises.push(
-          fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-              qWithCity
-            )}&limit=15&addressdetails=1`,
-            {
-              headers: { 'Accept-Language': 'en,hi', 'User-Agent': 'Bykneo-App/1.0' },
-              signal: AbortSignal.timeout(3500)
-            }
-          )
-            .then((res) => res.json())
-            .then((data) => {
+        for (const nq of nomQueries) {
+          promises.push(
+            safeFetchJson(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+                `${nq} ${cityName}`
+              )}&viewbox=${minLon},${maxLat},${maxLon},${minLat}&bounded=1&limit=8`
+            ).then((data) => {
               if (Array.isArray(data)) {
                 data.forEach((item) => {
                   const parts = item.display_name.split(',');
+                  const mainName = parts[0]?.trim();
+                  const subName = parts.slice(1, 3).join(', ').trim();
+
+                  if (
+                    detectedCategory &&
+                    localityCandidate &&
+                    mainName &&
+                    mainName.toLowerCase().includes(localityCandidate.toLowerCase())
+                  ) {
+                    const formattedPoiTitle = `${mainName} (${landmarkCandidate ? landmarkCandidate.toUpperCase() : detectedCategory.label})`;
+                    addResult(
+                      formattedPoiTitle,
+                      `Near ${landmarkCandidate || detectedCategory.label} • ${subName}`,
+                      item.display_name,
+                      Number(item.lat),
+                      Number(item.lon),
+                      detectedCategory.type,
+                      true
+                    );
+                  }
+
                   addResult(
-                    parts[0]?.trim(),
-                    parts.slice(1, 3).join(', ').trim(),
+                    mainName,
+                    subName,
                     item.display_name,
                     Number(item.lat),
                     Number(item.lon),
@@ -551,50 +562,48 @@ const renderPlaceIcon = (type) => {
                 });
               }
             })
-            .catch(() => {})
-        );
+          );
+        }
 
         await Promise.allSettled(promises);
       } catch (err) {
         console.error('Search error:', err);
-      }
+      } finally {
+        if (currentSeq === searchSeqRef.current) {
+          // Smart Lexical & Proximity Sorting:
+          const locLower = (normalizeSpelling(query) || '').toLowerCase().trim();
+          const qCleanLower = query.toLowerCase().trim();
 
-      // CRITICAL: Prevent Race Condition overwrites
-      if (currentSeq !== searchSeqRef.current) return;
+          combined.sort((a, b) => {
+            // 1. Synthesized / Category matched high relevance
+            if (a.isSynthesized && !b.isSynthesized) return -1;
+            if (!a.isSynthesized && b.isSynthesized) return 1;
 
-      // Smart Lexical & Proximity Sorting:
-      // Priority 1: Direct search match
-      // Priority 2: Locality match (e.g. "piplani" in "piplani police station")
-      // Priority 3: Ascending distance from rider
-      const locLower = (localityCandidate || '').toLowerCase().trim();
-      const qLower = query.toLowerCase().trim();
+            const aTitle = (a.title || '').toLowerCase();
+            const aSub = (a.subtitle || '').toLowerCase();
+            const bTitle = (b.title || '').toLowerCase();
+            const bSub = (b.subtitle || '').toLowerCase();
 
-      combined.sort((a, b) => {
-        const aTitle = (a.title || '').toLowerCase();
-        const aSub = (a.subtitle || '').toLowerCase();
-        const bTitle = (b.title || '').toLowerCase();
-        const bSub = (b.subtitle || '').toLowerCase();
+            // 2. Direct query match
+            const aFullMatch = aTitle.includes(qCleanLower) || aTitle.includes(locLower);
+            const bFullMatch = bTitle.includes(qCleanLower) || bTitle.includes(locLower);
+            if (aFullMatch && !bFullMatch) return -1;
+            if (!aFullMatch && bFullMatch) return 1;
 
-        // 1. Direct query match
-        const aFullMatch = aTitle.includes(qLower);
-        const bFullMatch = bTitle.includes(qLower);
-        if (aFullMatch && !bFullMatch) return -1;
-        if (!aFullMatch && bFullMatch) return 1;
+            // 3. Subtitle / Area match
+            const aSubMatch = aSub.includes(locLower);
+            const bSubMatch = bSub.includes(locLower);
+            if (aSubMatch && !bSubMatch) return -1;
+            if (!aSubMatch && bSubMatch) return 1;
 
-        // 2. Locality candidate match boost
-        if (locLower && locLower.length >= 3) {
-          const aLocMatch = aTitle.includes(locLower) || aSub.includes(locLower);
-          const bLocMatch = bTitle.includes(locLower) || bSub.includes(locLower);
-          if (aLocMatch && !bLocMatch) return -1;
-          if (!aLocMatch && bLocMatch) return 1;
+            // 4. Proximity distance sort
+            return a.distanceKm - b.distanceKm;
+          });
+
+          setSuggestions(combined);
+          setSearchingAddress(false);
         }
-
-        // 3. Proximity distance sort
-        return a.distanceKm - b.distanceKm;
-      });
-
-      setSuggestions(combined);
-      setSearchingAddress(false);
+      }
     }, 250);
   };
 
@@ -835,7 +844,7 @@ const renderPlaceIcon = (type) => {
 
             {!searchingAddress && suggestions.length === 0 && (
               <div className="py-2.5 text-center text-[10px] text-gray-400 px-2 leading-relaxed">
-                No places found strictly within {currentCityName} ({currentCityRadius} KM zone).
+                No places found in {currentCityName}. Please check spelling or enter a nearby landmark.
               </div>
             )}
 
@@ -890,24 +899,30 @@ const renderPlaceIcon = (type) => {
         )}
 
         {/* Geofence Out-of-Service Alert */}
-        {estimatedFare && estimatedFare.is_serviceable === false && (
+        {((estimatedFare && estimatedFare.is_serviceable === false) || (zoneStatus && zoneStatus.isServiceable === false) || !activeCities?.length) && (
           <div className="bg-red-500/15 border border-red-500/30 p-2.5 rounded-xl space-y-1 animate-in fade-in-50 shrink-0">
             <div className="flex items-center gap-1.5 text-red-400 font-bold text-[11px]">
               <MapPin className="w-3.5 h-3.5 shrink-0" />
               <span>Bykneo is launching soon in this area!</span>
             </div>
-            <div className="flex flex-wrap gap-1 pt-0.5">
-              {estimatedFare.active_cities?.map((c, i) => (
-                <span key={i} className="text-[9px] bg-gray-800 text-brand-yellow px-1.5 py-0.2 rounded-full font-bold">
-                  📍 {c.name} ({c.radius_km} km)
-                </span>
-              ))}
-            </div>
+            <p className="text-[10px] text-gray-300">
+              Our fleet is currently offline or not operating in this zone. Driver availability is turned OFF.
+            </p>
+            {activeCities && activeCities.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                <span className="text-[9px] text-gray-400 font-medium">Active Zones:</span>
+                {activeCities.map((c, i) => (
+                  <span key={i} className="text-[9px] bg-gray-800 text-brand-yellow px-1.5 py-0.2 rounded font-bold">
+                    📍 {c.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Rapido-Style Half-Screen Multi-Vehicle Selector */}
-        {estimatedFare && estimatedFare.is_serviceable !== false && (
+        {/* Rapido-Style Half-Screen Multi-Vehicle Selector (Only visible when zone is Active & Serviceable) */}
+        {zoneStatus?.isServiceable !== false && activeCities?.length > 0 && estimatedFare && estimatedFare.is_serviceable !== false && Array.isArray(estimatedFare.vehicles) && estimatedFare.vehicles.length > 0 && (
           <div className="space-y-1.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between">
             {/* Serving Zone Tag & Stats */}
             <div className="flex items-center justify-between px-1 text-[10px] shrink-0">
@@ -1051,14 +1066,14 @@ const renderPlaceIcon = (type) => {
               };
             onRequestRide(paymentMode, chosen);
           }}
-          disabled={!pickup || !drop || loadingEstimate || estimatedFare?.is_serviceable === false}
+          disabled={!pickup || !drop || loadingEstimate || zoneStatus?.isServiceable === false || estimatedFare?.is_serviceable === false || !activeCities?.length || !estimatedFare?.vehicles?.length}
           className="w-full bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-brand-yellow/15 transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
         >
           <Zap className="w-4 h-4 fill-current" />
           {loadingEstimate
             ? 'Calculating Route & Fares...'
-            : estimatedFare?.is_serviceable === false
-            ? 'Out of Active City Service Zone'
+            : (zoneStatus?.isServiceable === false || estimatedFare?.is_serviceable === false || !activeCities?.length)
+            ? 'Service Unavailable in this Area (No Drivers)'
             : !pickup
             ? 'Enter Pickup Location'
             : !drop

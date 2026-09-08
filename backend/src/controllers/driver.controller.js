@@ -48,8 +48,8 @@ export const getEarnings = (req, res) => {
   }, 0);
 
   return res.json({
-    total_earnings: Number(totalEarned.toFixed(2)),
-    today_earnings: Number(todayEarned.toFixed(2)),
+    total_earnings: Math.round(totalEarned),
+    today_earnings: Math.round(todayEarned),
     total_completed_trips: rides.length,
     today_trips: todayRides.length,
     rating: driver.rating,

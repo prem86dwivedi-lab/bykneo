@@ -52,6 +52,10 @@ export function App() {
   const [showRideCompletedModal, setShowRideCompletedModal] = useState(false);
   const [lastCompletedRide, setLastCompletedRide] = useState(null);
   const [driverKycToast, setDriverKycToast] = useState(null);
+  const [rideAlertToast, setRideAlertToast] = useState(null);
+
+  // Dedicated Live Assigned Captain Coordinates (Received over WebSocket on Rider phone)
+  const [assignedCaptainLocation, setAssignedCaptainLocation] = useState(null);
 
   // Driver Online State
   const [isDriverOnline, setIsDriverOnline] = useState(false);
@@ -80,20 +84,21 @@ export function App() {
 
   // Helper to check if coordinates are within an active geofence
   const getZoneStatus = (lat, lng) => {
-    if (!activeCities || activeCities.length === 0) {
-      return { isServiceable: true, matchedCity: null, activeCities: [] };
+    const active = (activeCities || []).filter((c) => c.is_active !== false);
+    if (!active || active.length === 0) {
+      return { isServiceable: false, matchedCity: null, activeCities: [] };
     }
     if (!lat || !lng) {
-      return { isServiceable: true, matchedCity: null, activeCities };
+      return { isServiceable: true, matchedCity: active[0] || null, activeCities: active };
     }
-    const matched = activeCities.find((c) => {
+    const matched = active.find((c) => {
       const dist = calculateDistance(lat, lng, Number(c.lat), Number(c.lng));
       return dist <= (Number(c.radius_km) || 30);
     });
     return {
       isServiceable: !!matched,
       matchedCity: matched || null,
-      activeCities
+      activeCities: active
     };
   };
 
@@ -257,6 +262,27 @@ export function App() {
       .catch(console.error);
   }, [user, activeRole]);
 
+  // Continuous Captain GPS Ping to Backend whenever Online OR in an Active Trip
+  useEffect(() => {
+    if (activeRole !== 'driver' || !socket || !driverProfile) return;
+    if (!isDriverOnline && !activeRide) return;
+
+    const pingLocation = () => {
+      if (driverGpsLocation?.lat && driverGpsLocation?.lng) {
+        socket.emit('driver:location_ping', {
+          driverId: driverProfile.id,
+          lat: driverGpsLocation.lat,
+          lng: driverGpsLocation.lng,
+          heading: 0
+        });
+      }
+    };
+
+    pingLocation();
+    const interval = setInterval(pingLocation, 3000);
+    return () => clearInterval(interval);
+  }, [activeRole, socket, driverProfile, isDriverOnline, activeRide, driverGpsLocation]);
+
   // Socket.IO Event Listeners
   useEffect(() => {
     if (!socket) return;
@@ -274,12 +300,28 @@ export function App() {
       console.log('✅ Captain Matched:', driver);
       setActiveRide(ride);
       setFindingDriver(false);
-      setDriverGpsLocation({ lat: driver.lat, lng: driver.lng });
+      if (driver && driver.lat && driver.lng) {
+        setAssignedCaptainLocation({
+          lat: Number(driver.lat),
+          lng: Number(driver.lng),
+          heading: Number(driver.heading || 0),
+          name: driver.name,
+          model: driver.vehicle_model,
+          number: driver.vehicle_number,
+          category: driver.vehicle_category,
+          avatar: driver.avatar
+        });
+      }
     });
 
     // 2. Rider: Driver Live Location Stream
-    socket.on('ride:driver_location', ({ lat, lng }) => {
-      setDriverGpsLocation({ lat, lng });
+    socket.on('ride:driver_location', ({ lat, lng, heading }) => {
+      setAssignedCaptainLocation((prev) => ({
+        ...prev,
+        lat: Number(lat),
+        lng: Number(lng),
+        heading: Number(heading || 0)
+      }));
     });
 
     // 3. Driver: Incoming Request Alert
@@ -295,35 +337,68 @@ export function App() {
       if (incomingRequest?.id === rideId) {
         setIncomingRequest(null);
       }
+      if (activeRide?.id === rideId) {
+        setActiveRide(null);
+        setAssignedCaptainLocation(null);
+      }
     });
 
     // 5. Driver: Assigned Successfully
     socket.on('ride:assigned_success', ({ ride }) => {
+      console.log('✅ Captain assigned successfully to ride:', ride.id);
       setActiveRide(ride);
       setIncomingRequest(null);
     });
 
-    // 6. Ride Arrived
+    // 6. Ride Arrived (Both Passenger and Driver)
     socket.on('ride:driver_arrived', ({ ride }) => {
+      console.log('📍 Captain has arrived at pickup:', ride.id);
       setActiveRide(ride);
     });
 
     // 7. Ride Started
     socket.on('ride:started', ({ ride }) => {
+      console.log('🚀 Ride started:', ride.id);
       setActiveRide(ride);
     });
 
     // 8. Ride Completed
     socket.on('ride:completed', ({ ride }) => {
+      console.log('🏁 Ride completed:', ride.id);
       setLastCompletedRide(ride);
       setActiveRide(null);
       setFindingDriver(false);
+      setAssignedCaptainLocation(null);
       if (activeRole === 'passenger') {
         setShowRideCompletedModal(true);
       }
     });
 
-    // 9. Captain KYC Approval / Rejection Real-Time Push Notification
+    // 9. Ride Cancelled by other party (Instant alert & reset)
+    socket.on('ride:cancelled_by_other', ({ ride, cancelledBy, reason }) => {
+      console.log('🚫 Ride cancelled by other:', cancelledBy, reason);
+      setActiveRide(null);
+      setFindingDriver(false);
+      setIncomingRequest(null);
+      setAssignedCaptainLocation(null);
+
+      if (activeRole === 'driver') {
+        sendPwaNotification('⚠️ Ride Cancelled by Passenger', reason || 'The passenger has cancelled this booking.');
+        setRideAlertToast({
+          type: 'cancelled',
+          title: 'Ride Cancelled by Passenger',
+          message: reason || 'The passenger has cancelled this ride request. You are back online and ready for new requests.'
+        });
+      } else {
+        setRideAlertToast({
+          type: 'cancelled',
+          title: 'Ride Cancelled',
+          message: reason || 'This ride booking has been cancelled.'
+        });
+      }
+    });
+
+    // 10. Captain KYC Approval / Rejection Real-Time Push Notification
     socket.on('driver:kyc_status_updated', ({ status, rejectionReason, driver }) => {
       console.log('🛡️ Received driver:kyc_status_updated:', status);
       if (status === 'approved') {
@@ -350,6 +425,7 @@ export function App() {
     });
 
     return () => {
+      socket.off('admin:cities_updated');
       socket.off('ride:matched');
       socket.off('ride:driver_location');
       socket.off('driver:incoming_request');
@@ -358,6 +434,7 @@ export function App() {
       socket.off('ride:driver_arrived');
       socket.off('ride:started');
       socket.off('ride:completed');
+      socket.off('ride:cancelled_by_other');
       socket.off('driver:kyc_status_updated');
     };
   }, [socket, activeRole, isDriverOnline, activeRide, incomingRequest]);
@@ -472,6 +549,7 @@ export function App() {
 
     setActiveRide(null);
     setFindingDriver(false);
+    setAssignedCaptainLocation(null);
   };
 
   // CAPTAIN: Accept Incoming Ride
@@ -479,7 +557,9 @@ export function App() {
     if (!driverProfile) return;
     socket.emit('driver:accept_ride', {
       rideId,
-      driverId: driverProfile.id
+      driverId: driverProfile.id,
+      lat: driverGpsLocation?.lat,
+      lng: driverGpsLocation?.lng
     });
   };
 
@@ -490,16 +570,24 @@ export function App() {
 
   // CAPTAIN: Driver Arrived at Pickup
   const handleDriverArrived = (rideId) => {
+    setActiveRide(prev => (prev ? { ...prev, status: 'ARRIVED' } : null));
     socket.emit('driver:arrived_pickup', { rideId });
   };
 
   // CAPTAIN: Start Ride with OTP
   const handleStartRide = (rideId, enteredOtp, callback) => {
-    socket.emit('driver:start_ride', { rideId, enteredOtp }, callback);
+    socket.emit('driver:start_ride', { rideId, enteredOtp }, (res) => {
+      if (res && res.success && res.ride) {
+        setActiveRide(res.ride);
+      }
+      if (callback) callback(res);
+    });
   };
 
   // CAPTAIN: Complete Ride
   const handleCompleteRide = (rideId) => {
+    setActiveRide(null);
+    setAssignedCaptainLocation(null);
     socket.emit('driver:complete_ride', { rideId });
   };
 
@@ -564,6 +652,27 @@ export function App() {
       {/* 0. PWA 1-Tap Mobile Install Banner */}
       <InstallPwaBanner />
 
+      {/* Global Ride Alert / Cancellation Notice Modal */}
+      {rideAlertToast && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-gray-900 border border-brand-yellow/40 rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl text-center">
+            <div className="w-12 h-12 rounded-2xl bg-brand-yellow/20 text-brand-yellow flex items-center justify-center mx-auto text-xl font-black">
+              🔔
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white">{rideAlertToast.title}</h3>
+              <p className="text-xs text-gray-300 mt-1 leading-relaxed">{rideAlertToast.message}</p>
+            </div>
+            <button
+              onClick={() => setRideAlertToast(null)}
+              className="w-full py-3 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition"
+            >
+              OK, GOT IT
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 1. Top Navbar */}
       <Navbar
         onOpenMenu={() => setDrawerOpen(true)}
@@ -602,12 +711,22 @@ export function App() {
               : null
             : drop
         }
-        driverLocation={driverGpsLocation}
+        driverLocation={
+          isCaptain
+            ? isDriverOnline && currentZoneStatus?.isServiceable !== false
+              ? driverGpsLocation
+              : null
+            : activeRide && assignedCaptainLocation
+            ? assignedCaptainLocation
+            : null
+        }
         nearbyDrivers={isCaptain ? [] : nearbyDrivers}
         selectedVehicleId={selectedVehicleId}
         onLocationSelect={handleLocationSelect}
         selectingMode={selectingMode}
         isCaptain={isCaptain}
+        isServiceable={currentZoneStatus?.isServiceable !== false && (estimatedFare ? estimatedFare.is_serviceable !== false : true)}
+        activeRide={activeRide}
       />
 
       {/* 4. PASSENGER EXPERIENCE */}

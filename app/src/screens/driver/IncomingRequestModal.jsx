@@ -5,21 +5,74 @@ export const IncomingRequestModal = ({ request, onAccept, onReject }) => {
   const [timeLeft, setTimeLeft] = useState(15);
 
   useEffect(() => {
-    // Play alert sound using Web Audio API beep
+    let audioCtx = null;
+    let beepInterval = null;
+    let beepCount = 0;
+
+    // Helper to play a crisp, loud two-tone alert chime (880Hz / 1175Hz)
+    const playUrgentBeep = () => {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!audioCtx || audioCtx.state === 'closed') {
+          audioCtx = new AudioContextClass();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+
+        // Tone 1: High alert (880 Hz - A5)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(880, now);
+        gain1.gain.setValueAtTime(0.35, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.18);
+
+        // Tone 2: Higher chime (1175 Hz - D6)
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1175, now + 0.09);
+        gain2.gain.setValueAtTime(0.35, now + 0.09);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.09);
+        osc2.stop(now + 0.25);
+      } catch (e) {
+        console.log('Audio autoplay prevented or unavailable:', e);
+      }
+    };
+
+    // Trigger mobile vibration pattern (6 strong pulses)
     try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.4);
+      if ('vibrate' in navigator) {
+        navigator.vibrate([350, 150, 350, 150, 350, 150, 350, 150, 350, 150, 350]);
+      }
     } catch (e) {
-      console.log('Audio autoplay prevented:', e);
+      // Non-blocking
     }
+
+    // Play 1st beep immediately
+    playUrgentBeep();
+    beepCount = 1;
+
+    // Schedule remaining 5 beeps (total 6 beeps at 500ms intervals)
+    beepInterval = setInterval(() => {
+      if (beepCount < 6) {
+        playUrgentBeep();
+        beepCount++;
+      } else {
+        clearInterval(beepInterval);
+      }
+    }, 500);
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -32,7 +85,18 @@ export const IncomingRequestModal = ({ request, onAccept, onReject }) => {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      if (beepInterval) clearInterval(beepInterval);
+      clearInterval(timer);
+      try {
+        if ('vibrate' in navigator) navigator.vibrate(0);
+        if (audioCtx && audioCtx.state !== 'closed') {
+          audioCtx.close();
+        }
+      } catch (e) {
+        // cleanup
+      }
+    };
   }, []);
 
   if (!request) return null;

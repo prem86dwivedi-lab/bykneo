@@ -82,13 +82,29 @@ export const DriverTripScreen = ({
           </a>
         </div>
 
-        {/* Route Address Snippet */}
-        <div className="text-xs text-gray-300 bg-gray-850/60 p-2.5 rounded-xl space-y-1 truncate">
-          <div className="truncate">
-            <span className="text-emerald-400 font-bold">Pick:</span> {ride.pickup_name}
+        {/* Route Address Snippet with Distance KM & Duration */}
+        <div className="text-xs text-gray-300 bg-gray-850/80 p-3 rounded-2xl border border-gray-800 space-y-2">
+          <div className="flex items-center justify-between pb-1.5 border-b border-gray-800 text-[11px]">
+            <span className="font-bold text-white flex items-center gap-1">
+              <Navigation className="w-3 h-3 text-brand-yellow" />
+              <span>{ride.distance_km || 3.5} km</span>
+              <span className="text-gray-500">•</span>
+              <span>~{ride.duration_mins || 10} mins</span>
+            </span>
+            <span className="font-mono font-bold text-brand-yellow">
+              Fare: ₹{ride.fare} (Net ₹{Math.round((ride.fare || 50) * 0.85)})
+            </span>
           </div>
-          <div className="truncate">
-            <span className="text-red-400 font-bold">Drop:</span> {ride.drop_name}
+
+          <div className="space-y-1 text-xs">
+            <div className="flex items-start gap-1.5 truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 mt-1 shrink-0" />
+              <div className="truncate"><span className="text-emerald-400 font-bold">Pick:</span> {ride.pickup_name}</div>
+            </div>
+            <div className="flex items-start gap-1.5 truncate">
+              <span className="w-2 h-2 rounded-full bg-red-400 mt-1 shrink-0" />
+              <div className="truncate"><span className="text-red-400 font-bold">Drop:</span> {ride.drop_name}</div>
+            </div>
           </div>
         </div>
 
@@ -96,42 +112,59 @@ export const DriverTripScreen = ({
         {ride.status === 'ACCEPTED' && (
           <button
             onClick={() => onDriverArrived(ride.id)}
-            className="w-full py-3.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/15 active:scale-[0.98] transition"
+            className="w-full py-3.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/20 active:scale-[0.98] transition"
           >
             <CheckCircle2 className="w-5 h-5" />
-            I HAVE ARRIVED AT PICKUP
+            <span>I HAVE ARRIVED AT PICKUP</span>
           </button>
         )}
 
         {isArrived && (
-          <form onSubmit={handleVerifyOtpAndStart} className="space-y-3">
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 mb-1">
-                Ask passenger for 4-Digit Start OTP:
-              </label>
+          <form onSubmit={handleVerifyOtpAndStart} className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-brand-yellow/10 border border-brand-yellow/30 p-3 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase text-brand-yellow flex items-center gap-1.5">
+                  <KeyRound className="w-4 h-4 text-brand-yellow" />
+                  Rider Verification & Start PIN
+                </span>
+                <span className="text-[9px] font-bold bg-brand-yellow/20 text-brand-yellow px-2 py-0.5 rounded-full border border-brand-yellow/30">
+                  4 Digits
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-300">
+                Ask passenger <b className="text-white">{ride.rider_name || 'Rider'}</b> for their 4-digit start PIN:
+              </p>
               <input
-                type="text"
+                type="tel"
+                pattern="[0-9]*"
+                inputMode="numeric"
                 maxLength={4}
+                autoFocus
                 value={enteredOtp}
-                onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
-                placeholder="Enter 4-digit PIN"
-                className="w-full bg-gray-850 border border-brand-yellow/50 focus:border-brand-yellow rounded-2xl py-3 px-4 text-center text-xl font-black tracking-widest text-brand-yellow focus:outline-none"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setEnteredOtp(val);
+                  setOtpError('');
+                }}
+                placeholder="• • • •"
+                className="w-full bg-gray-950 border-2 border-brand-yellow focus:border-white rounded-xl py-2.5 px-4 text-center text-2xl font-black tracking-[0.5em] text-brand-yellow focus:outline-none shadow-inner"
               />
             </div>
 
             {otpError && (
-              <div className="text-xs text-red-400 bg-red-500/10 p-2 rounded-xl text-center">
-                {otpError}
+              <div className="text-xs text-red-400 bg-red-500/10 p-2.5 rounded-xl text-center border border-red-500/30 flex items-center justify-center gap-1.5">
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span>{otpError}</span>
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading || enteredOtp.length !== 4}
-              className="w-full py-3.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/15 active:scale-[0.98] transition disabled:opacity-50"
+              className="w-full py-3.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/20 active:scale-[0.98] transition disabled:opacity-40"
             >
               <KeyRound className="w-5 h-5" />
-              {loading ? 'Verifying...' : 'VERIFY OTP & START TRIP'}
+              <span>{loading ? 'Verifying PIN...' : 'VERIFY PIN & START TRIP'}</span>
             </button>
           </form>
         )}
@@ -142,7 +175,7 @@ export const DriverTripScreen = ({
             className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition"
           >
             <CheckCircle2 className="w-5 h-5" />
-            COMPLETE RIDE & COLLECT ₹{ride.fare}
+            <span>COMPLETE RIDE & COLLECT ₹{ride.fare}</span>
           </button>
         )}
       </div>

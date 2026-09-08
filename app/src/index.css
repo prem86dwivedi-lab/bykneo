@@ -14,9 +14,9 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* Offset Leaflet zoom controls away from mobile bottom navigation bar */
+/* Offset Leaflet zoom controls above mobile bottom action buttons */
 .leaflet-bottom.leaflet-right {
-  bottom: 24px !important;
+  bottom: 88px !important;
   right: 12px !important;
   margin-bottom: env(safe-area-inset-bottom, 12px) !important;
 }

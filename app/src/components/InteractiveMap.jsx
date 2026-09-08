@@ -747,8 +747,8 @@ export const InteractiveMap = ({
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-      {/* Floating Action Controls (Top Right: Location Icon + Layer Icon on the right side) */}
-      <div className="absolute top-14 right-3 z-30 flex items-center gap-1.5 pointer-events-auto">
+      {/* Floating Action Controls (Top Right: Location Icon + Layer Icon vertically stacked) */}
+      <div className="absolute top-24 right-3 z-30 flex flex-col items-end gap-2 pointer-events-auto">
         {/* 1. GPS Locate Button */}
         <button
           onClick={handleLocateMe}

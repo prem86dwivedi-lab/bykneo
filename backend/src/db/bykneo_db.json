@@ -133,14 +133,14 @@
       "license_number": "DL-NEW-DRIVER-01",
       "is_online": false,
       "is_available": false,
-      "lat": 23.259703,
-      "lng": 77.412435,
-      "heading": 5,
+      "lat": 23.258728,
+      "lng": 77.412354,
+      "heading": 222,
       "rating": 5,
       "total_rides": 0,
       "today_earnings": 0,
       "kyc_status": "approved",
-      "last_ping": "2026-09-08T04:45:18.229Z"
+      "last_ping": "2026-09-08T05:13:14.435Z"
     },
     {
       "id": "drv_e93da2bc",

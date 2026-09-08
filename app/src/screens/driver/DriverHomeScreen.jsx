@@ -64,9 +64,9 @@ export const DriverHomeScreen = ({
 
   return (
     <>
-      {/* Top Floating Captain Status Card - Height matches h-9 of Location and Layer buttons */}
-      <div className="absolute top-14 left-3 z-30 pointer-events-none max-w-[calc(100%-92px)]">
-        <div className="h-9 inline-flex items-center gap-1.5 px-2 bg-gray-900/95 backdrop-blur-xl border border-gray-800 rounded-xl shadow-xl pointer-events-auto">
+      {/* Top Floating Captain Status Card */}
+      <div className="absolute top-14 left-3 z-30 pointer-events-none">
+        <div className="h-8 inline-flex items-center gap-1.5 px-2 bg-gray-900/95 backdrop-blur-xl border border-gray-800 rounded-xl shadow-xl pointer-events-auto">
           {/* Left: Online Status & Operating Zone */}
           <div className="flex items-center gap-1.5 min-w-0">
             <div
@@ -83,24 +83,24 @@ export const DriverHomeScreen = ({
                 {isOnline ? 'ONLINE' : 'OFFLINE'}
               </span>
               {matchedCity && (
-                <span className="text-[8px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1 py-0.2 rounded font-bold truncate">
+                <span className="text-[8px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold truncate">
                   {matchedCity.name}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="h-4 w-[1px] bg-gray-800 shrink-0"></div>
+          <div className="h-3.5 w-[1px] bg-gray-800 shrink-0"></div>
 
-          {/* Center/Right: Clickable Compact KYC Chip & Today's Earnings */}
+          {/* Center: Clickable KYC Chip matching City Badge size & font */}
           <button
             onClick={onOpenKyc}
-            className={`h-6 px-1.5 rounded-lg border text-[8.5px] font-bold flex items-center gap-1 transition active:scale-95 shrink-0 ${
+            className={`text-[8px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 transition active:scale-95 shrink-0 ${
               kycStatus === 'approved'
-                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25'
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
                 : kycStatus === 'pending'
-                ? 'bg-amber-500/15 border-brand-yellow/40 text-amber-300 hover:bg-amber-500/25'
-                : 'bg-red-500/15 border-red-500/40 text-red-300 hover:bg-red-500/25'
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30'
+                : 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30'
             }`}
             title="Click to view/update KYC documents"
           >
@@ -108,9 +108,12 @@ export const DriverHomeScreen = ({
             <span>{kycStatus === 'approved' ? 'KYC Verified' : kycStatus === 'pending' ? 'KYC Review' : 'Submit KYC'}</span>
           </button>
 
-          <div className="h-6 bg-gray-850 px-1.5 rounded-lg border border-gray-800 flex items-center gap-1 shrink-0">
-            <span className="text-[7.5px] text-gray-400 font-bold leading-none">TODAY</span>
-            <span className="text-[10.5px] font-black text-brand-yellow leading-none">₹{todayEarnings}</span>
+          <div className="h-3.5 w-[1px] bg-gray-800 shrink-0"></div>
+
+          {/* Right: Today's Earnings */}
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="text-[8px] text-gray-400 font-bold leading-none">TODAY</span>
+            <span className="text-[10px] font-black text-brand-yellow leading-none">₹{todayEarnings}</span>
           </div>
         </div>
       </div>

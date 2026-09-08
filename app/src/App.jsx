@@ -109,41 +109,108 @@ export function App() {
       .catch(console.error);
   };
 
-  // Auto-detect real device GPS on initial load
+  // Fast non-blocking reverse geocoding with timeout
+  const reverseGeocodeFast = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3000) }
+      );
+      const data = await res.json();
+      if (data && data.display_name) {
+        return data.display_name.split(',').slice(0, 3).join(', ');
+      }
+    } catch (e) {
+      // Non-blocking fallback
+    }
+    return null;
+  };
+
+  // Immediate Live Location Fetcher & Continuous Real-time GPS Tracking
   useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = Number(position.coords.latitude.toFixed(6));
-          const lng = Number(position.coords.longitude.toFixed(6));
+    if (!('geolocation' in navigator)) return;
 
-          let locName = 'Current Location';
-          try {
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-              { headers: { 'Accept-Language': 'en,hi' } }
-            );
-            const data = await res.json();
-            if (data && data.display_name) {
-              locName = data.display_name.split(',').slice(0, 3).join(', ');
-            }
-          } catch (e) {
-            console.warn('GPS reverse geocode error:', e);
-          }
+    const handleNewLocation = (lat, lng, isFast = false) => {
+      // 1. Immediately update driver live GPS coordinates
+      setDriverGpsLocation({ lat, lng });
 
-          setPickup({
-            name: locName,
+      // 2. Immediately update passenger pickup coordinates
+      setPickup((prev) => {
+        const isDefault =
+          !prev ||
+          prev.name === 'Locating GPS...' ||
+          prev.name === 'Current Location' ||
+          prev.name === 'My Current Location';
+        if (isDefault) {
+          return {
+            name: prev?.name && prev.name !== 'Locating GPS...' ? prev.name : 'Current Location',
             lat,
             lng
+          };
+        }
+        return prev;
+      });
+
+      // 3. Asynchronously resolve human-friendly address without blocking map/UI
+      reverseGeocodeFast(lat, lng).then((resolvedName) => {
+        if (resolvedName) {
+          setPickup((prev) => {
+            const isDefault =
+              !prev ||
+              prev.name === 'Locating GPS...' ||
+              prev.name === 'Current Location' ||
+              prev.name === 'My Current Location';
+            if (isDefault) {
+              return { name: resolvedName, lat, lng };
+            }
+            return prev;
           });
-          setDriverGpsLocation({ lat, lng });
-        },
-        (err) => {
-          console.log('GPS autodetect pending permission / skipped:', err.message);
-        },
-        { enableHighAccuracy: true, timeout: 6000 }
-      );
-    }
+        }
+      });
+    };
+
+    // TIER 1: Instant Fast Fix (< 100ms) from device cache / cellular / WiFi
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = Number(position.coords.latitude.toFixed(6));
+        const lng = Number(position.coords.longitude.toFixed(6));
+        handleNewLocation(lat, lng, true);
+      },
+      (err) => {
+        console.log('Fast initial GPS fix note:', err.message);
+      },
+      { enableHighAccuracy: false, timeout: 2500, maximumAge: 120000 }
+    );
+
+    // TIER 2: High-Precision Immediate Fix (Meter-Level Satellite GPS)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = Number(position.coords.latitude.toFixed(6));
+        const lng = Number(position.coords.longitude.toFixed(6));
+        handleNewLocation(lat, lng, false);
+      },
+      (err) => {
+        console.warn('High precision one-shot error:', err.message);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+
+    // TIER 3: Continuous Live GPS Watcher (Tracks real-time movement on mobile)
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const lat = Number(position.coords.latitude.toFixed(6));
+        const lng = Number(position.coords.longitude.toFixed(6));
+        handleNewLocation(lat, lng, false);
+      },
+      (err) => {
+        console.warn('Live GPS watch error:', err.message);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+    );
+
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
 
   useEffect(() => {

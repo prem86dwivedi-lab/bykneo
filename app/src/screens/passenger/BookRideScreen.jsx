@@ -514,42 +514,63 @@ export const BookRideScreen = ({
     setActiveInput(null);
   };
 
-  // Auto detect current GPS with reverse geocoding to village / street name
+  // Auto detect current GPS with instant non-blocking reverse geocoding
   const handleUseCurrentLocation = () => {
     if ('geolocation' in navigator) {
+      // Step 1: Fast cached / network fix immediately (< 100ms)
       navigator.geolocation.getCurrentPosition(
-        async (pos) => {
+        (pos) => {
           const lat = Number(pos.coords.latitude.toFixed(6));
           const lng = Number(pos.coords.longitude.toFixed(6));
-          let locName = 'Current GPS Location';
-
-          try {
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-              { headers: { 'Accept-Language': 'en,hi' } }
-            );
-            const data = await res.json();
-            if (data && data.display_name) {
-              locName = data.display_name.split(',').slice(0, 3).join(', ');
-            }
-          } catch (e) {
-            console.warn('Reverse geocode failed:', e);
-          }
-
-          const loc = {
-            name: locName,
-            lat,
-            lng
-          };
-          setPickup(loc);
-          setPickupQuery(locName);
+          setPickup({ name: 'Current GPS Location', lat, lng });
+          setPickupQuery('Current GPS Location');
           setSuggestions([]);
           setActiveInput(null);
+
+          // Background reverse geocoding
+          fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3000) }
+          )
+            .then((res) => res.json())
+            .then((data) => {
+              if (data && data.display_name) {
+                const locName = data.display_name.split(',').slice(0, 3).join(', ');
+                setPickup((prev) => ({ ...prev, name: locName, lat, lng }));
+                setPickupQuery(locName);
+              }
+            })
+            .catch(() => {});
+        },
+        null,
+        { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 }
+      );
+
+      // Step 2: High precision GPS fix
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = Number(pos.coords.latitude.toFixed(6));
+          const lng = Number(pos.coords.longitude.toFixed(6));
+          setPickup((prev) => ({ ...prev, lat, lng }));
+
+          fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3000) }
+          )
+            .then((res) => res.json())
+            .then((data) => {
+              if (data && data.display_name) {
+                const locName = data.display_name.split(',').slice(0, 3).join(', ');
+                setPickup({ name: locName, lat, lng });
+                setPickupQuery(locName);
+              }
+            })
+            .catch(() => {});
         },
         (err) => {
-          alert('Location permission is required to detect your location automatically.');
+          console.warn('GPS location error:', err);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
       );
     }
   };

@@ -533,11 +533,16 @@ export const InteractiveMap = ({
           .addTo(map)
           .bindPopup('<b>Your Bykneo Captain (Live GPS)</b>');
       }
+
+      // If in Captain mode and no active navigation to drop, immediately center map on Captain GPS location
+      if (isCaptain && (!drop || !drop.lat)) {
+        map.flyTo([driverLocation.lat, driverLocation.lng], 19, { duration: 1.0, easeLinearity: 0.25 });
+      }
     } else if (markersRef.current.driver) {
       map.removeLayer(markersRef.current.driver);
       markersRef.current.driver = null;
     }
-  }, [driverLocation, selectedVehicleId]);
+  }, [driverLocation, selectedVehicleId, isCaptain, drop]);
 
   // Continuous 60 FPS Pure Road-Snapped Vehicle Movement (STRICTLY ON ASPHALT ROADS ONLY)
   useEffect(() => {
@@ -719,27 +724,41 @@ export const InteractiveMap = ({
     if (!map) return;
 
     if ('geolocation' in navigator) {
+      // Tier 1: Fast fix immediately (< 100ms)
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = Number(position.coords.latitude.toFixed(6));
           const lng = Number(position.coords.longitude.toFixed(6));
-          map.flyTo([lat, lng], 19, { duration: 1.2, easeLinearity: 0.25 });
+          map.flyTo([lat, lng], 19, { duration: 0.8, easeLinearity: 0.25 });
           if (onLocationSelect) {
-            onLocationSelect({ lat, lng, type: 'pickup', name: 'My Current Location' });
+            onLocationSelect({ lat, lng, type: isCaptain ? 'driver' : 'pickup', name: 'My Current Location' });
+          }
+        },
+        null,
+        { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 }
+      );
+
+      // Tier 2: Refined High Accuracy Fix
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = Number(position.coords.latitude.toFixed(6));
+          const lng = Number(position.coords.longitude.toFixed(6));
+          map.flyTo([lat, lng], 19, { duration: 0.6, easeLinearity: 0.25 });
+          if (onLocationSelect) {
+            onLocationSelect({ lat, lng, type: isCaptain ? 'driver' : 'pickup', name: 'My Current Location' });
           }
         },
         (err) => {
-          // Fallback to current pickup / driver marker with zoom 19
           const targetLat = pickup?.lat || driverLocation?.lat || center[0];
           const targetLng = pickup?.lng || driverLocation?.lng || center[1];
-          map.flyTo([targetLat, targetLng], 19, { duration: 1.2, easeLinearity: 0.25 });
+          map.flyTo([targetLat, targetLng], 19, { duration: 0.8, easeLinearity: 0.25 });
         },
-        { enableHighAccuracy: true, timeout: 6000 }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
       );
     } else {
       const targetLat = pickup?.lat || driverLocation?.lat || center[0];
       const targetLng = pickup?.lng || driverLocation?.lng || center[1];
-      map.flyTo([targetLat, targetLng], 19, { duration: 1.2, easeLinearity: 0.25 });
+      map.flyTo([targetLat, targetLng], 19, { duration: 0.8, easeLinearity: 0.25 });
     }
   };
 

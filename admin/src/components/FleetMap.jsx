@@ -16,23 +16,12 @@ const BIKE_ICON_HTML = (name, isBusy) => `
 export const FleetMap = ({ drivers = [], activeRides = [] }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const [mapType, setMapType] = useState('arcgis'); // 'arcgis' | 'hybrid' | 'streets'
+  const [mapType, setMapType] = useState('hybrid'); // Default to Google Hybrid
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const tileLayerRef = useRef(null);
   const driverMarkersRef = useRef({});
 
   const MAP_LAYERS = {
-    arcgis: {
-      id: 'arcgis',
-      name: 'Crystal HD Satellite',
-      provider: 'ArcGIS World Imagery',
-      tag: 'Ultra Clear',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      options: {
-        maxZoom: 19,
-        attribution: '&copy; Esri &mdash; High-Resolution World Imagery'
-      }
-    },
     hybrid: {
       id: 'hybrid',
       name: 'Google Hybrid',
@@ -43,6 +32,17 @@ export const FleetMap = ({ drivers = [], activeRides = [] }) => {
         subdomains: ['0', '1', '2', '3'],
         maxZoom: 20,
         attribution: '&copy; Google Maps Hybrid'
+      }
+    },
+    arcgis: {
+      id: 'arcgis',
+      name: 'Crystal HD Satellite',
+      provider: 'ArcGIS World Imagery',
+      tag: 'Ultra Clear',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      options: {
+        maxZoom: 19,
+        attribution: '&copy; Esri &mdash; High-Resolution World Imagery'
       }
     },
     streets: {
@@ -70,7 +70,7 @@ export const FleetMap = ({ drivers = [], activeRides = [] }) => {
         minZoom: 4
       });
 
-      const initialLayer = MAP_LAYERS['arcgis'];
+      const initialLayer = MAP_LAYERS['hybrid'];
       tileLayerRef.current = L.tileLayer(initialLayer.url, initialLayer.options).addTo(map);
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);

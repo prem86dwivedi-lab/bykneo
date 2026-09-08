@@ -63,27 +63,52 @@ export const estimateFare = async (req, res) => {
   const distance = routeInfo.distance;
   const duration = routeInfo.duration;
 
-  // Fare Formula: Base Fare + (Distance - 1.5) * RatePerKm + Duration * RatePerMin
-  let calculatedFare = settings.base_fare || 25;
-  if (distance > 1.5) {
-    calculatedFare += (distance - 1.5) * (settings.rate_per_km || 9);
-  }
-  calculatedFare += duration * (settings.rate_per_min || 1);
-  calculatedFare = Math.round(calculatedFare * (settings.surge_multiplier || 1.0));
+  // Dynamic Vehicle-Specific Pricing from Admin Settings
+  const vp = settings.vehicle_pricing || {};
+  const surge = Number(settings.surge_multiplier || 1.0);
+
+  // 1. BIKE (Fastest Solo Ride)
+  const bikeBase = Number(vp.bike?.base_fare ?? (settings.base_fare || 25));
+  const bikeRateKm = Number(vp.bike?.rate_per_km ?? (settings.rate_per_km || 6.8));
+  const bikeDistCharge = distance > 1.5 ? (distance - 1.5) * bikeRateKm : 0;
+  const bikeTimeCharge = duration * 0.15;
+  const standardBikeFare = Math.max(bikeBase, Math.round((bikeBase + bikeDistCharge + bikeTimeCharge) * surge));
+
+  // 2. BIKE LITE (Budget Solo Ride)
+  const bikeLiteBase = Number(vp.bike_lite?.base_fare ?? 20);
+  const bikeLiteRateKm = Number(vp.bike_lite?.rate_per_km ?? 6.0);
+  const bikeLiteDistCharge = distance > 1.5 ? (distance - 1.5) * bikeLiteRateKm : 0;
+  const bikeLiteFare = Math.max(bikeLiteBase, Math.round((bikeLiteBase + bikeLiteDistCharge) * surge));
+
+  // 3. AUTO LITE (Budget 3-Seater Auto)
+  const autoLiteBase = Number(vp.auto_lite?.base_fare ?? 35);
+  const autoLiteRateKm = Number(vp.auto_lite?.rate_per_km ?? 12.5);
+  const autoLiteDistCharge = distance > 1.5 ? (distance - 1.5) * autoLiteRateKm : 0;
+  const autoLiteFare = Math.max(autoLiteBase, Math.round((autoLiteBase + autoLiteDistCharge) * surge));
+
+  // 4. BYKNEO AUTO (Standard 3-Seater Auto Rickshaw)
+  const autoBase = Number(vp.auto?.base_fare ?? 40);
+  const autoRateKm = Number(vp.auto?.rate_per_km ?? 15.5);
+  const autoDistCharge = distance > 1.5 ? (distance - 1.5) * autoRateKm : 0;
+  const autoFare = Math.max(autoBase, Math.round((autoBase + autoDistCharge) * surge));
+
+  // 5. CAB ECONOMY (Compact AC Cab)
+  const cabEcoBase = Number(vp.cab_economy?.base_fare ?? 65);
+  const cabEcoRateKm = Number(vp.cab_economy?.rate_per_km ?? 13.5);
+  const cabEcoDistCharge = distance > 1.5 ? (distance - 1.5) * cabEcoRateKm : 0;
+  const cabEconomyFare = Math.max(cabEcoBase, Math.round((cabEcoBase + cabEcoDistCharge) * surge));
+
+  // 6. CAB PREMIUM (Top-Rated Sedan / SUV)
+  const cabPremBase = Number(vp.cab_premium?.base_fare ?? 85);
+  const cabPremRateKm = Number(vp.cab_premium?.rate_per_km ?? 17.0);
+  const cabPremDistCharge = distance > 1.5 ? (distance - 1.5) * cabPremRateKm : 0;
+  const cabPremiumFare = Math.max(cabPremBase, Math.round((cabPremBase + cabPremDistCharge) * surge));
 
   const now = new Date();
   const formatTime = (addMins) => {
     const d = new Date(now.getTime() + addMins * 60000);
     return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
-
-  const baseFare = settings.base_fare || 25;
-  const standardBikeFare = Math.max(baseFare, calculatedFare);
-  const bikeLiteFare = Math.max(20, Math.round(standardBikeFare * 0.88));
-  const autoLiteFare = Math.max(35, Math.round(standardBikeFare * 1.45));
-  const autoFare = Math.max(40, Math.round(standardBikeFare * 1.65));
-  const cabEconomyFare = Math.max(70, Math.round(standardBikeFare * 2.75));
-  const cabPremiumFare = Math.max(90, Math.round(standardBikeFare * 3.45));
 
   const vehicles = [
     {

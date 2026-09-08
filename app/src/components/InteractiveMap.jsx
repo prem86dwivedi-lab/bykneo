@@ -229,22 +229,11 @@ export const InteractiveMap = ({
 }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const [mapType, setMapType] = useState('arcgis'); // 'arcgis' | 'hybrid' | 'streets'
+  const [mapType, setMapType] = useState('hybrid'); // Default to Google Hybrid
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const tileLayerRef = useRef(null);
 
   const MAP_LAYERS = {
-    arcgis: {
-      id: 'arcgis',
-      name: 'Crystal HD Satellite',
-      provider: 'ArcGIS World Imagery',
-      tag: 'Ultra Clear',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      options: {
-        maxZoom: 19,
-        attribution: '&copy; Esri &mdash; High-Resolution World Imagery'
-      }
-    },
     hybrid: {
       id: 'hybrid',
       name: 'Google Hybrid',
@@ -255,6 +244,17 @@ export const InteractiveMap = ({
         subdomains: ['0', '1', '2', '3'],
         maxZoom: 20,
         attribution: '&copy; Google Maps Hybrid'
+      }
+    },
+    arcgis: {
+      id: 'arcgis',
+      name: 'Crystal HD Satellite',
+      provider: 'ArcGIS World Imagery',
+      tag: 'Ultra Clear',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      options: {
+        maxZoom: 19,
+        attribution: '&copy; Esri &mdash; High-Resolution World Imagery'
       }
     },
     streets: {
@@ -293,8 +293,8 @@ export const InteractiveMap = ({
         maxBoundsViscosity: 1.0
       });
 
-      // Default to Crystal HD ArcGIS World Imagery
-      const initialLayer = MAP_LAYERS['arcgis'];
+      // Default to Google Hybrid Layer
+      const initialLayer = MAP_LAYERS['hybrid'];
       tileLayerRef.current = L.tileLayer(initialLayer.url, initialLayer.options).addTo(map);
 
       // Clean Zoom Control at bottom right
@@ -367,7 +367,11 @@ export const InteractiveMap = ({
         });
       }
       if (!drop || !drop.lat) {
-        map.flyTo([pickup.lat, pickup.lng], 19, { duration: 1.2, easeLinearity: 0.25 });
+        const currentCenter = map.getCenter();
+        const distMeters = currentCenter ? currentCenter.distanceTo([pickup.lat, pickup.lng]) : 999;
+        if (distMeters > 15) {
+          map.flyTo([pickup.lat, pickup.lng], 19, { duration: 1.0, easeLinearity: 0.25 });
+        }
       }
     } else if (markersRef.current.pickup) {
       map.removeLayer(markersRef.current.pickup);
@@ -534,9 +538,13 @@ export const InteractiveMap = ({
           .bindPopup('<b>Your Bykneo Captain (Live GPS)</b>');
       }
 
-      // If in Captain mode and no active navigation to drop, immediately center map on Captain GPS location
+      // If in Captain mode and no active navigation to drop, center map on Captain GPS location when moved
       if (isCaptain && (!drop || !drop.lat)) {
-        map.flyTo([driverLocation.lat, driverLocation.lng], 19, { duration: 1.0, easeLinearity: 0.25 });
+        const currentCenter = map.getCenter();
+        const distMeters = currentCenter ? currentCenter.distanceTo([driverLocation.lat, driverLocation.lng]) : 999;
+        if (distMeters > 15) {
+          map.flyTo([driverLocation.lat, driverLocation.lng], 19, { duration: 1.0, easeLinearity: 0.25 });
+        }
       }
     } else if (markersRef.current.driver) {
       map.removeLayer(markersRef.current.driver);

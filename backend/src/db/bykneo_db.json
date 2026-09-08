@@ -209,14 +209,14 @@
       "license_number": "DL-NEW-DRIVER-01",
       "is_online": true,
       "is_available": true,
-      "lat": 23.244848,
-      "lng": 77.505297,
-      "heading": 120,
+      "lat": 23.248649,
+      "lng": 77.502083,
+      "heading": 0,
       "rating": 5,
       "total_rides": 0,
       "today_earnings": 0,
       "kyc_status": "approved",
-      "last_ping": "2026-09-07T19:43:17.452Z",
+      "last_ping": "2026-09-08T08:31:58.234Z",
       "kyc_reviewed_at": "2026-09-07T12:33:01.048Z",
       "kyc_rejection_reason": null
     },
@@ -736,12 +736,44 @@
   ],
   "settings": {
     "base_fare": 25,
-    "rate_per_km": 9,
-    "rate_per_min": 1,
+    "rate_per_km": 6.8,
+    "rate_per_min": 0.15,
     "surge_multiplier": 1,
     "platform_commission_pct": 15,
     "cancellation_fee": 15,
-    "auto_kyc_enabled": true
+    "auto_kyc_enabled": true,
+    "vehicle_pricing": {
+      "bike_lite": {
+        "name": "Bike Lite",
+        "base_fare": 20,
+        "rate_per_km": 6
+      },
+      "bike": {
+        "name": "Bykneo Bike",
+        "base_fare": 25,
+        "rate_per_km": 6.8
+      },
+      "auto_lite": {
+        "name": "Auto Lite",
+        "base_fare": 35,
+        "rate_per_km": 12.5
+      },
+      "auto": {
+        "name": "Bykneo Auto",
+        "base_fare": 40,
+        "rate_per_km": 15.5
+      },
+      "cab_economy": {
+        "name": "Cab Economy",
+        "base_fare": 65,
+        "rate_per_km": 13.5
+      },
+      "cab_premium": {
+        "name": "Cab Premium",
+        "base_fare": 85,
+        "rate_per_km": 17
+      }
+    }
   },
   "cities": [
     {

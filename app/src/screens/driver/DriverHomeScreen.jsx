@@ -23,32 +23,23 @@ export const DriverHomeScreen = ({
   const activeCities = zoneStatus?.activeCities || [];
   const kycStatus = driverProfile?.kyc_status || 'approved'; // default approved for demo, checked strictly
 
-  // Background GPS updater (Simulates live GPS navigation pinging every 3 seconds)
+  // Background GPS updater (Emits real live GPS coordinates to backend without artificial jitter)
   useEffect(() => {
     if (!isOnline || !socket || !driverProfile) return;
 
     const interval = setInterval(() => {
-      setDriverLocation(prev => {
-        const baseLat = prev?.lat || 23.2599;
-        const baseLng = prev?.lng || 77.4126;
-        // Small realistic GPS jitter/movement (approx 10-20 meters)
-        const newLat = Number((baseLat + (Math.random() - 0.48) * 0.0006).toFixed(6));
-        const newLng = Number((baseLng + (Math.random() - 0.48) * 0.0006).toFixed(6));
-
-        // Emit GPS ping to backend
+      if (driverLocation?.lat && driverLocation?.lng) {
         socket.emit('driver:location_ping', {
           driverId: driverProfile.id,
-          lat: newLat,
-          lng: newLng,
-          heading: Math.floor(Math.random() * 360)
+          lat: driverLocation.lat,
+          lng: driverLocation.lng,
+          heading: 0
         });
-
-        return { lat: newLat, lng: newLng };
-      });
+      }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [isOnline, socket, driverProfile]);
+  }, [isOnline, socket, driverProfile, driverLocation]);
 
   const handleToggleOnlineClick = () => {
     if (!isOnline && kycStatus !== 'approved') {

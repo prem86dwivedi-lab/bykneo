@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './context/AuthContext';
 import { useSocket, BACKEND_URL } from './context/SocketContext';
 import { Navbar } from './components/Navbar';
@@ -126,11 +126,27 @@ export function App() {
     return null;
   };
 
+  const lastGpsFixRef = useRef(null);
+
   // Immediate Live Location Fetcher & Continuous Real-time GPS Tracking
   useEffect(() => {
     if (!('geolocation' in navigator)) return;
 
     const handleNewLocation = (lat, lng, isFast = false) => {
+      // Stationary Jitter Deadband Filter: Ignore sub-8m GPS satellite noise when stationary
+      if (lastGpsFixRef.current && !isFast) {
+        const dLat = (lat - lastGpsFixRef.current.lat) * 111320;
+        const dLng = (lng - lastGpsFixRef.current.lng) * 111320 * Math.cos((lat * Math.PI) / 180);
+        const distMeters = Math.sqrt(dLat * dLat + dLng * dLng);
+
+        // If moved less than 8 meters, treat as constant/stationary and do not jitter
+        if (distMeters < 8) {
+          return;
+        }
+      }
+
+      lastGpsFixRef.current = { lat, lng };
+
       // 1. Immediately update driver live GPS coordinates
       setDriverGpsLocation({ lat, lng });
 

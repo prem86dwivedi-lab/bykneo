@@ -237,7 +237,8 @@ export const updateSettings = (req, res) => {
     platform_commission_pct,
     surge_multiplier,
     geofencing_enabled,
-    auto_kyc_enabled
+    auto_kyc_enabled,
+    vehicle_pricing
   } = req.body;
 
   db.data.settings = {
@@ -248,7 +249,8 @@ export const updateSettings = (req, res) => {
     platform_commission_pct: platform_commission_pct !== undefined ? Number(platform_commission_pct) : db.data.settings.platform_commission_pct,
     surge_multiplier: surge_multiplier !== undefined ? Number(surge_multiplier) : db.data.settings.surge_multiplier,
     geofencing_enabled: geofencing_enabled !== undefined ? Boolean(geofencing_enabled) : db.data.settings.geofencing_enabled,
-    auto_kyc_enabled: auto_kyc_enabled !== undefined ? Boolean(auto_kyc_enabled) : (db.data.settings.auto_kyc_enabled ?? true)
+    auto_kyc_enabled: auto_kyc_enabled !== undefined ? Boolean(auto_kyc_enabled) : (db.data.settings.auto_kyc_enabled ?? true),
+    vehicle_pricing: vehicle_pricing !== undefined ? vehicle_pricing : db.data.settings.vehicle_pricing
   };
   db.save();
 

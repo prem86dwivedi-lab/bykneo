@@ -207,8 +207,8 @@ export const DriverHomeScreen = ({
         </div>
       )}
 
-      {/* Bottom Main Action Button - Floating, Sleek & Compact without outer container */}
-      <div className="absolute bottom-4 left-0 right-0 z-20 px-4 pointer-events-none flex justify-center">
+      {/* Bottom Main Action Button - Floating, Sleek & Compact with Safe-Area clearance */}
+      <div className="absolute bottom-6 sm:bottom-8 left-0 right-0 z-30 px-4 pointer-events-none flex justify-center pb-[env(safe-area-inset-bottom,16px)]">
         <button
           onClick={handleToggleOnlineClick}
           className={`pointer-events-auto py-2.5 px-5 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-2xl transition active:scale-[0.96] backdrop-blur-md ${

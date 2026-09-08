@@ -44,7 +44,7 @@ export const DriverTripScreen = ({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-20 px-3 pb-4 pointer-events-none">
+    <div className="absolute bottom-0 left-0 right-0 z-20 px-3 pb-4 pb-[env(safe-area-inset-bottom,16px)] pointer-events-none">
       <div className="max-w-lg mx-auto bg-gray-900/95 backdrop-blur-xl border border-gray-800 rounded-3xl p-4 shadow-2xl pointer-events-auto space-y-3.5">
         {/* Status Header */}
         <div className="flex items-center justify-between">

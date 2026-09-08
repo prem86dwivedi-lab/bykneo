@@ -477,7 +477,7 @@ export function App() {
     : getZoneStatus(pickup?.lat, pickup?.lng);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gray-950 font-sans">
+    <div className="relative w-full h-[100dvh] min-h-[100dvh] overflow-hidden bg-gray-950 font-sans">
       {/* 0. PWA 1-Tap Mobile Install Banner */}
       <InstallPwaBanner />
 

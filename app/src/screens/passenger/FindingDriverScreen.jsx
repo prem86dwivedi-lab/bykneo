@@ -10,7 +10,7 @@ export const FindingDriverScreen = ({ onCancel, ride }) => {
   }, []);
 
   return (
-    <div className="absolute inset-0 z-30 bg-gray-950/90 backdrop-blur-md flex flex-col items-center justify-between p-6">
+    <div className="absolute inset-0 z-30 bg-gray-950/90 backdrop-blur-md flex flex-col items-center justify-between p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,12px))]">
       {/* Top Tag */}
       <div className="pt-8 text-center">
         <div className="inline-flex items-center gap-2 bg-gray-900 border border-brand-yellow/30 px-4 py-1.5 rounded-full text-brand-yellow text-xs font-bold shadow-lg mb-2">

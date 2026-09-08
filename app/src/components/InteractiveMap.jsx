@@ -774,73 +774,64 @@ export const InteractiveMap = ({
 
           {/* 3-Way Layer Popover Menu - Sleek & Ultra-Compact for Mobile */}
           {showLayerMenu && (
-            <div className="absolute top-9 right-0 w-44 bg-gray-900/95 backdrop-blur-2xl border border-gray-750 p-1.5 rounded-xl shadow-2xl space-y-1 animate-in fade-in-50 zoom-in-95 duration-150 z-30">
+            <div className="absolute top-9 right-0 w-40 bg-gray-900/95 backdrop-blur-2xl border border-gray-750 p-1.5 rounded-xl shadow-2xl space-y-1 animate-in fade-in-50 zoom-in-95 duration-150 z-30">
               <div className="text-[8.5px] font-bold uppercase text-gray-400 px-1 py-0.5 flex items-center justify-between">
                 <span>Map Views</span>
                 <span className="text-brand-yellow font-bold">1-Tap</span>
               </div>
 
-              {/* Option 1: Crystal HD Satellite [ArcGIS] */}
+              {/* Option 1: Crystal HD Satellite */}
               <button
                 onClick={() => handleSelectMapType('arcgis')}
-                className={`w-full text-left p-1.5 rounded-lg border transition flex items-center gap-1.5 ${
+                className={`w-full text-left py-1.5 px-2 rounded-lg border transition flex items-center justify-between ${
                   mapType === 'arcgis'
                     ? 'bg-brand-yellow/15 border-brand-yellow text-white'
                     : 'bg-gray-850/80 border-transparent text-gray-300 hover:bg-gray-800'
                 }`}
               >
-                <div className="w-5 h-5 rounded-md bg-gray-800 flex items-center justify-center text-brand-yellow shrink-0">
-                  <Sparkles className="w-3 h-3 text-brand-yellow" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-white truncate">Crystal HD</span>
-                    {mapType === 'arcgis' && <Check className="w-2.5 h-2.5 text-brand-yellow shrink-0" />}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-5 h-5 rounded-md bg-gray-800 flex items-center justify-center text-brand-yellow shrink-0">
+                    <Sparkles className="w-3 h-3 text-brand-yellow" />
                   </div>
-                  <div className="text-[8px] text-brand-yellow font-semibold truncate">ArcGIS Satellite</div>
+                  <span className="text-[10px] font-bold text-white truncate">Crystal HD</span>
                 </div>
+                {mapType === 'arcgis' && <Check className="w-3 h-3 text-brand-yellow shrink-0" />}
               </button>
 
-              {/* Option 2: Google Hybrid [Labels] */}
+              {/* Option 2: Google Hybrid */}
               <button
                 onClick={() => handleSelectMapType('hybrid')}
-                className={`w-full text-left p-1.5 rounded-lg border transition flex items-center gap-1.5 ${
+                className={`w-full text-left py-1.5 px-2 rounded-lg border transition flex items-center justify-between ${
                   mapType === 'hybrid'
                     ? 'bg-brand-yellow/15 border-brand-yellow text-white'
                     : 'bg-gray-850/80 border-transparent text-gray-300 hover:bg-gray-800'
                 }`}
               >
-                <div className="w-5 h-5 rounded-md bg-gray-800 flex items-center justify-center text-emerald-400 shrink-0">
-                  <Satellite className="w-3 h-3 text-emerald-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-white truncate">Google Hybrid</span>
-                    {mapType === 'hybrid' && <Check className="w-2.5 h-2.5 text-brand-yellow shrink-0" />}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-5 h-5 rounded-md bg-gray-800 flex items-center justify-center text-emerald-400 shrink-0">
+                    <Satellite className="w-3 h-3 text-emerald-400" />
                   </div>
-                  <div className="text-[8px] text-emerald-400 font-semibold truncate">Satellite + Names</div>
+                  <span className="text-[10px] font-bold text-white truncate">Google Hybrid</span>
                 </div>
+                {mapType === 'hybrid' && <Check className="w-3 h-3 text-brand-yellow shrink-0" />}
               </button>
 
               {/* Option 3: Street RoadMap */}
               <button
                 onClick={() => handleSelectMapType('streets')}
-                className={`w-full text-left p-1.5 rounded-lg border transition flex items-center gap-1.5 ${
+                className={`w-full text-left py-1.5 px-2 rounded-lg border transition flex items-center justify-between ${
                   mapType === 'streets'
                     ? 'bg-brand-yellow/15 border-brand-yellow text-white'
                     : 'bg-gray-850/80 border-transparent text-gray-300 hover:bg-gray-800'
                 }`}
               >
-                <div className="w-5 h-5 rounded-md bg-gray-800 flex items-center justify-center text-blue-400 shrink-0">
-                  <MapIcon className="w-3 h-3 text-blue-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-white truncate">Street RoadMap</span>
-                    {mapType === 'streets' && <Check className="w-2.5 h-2.5 text-brand-yellow shrink-0" />}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-5 h-5 rounded-md bg-gray-800 flex items-center justify-center text-blue-400 shrink-0">
+                    <MapIcon className="w-3 h-3 text-blue-400" />
                   </div>
-                  <div className="text-[8px] text-blue-400 font-semibold truncate">Google Navigation</div>
+                  <span className="text-[10px] font-bold text-white truncate">Street RoadMap</span>
                 </div>
+                {mapType === 'streets' && <Check className="w-3 h-3 text-brand-yellow shrink-0" />}
               </button>
             </div>
           )}

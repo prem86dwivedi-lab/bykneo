@@ -1,6 +1,17 @@
 {
   "users": [
     {
+      "id": "usr_b20091f2",
+      "phone": "9653254632",
+      "name": "New Captain",
+      "email": "9653254632@bykneo.com",
+      "role": "driver",
+      "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=9653254632",
+      "wallet_balance": 500,
+      "rating": 5,
+      "created_at": "2026-09-08T04:44:57.020Z"
+    },
+    {
       "id": "usr_4ef5116f",
       "phone": "6325987459",
       "name": "New Rider",
@@ -112,6 +123,25 @@
     }
   ],
   "drivers": [
+    {
+      "id": "drv_dfc6801c",
+      "user_id": "usr_b20091f2",
+      "name": "New Captain",
+      "phone": "9653254632",
+      "vehicle_model": "Honda Activa 6G",
+      "vehicle_number": "DL 01 AB 0001",
+      "license_number": "DL-NEW-DRIVER-01",
+      "is_online": false,
+      "is_available": false,
+      "lat": 23.259703,
+      "lng": 77.412435,
+      "heading": 5,
+      "rating": 5,
+      "total_rides": 0,
+      "today_earnings": 0,
+      "kyc_status": "approved",
+      "last_ping": "2026-09-08T04:45:18.229Z"
+    },
     {
       "id": "drv_e93da2bc",
       "user_id": "usr_4ef5116f",

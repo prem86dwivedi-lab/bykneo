@@ -25,6 +25,7 @@ import { CaptainKycScreen } from './screens/driver/CaptainKycScreen';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
 import { sendPwaNotification, requestNotificationPermission } from './utils/notification';
 import { subscribeToPush, unsubscribeFromPush } from './utils/pushNotification.js';
+import { getPreciseCurrentPosition, watchPreciseLocation, requestLocationPermissions } from './utils/nativeLocation.js';
 import { ShieldCheck, X } from 'lucide-react';
 
 export function App() {
@@ -140,30 +141,30 @@ export function App() {
 
   const lastGpsFixRef = useRef(null);
 
-  // Immediate Live Location Fetcher & Continuous Real-time GPS Tracking
+  // Immediate Live Location Fetcher & Continuous Real-time GPS Tracking (Capacitor Native + PWA)
   useEffect(() => {
-    if (!('geolocation' in navigator)) return;
+    let unwatch = null;
 
-    const handleNewLocation = (lat, lng, isFast = false) => {
-      // Stationary Jitter Deadband Filter: Ignore sub-3m GPS satellite noise when stationary
+    const handleNewLocation = (lat, lng, heading = 0, isFast = false) => {
+      // Stationary Jitter Deadband Filter: Ignore sub-2.5m GPS satellite noise when stationary
       if (lastGpsFixRef.current && !isFast) {
         const dLat = (lat - lastGpsFixRef.current.lat) * 111320;
         const dLng = (lng - lastGpsFixRef.current.lng) * 111320 * Math.cos((lat * Math.PI) / 180);
         const distMeters = Math.sqrt(dLat * dLat + dLng * dLng);
 
-        // If moved less than 3 meters, treat as stationary and do not jitter
-        if (distMeters < 3) {
+        // If moved less than 2.5 meters, treat as stationary and do not jitter
+        if (distMeters < 2.5) {
           return;
         }
       }
 
-      lastGpsFixRef.current = { lat, lng };
+      lastGpsFixRef.current = { lat, lng, heading };
 
       // Mark GPS as ready — real device coordinates are now available
       setGpsReady(true);
 
-      // 1. Immediately update driver live GPS coordinates
-      setDriverGpsLocation({ lat, lng });
+      // 1. Immediately update driver live GPS coordinates with heading
+      setDriverGpsLocation({ lat, lng, heading });
 
       // 2. Immediately update passenger pickup coordinates
       setPickup((prev) => {
@@ -200,47 +201,27 @@ export function App() {
       });
     };
 
-    // TIER 1: Instant Fast Fix (< 100ms) from device cache / cellular / WiFi
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = Number(position.coords.latitude.toFixed(6));
-        const lng = Number(position.coords.longitude.toFixed(6));
-        handleNewLocation(lat, lng, true);
-      },
-      (err) => {
-        console.log('Fast initial GPS fix note:', err.message);
-      },
-      { enableHighAccuracy: false, timeout: 2500, maximumAge: 120000 }
-    );
+    // TIER 1: Fast initial one-shot fix
+    getPreciseCurrentPosition()
+      .then((pos) => {
+        if (pos?.lat && pos?.lng) {
+          handleNewLocation(pos.lat, pos.lng, pos.heading || 0, true);
+        }
+      })
+      .catch((e) => console.log('Fast GPS init note:', e.message));
 
-    // TIER 2: High-Precision Immediate Fix (Meter-Level Satellite GPS)
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = Number(position.coords.latitude.toFixed(6));
-        const lng = Number(position.coords.longitude.toFixed(6));
-        handleNewLocation(lat, lng, false);
+    // TIER 2 & 3: High-frequency continuous native GPS / PWA watcher
+    unwatch = watchPreciseLocation(
+      (pos) => {
+        handleNewLocation(pos.lat, pos.lng, pos.heading || 0, false);
       },
       (err) => {
-        console.warn('High precision one-shot error:', err.message);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-    );
-
-    // TIER 3: Continuous Live GPS Watcher (Tracks real-time movement on mobile)
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const lat = Number(position.coords.latitude.toFixed(6));
-        const lng = Number(position.coords.longitude.toFixed(6));
-        handleNewLocation(lat, lng, false);
-      },
-      (err) => {
-        console.warn('Live GPS watch error:', err.message);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+        console.warn('Live GPS watch notice:', err.message);
+      }
     );
 
     return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (typeof unwatch === 'function') unwatch();
     };
   }, []);
 
@@ -325,7 +306,7 @@ export function App() {
           driverId: driverProfile.id,
           lat: driverGpsLocation.lat,
           lng: driverGpsLocation.lng,
-          heading: 0
+          heading: driverGpsLocation.heading || 0
         });
       }
     };

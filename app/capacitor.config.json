@@ -1,0 +1,15 @@
+{
+  "appId": "com.bykneo.app",
+  "appName": "Bykneo",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "Geolocation": {
+      "enableHighAccuracy": true
+    }
+  }
+}

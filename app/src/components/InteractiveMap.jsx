@@ -15,7 +15,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
   if (isAuto) {
     // 🛺 High-Visibility Indian Auto-Rickshaw Top View (Breadth reduced to 18px)
     return `
-      <div style="transform: rotate(${heading}deg); width: 18px; height: 26px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+      <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 18px; height: 26px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
         <svg width="18" height="26" viewBox="0 0 18 26" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.85));">
           <!-- Directional Road Shadow -->
           <ellipse cx="9" cy="14" rx="7" ry="10" fill="rgba(0,0,0,0.4)" />
@@ -61,7 +61,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
     const bodyColor = isPremium ? '#F59E0B' : '#FBBF24';
     const roofColor = isPremium ? '#09090b' : '#18181b';
     return `
-      <div style="transform: rotate(${heading}deg); width: 20px; height: 34px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+      <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 20px; height: 34px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
         <svg width="20" height="34" viewBox="0 0 20 34" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));">
           <!-- Directional Road Shadow -->
           <ellipse cx="10" cy="18" rx="8" ry="13" fill="rgba(0,0,0,0.45)" />
@@ -116,7 +116,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
   const mainColor = isLite ? '#10B981' : '#FACC15';
   const accentColor = isLite ? '#059669' : '#EAB308';
   return `
-    <div style="transform: rotate(${heading}deg); width: 30px; height: 42px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+    <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 30px; height: 42px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
       <svg width="30" height="42" viewBox="0 0 30 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 7px rgba(0,0,0,0.85));">
         <!-- Directional Road Shadow -->
         <ellipse cx="15" cy="22" rx="7" ry="16" fill="rgba(0,0,0,0.35)" />

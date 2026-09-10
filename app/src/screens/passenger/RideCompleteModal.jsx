@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Star, CheckCircle2, Bike, HeartHandshake, ArrowRight } from 'lucide-react';
+import { Star, CheckCircle2, Bike, HeartHandshake, ArrowRight, X } from 'lucide-react';
 import { BACKEND_URL } from '../../context/SocketContext';
 
 export const RideCompleteModal = ({ ride, onClose }) => {
@@ -37,7 +37,16 @@ export const RideCompleteModal = ({ ride, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-in zoom-in-95 duration-200 relative">
+        {/* Top-Right Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-750 text-gray-400 hover:text-white flex items-center justify-center border border-gray-700 active:scale-95 transition z-10"
+          title="Exit without rating"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
         <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto shadow-xl">
           <CheckCircle2 className="w-8 h-8" />
         </div>

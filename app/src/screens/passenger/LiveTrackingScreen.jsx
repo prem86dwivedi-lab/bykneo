@@ -12,13 +12,20 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronDown,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react';
+import { InRideChatModal } from '../../components/InRideChatModal';
+import { useSocket } from '../../context/SocketContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
-  const [showSosModal, setShowSosModal]       = useState(false);
+  const { socket } = useSocket();
+  const { user } = useAuth();
+  const [showSosModal, setShowSosModal]         = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [isExpanded, setIsExpanded]           = useState(false);
+  const [showChatModal, setShowChatModal]       = useState(false);
+  const [isExpanded, setIsExpanded]             = useState(false);
 
   if (!ride) return null;
 
@@ -114,8 +121,15 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
               </div>
             </div>
 
-            {/* Call & SOS */}
-            <div className="flex items-center gap-2">
+            {/* Chat, Call & SOS Buttons */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowChatModal(true)}
+                className="w-10 h-10 rounded-2xl bg-brand-yellow/15 hover:bg-brand-yellow/25 border border-brand-yellow/40 flex items-center justify-center text-brand-yellow shadow-lg active:scale-95 transition"
+                title="Message Captain"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
               <a
                 href={`tel:${ride.driver_phone || '+919123456780'}`}
                 className="w-10 h-10 rounded-2xl bg-gray-800 hover:bg-gray-750 border border-gray-700 flex items-center justify-center text-emerald-400 shadow-lg active:scale-95 transition"
@@ -326,6 +340,15 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
           </div>
         </div>
       )}
+      {/* ── In-Ride Chat Modal (Rider <-> Driver) ── */}
+      <InRideChatModal
+        isOpen={showChatModal}
+        onClose={() => setShowChatModal(false)}
+        ride={ride}
+        currentUserRole="rider"
+        socket={socket}
+        currentUserId={user?.id}
+      />
     </div>
   );
 };

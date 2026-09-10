@@ -324,6 +324,25 @@ export const registerSocketHandlers = (io) => {
       io.to('admins').emit('admin:ride_updated', { ride: updated });
     });
 
+    // 9. Real-time In-Ride Chat Messaging (Rider <-> Driver)
+    socket.on('ride:send_chat_message', (messageData) => {
+      const { rideId, senderRole, text } = messageData;
+      const ride = db.find('rides', r => r.id === rideId);
+      if (!ride) return;
+
+      console.log(`💬 In-Ride Message [${rideId}] from ${senderRole}: ${text?.slice(0, 30)}`);
+
+      // Broadcast to both Rider and Driver rooms
+      io.to(`user:${ride.rider_id}`).emit('ride:chat_message', messageData);
+      if (ride.driver_id) {
+        io.to(`driver:${ride.driver_id}`).emit('ride:chat_message', messageData);
+        const drv = db.find('drivers', d => d.id === ride.driver_id);
+        if (drv?.user_id) {
+          io.to(`user:${drv.user_id}`).emit('ride:chat_message', messageData);
+        }
+      }
+    });
+
     socket.on('disconnect', () => {
       console.log(`🔌 Socket disconnected: ${socket.id}`);
     });

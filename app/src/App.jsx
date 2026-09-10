@@ -595,6 +595,9 @@ export function App() {
     setActiveRide(null);
     setFindingDriver(false);
     setAssignedCaptainLocation(null);
+    setDrop(null);
+    setEstimatedFare(null);
+    setSelectingMode(null);
   };
 
   // CAPTAIN: Accept Incoming Ride
@@ -838,7 +841,12 @@ export function App() {
           {showRideCompletedModal && (
             <RideCompleteModal
               ride={lastCompletedRide}
-              onClose={() => setShowRideCompletedModal(false)}
+              onClose={() => {
+                setShowRideCompletedModal(false);
+                setDrop(null);
+                setEstimatedFare(null);
+                setSelectingMode(null);
+              }}
             />
           )}
         </>

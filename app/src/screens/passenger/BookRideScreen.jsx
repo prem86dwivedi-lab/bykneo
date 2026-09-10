@@ -716,22 +716,22 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
         {/* Mobile Top Drag Handle Bar */}
         <div className="w-8 h-1 bg-gray-700 rounded-full mx-auto shrink-0 opacity-70"></div>
 
-        {/* Compact 2-Line Route Summary Bar when route is active & not editing */}
+        {/* 1. ROUTE SUMMARY (When Destination is Chosen & Fare Estimated) */}
         {estimatedFare && pickup?.name && drop?.name && !isEditingAddress && !activeInput ? (
-          <div className="bg-gray-850/90 px-3 py-1.5 rounded-xl border border-gray-800 flex items-center justify-between gap-2 shrink-0">
-            <div className="flex-1 min-w-0 space-y-0.5">
-              <div className="flex items-center gap-1.5 text-[10.5px] truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+          <div className="bg-gray-850/90 px-3 py-2 rounded-2xl border border-gray-800 flex items-center justify-between gap-2 shrink-0 shadow-lg">
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center gap-1.5 text-[11px] truncate">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
                 <span className="text-gray-300 font-medium truncate">{pickup.name}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10.5px] truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>
+              <div className="flex items-center gap-1.5 text-[11px] truncate">
+                <span className="w-2 h-2 rounded-full bg-red-400 shrink-0"></span>
                 <span className="text-white font-bold truncate">{drop.name}</span>
               </div>
             </div>
             <button
               onClick={() => setIsEditingAddress(true)}
-              className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-750 text-brand-yellow shrink-0 flex items-center gap-1 text-[10px] font-bold transition active:scale-95"
+              className="px-2.5 py-1.5 rounded-xl bg-gray-800 hover:bg-gray-750 text-brand-yellow shrink-0 flex items-center gap-1 text-[11px] font-bold transition active:scale-95 border border-gray-700"
               title="Change Route"
             >
               <Edit2 className="w-3 h-3" />
@@ -739,78 +739,76 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
             </button>
           </div>
         ) : (
-          /* Full Pickup & Destination Input Form */
-          <div className="bg-gray-850 p-2.5 rounded-2xl border border-gray-800 space-y-2 relative shrink-0">
-            {/* Pickup Input */}
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center shrink-0">
-                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-              </div>
-              <div className="flex-1 relative">
-                <span className="text-[9px] uppercase font-bold text-emerald-400 block leading-none mb-0.5">
-                  Pickup Point
-                </span>
-                <input
-                  type="text"
-                  value={pickupQuery}
-                  onChange={(e) => handleSearchAddress(e.target.value, 'pickup')}
-                  onFocus={() => setActiveInput('pickup')}
-                  placeholder="Search pickup area, metro, street..."
-                  className="w-full bg-transparent text-[11px] font-semibold text-white placeholder-gray-500 focus:outline-none focus:text-emerald-300 transition"
-                />
+          /* 2. RAPIDO-STYLE 'WHERE DO YOU WANT TO GO?' SEARCH CARD */
+          <div className="bg-gray-850 p-3 rounded-2xl border border-gray-800 space-y-2.5 relative shrink-0 shadow-xl">
+            {/* Pickup Point Bar */}
+            <div className="flex items-center justify-between gap-2 bg-gray-900/90 px-2.5 py-1.5 rounded-xl border border-gray-800">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
+                <div className="min-w-0 flex-1">
+                  <span className="text-[9px] uppercase font-bold text-emerald-400 block leading-none">
+                    Current Location (GPS)
+                  </span>
+                  <span className="text-[11px] font-semibold text-gray-200 truncate block mt-0.5">
+                    {pickup?.name || 'Locating current GPS...'}
+                  </span>
+                </div>
               </div>
 
-              {/* Quick Locate Me Icon */}
               <button
+                type="button"
                 onClick={handleUseCurrentLocation}
-                className="p-1 rounded-lg bg-gray-800 hover:bg-gray-750 text-emerald-400 text-[10px] font-bold flex items-center gap-1 transition active:scale-95"
-                title="Use Current Device GPS"
+                className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-750 text-emerald-400 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 shrink-0 border border-gray-700"
+                title="Refresh Current GPS Location"
               >
                 <Crosshair className="w-3 h-3" />
-                <span className="text-[9px] hidden sm:inline">GPS</span>
+                <span className="text-[9px]">GPS</span>
               </button>
             </div>
 
-            {/* Divider with Swap Button */}
-            <div className="relative flex items-center justify-center">
-              <div className="h-[1px] bg-gray-800 w-full ml-7 mr-7"></div>
-              <button
-                onClick={handleSwap}
-                className="absolute right-1 p-1 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-brand-yellow transition"
-                title="Swap Pickup and Drop"
-              >
-                <ArrowUpDown className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Drop Input */}
-            <div className="flex items-center gap-2">
+            {/* Destination Search Input: Rapido-style 'Where do you want to go?' */}
+            <div className="flex items-center gap-2.5 bg-gray-950 border-2 border-brand-yellow/60 focus-within:border-brand-yellow rounded-xl px-3 py-2.5 shadow-inner transition">
               <div className="w-6 h-6 rounded-full bg-red-500/20 border border-red-500 flex items-center justify-center shrink-0">
-                <MapPin className="w-3 h-3 text-red-400" />
+                <MapPin className="w-3.5 h-3.5 text-red-400" />
               </div>
-              <div className="flex-1">
-                <span className="text-[9px] uppercase font-bold text-red-400 block leading-none mb-0.5">
-                  Drop Destination
-                </span>
+              <div className="flex-1 min-w-0">
                 <input
                   type="text"
                   value={dropQuery}
                   onChange={(e) => handleSearchAddress(e.target.value, 'drop')}
                   onFocus={() => setActiveInput('drop')}
-                  placeholder="Search destination, mall, office, city..."
-                  className="w-full bg-transparent text-[11px] font-semibold text-white placeholder-gray-500 focus:outline-none focus:text-red-300 transition"
+                  placeholder="Where do you want to go?"
+                  className="w-full bg-transparent text-xs font-bold text-white placeholder-gray-400 focus:outline-none focus:placeholder-gray-500 transition"
                 />
               </div>
 
-              {pickup?.name && drop?.name && isEditingAddress && (
+              {dropQuery && (
                 <button
-                  onClick={() => setIsEditingAddress(false)}
-                  className="text-[10px] font-bold text-gray-400 hover:text-white px-1.5 py-0.5 rounded bg-gray-800"
+                  type="button"
+                  onClick={() => {
+                    setDropQuery('');
+                    setDrop(null);
+                    setEstimatedFare(null);
+                  }}
+                  className="p-1 text-gray-400 hover:text-white rounded-md"
                 >
-                  Done
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
+
+            {/* If user is editing addresses in detailed mode */}
+            {isEditingAddress && (
+              <div className="flex items-center justify-between pt-1 border-t border-gray-800 text-[10px]">
+                <span className="text-gray-400">Search and pick any landmark or locality</span>
+                <button
+                  onClick={() => setIsEditingAddress(false)}
+                  className="px-2 py-0.5 rounded bg-gray-800 text-brand-yellow font-bold"
+                >
+                  Done
+                </button>
+              </div>
+            )}
           </div>
         )}
 

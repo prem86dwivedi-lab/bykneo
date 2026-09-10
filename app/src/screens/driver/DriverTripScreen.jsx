@@ -8,8 +8,12 @@ import {
   ArrowRight,
   User,
   Clock,
-  DollarSign
+  DollarSign,
+  MessageSquare
 } from 'lucide-react';
+import { InRideChatModal } from '../../components/InRideChatModal';
+import { useSocket } from '../../context/SocketContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const DriverTripScreen = ({
   ride,
@@ -17,9 +21,12 @@ export const DriverTripScreen = ({
   onStartRide,
   onCompleteRide
 }) => {
+  const { socket } = useSocket();
+  const { user } = useAuth();
   const [enteredOtp, setEnteredOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   if (!ride) return null;
 
@@ -74,12 +81,23 @@ export const DriverTripScreen = ({
             </div>
           </div>
 
-          <a
-            href={`tel:${ride.rider_phone || '+919876543210'}`}
-            className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-lg active:scale-95 transition"
-          >
-            <Phone className="w-4 h-4" />
-          </a>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowChatModal(true)}
+              className="w-10 h-10 rounded-2xl bg-brand-yellow/15 border border-brand-yellow/40 flex items-center justify-center text-brand-yellow shadow-lg active:scale-95 transition"
+              title="Message Passenger"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+            <a
+              href={`tel:${ride.rider_phone || '+919876543210'}`}
+              className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-lg active:scale-95 transition"
+              title="Call Passenger"
+            >
+              <Phone className="w-4 h-4" />
+            </a>
+          </div>
         </div>
 
         {/* Route Address Snippet with Distance KM & Duration */}
@@ -179,6 +197,16 @@ export const DriverTripScreen = ({
           </button>
         )}
       </div>
+
+      {/* In-Ride Direct Chat (Driver <-> Rider) */}
+      <InRideChatModal
+        isOpen={showChatModal}
+        onClose={() => setShowChatModal(false)}
+        ride={ride}
+        currentUserRole="driver"
+        socket={socket}
+        currentUserId={user?.id}
+      />
     </div>
   );
 };

@@ -5,7 +5,8 @@ import {
   getActiveRideForUser,
   getUserRides,
   rateRide,
-  cancelRide
+  cancelRide,
+  getRideById
 } from '../controllers/ride.controller.js';
 
 const router = express.Router();
@@ -16,5 +17,6 @@ router.get('/active', getActiveRideForUser);
 router.get('/history', getUserRides);
 router.post('/rate', rateRide);
 router.post('/cancel', cancelRide);
+router.get('/:id', getRideById);
 
 export default router;

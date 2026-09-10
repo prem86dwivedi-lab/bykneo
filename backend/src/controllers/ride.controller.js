@@ -369,3 +369,10 @@ export const cancelRide = (req, res) => {
 
   return res.json({ success: true, ride: updated });
 };
+
+export const getRideById = (req, res) => {
+  const { id } = req.params;
+  const ride = db.find('rides', r => r.id === id);
+  if (!ride) return res.status(404).json({ success: false, error: 'Ride not found' });
+  return res.json({ success: true, ride });
+};

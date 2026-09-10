@@ -28,15 +28,22 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Sync with socket rooms whenever user/role changes
+  // Sync with socket rooms whenever user/role changes OR socket reconnects
   useEffect(() => {
     if (!socket || !user) return;
 
-    socket.emit('join_user', { userId: user.id });
+    const joinRooms = () => {
+      socket.emit('join_user', { userId: user.id });
+      if (activeRole === 'driver' && driverProfile) {
+        socket.emit('join_driver', { driverId: driverProfile.id });
+      }
+    };
 
-    if (activeRole === 'driver' && driverProfile) {
-      socket.emit('join_driver', { driverId: driverProfile.id });
-    }
+    joinRooms();
+    socket.on('connect', joinRooms);
+    return () => {
+      socket.off('connect', joinRooms);
+    };
   }, [socket, user, activeRole, driverProfile]);
 
   /**

@@ -249,21 +249,55 @@ export function App() {
       .catch(console.error);
   }, []);
 
-  // Fetch active ongoing ride on load
+  // Fetch active ongoing ride on load & poll while trip is active
   useEffect(() => {
     if (!user) return;
-    fetch(`${BACKEND_URL}/api/rides/active?userId=${user.id}&role=${activeRole}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.activeRide) {
-          setActiveRide(data.activeRide);
-          if (data.activeRide.status === 'REQUESTED') {
-            setFindingDriver(true);
+
+    const checkActiveRide = () => {
+      fetch(`${BACKEND_URL}/api/rides/active?userId=${user.id}&role=${activeRole}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.activeRide) {
+            setActiveRide(data.activeRide);
+            if (data.activeRide.status === 'REQUESTED') {
+              setFindingDriver(true);
+            } else {
+              setFindingDriver(false);
+            }
+          } else if (activeRide && activeRole !== 'driver') {
+            // Ride ended/completed on server — fetch final ride receipt immediately
+            fetch(`${BACKEND_URL}/api/rides/${activeRide.id}`)
+              .then(r => r.json())
+              .then(resData => {
+                const finalRide = resData.ride || activeRide;
+                setLastCompletedRide({ ...finalRide, status: 'COMPLETED' });
+                setActiveRide(null);
+                setFindingDriver(false);
+                setAssignedCaptainLocation(null);
+                setShowRideCompletedModal(true);
+              })
+              .catch(() => {
+                setLastCompletedRide({ ...activeRide, status: 'COMPLETED' });
+                setActiveRide(null);
+                setFindingDriver(false);
+                setAssignedCaptainLocation(null);
+                setShowRideCompletedModal(true);
+              });
           }
-        }
-      })
-      .catch(console.error);
-  }, [user, activeRole]);
+        })
+        .catch(console.error);
+    };
+
+    checkActiveRide();
+    // Poll every 3 seconds only while in an active trip as safety fallback
+    let interval = null;
+    if (activeRide && activeRide.status !== 'REQUESTED') {
+      interval = setInterval(checkActiveRide, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [user, activeRole, activeRide?.id, activeRide?.status]);
 
   // Continuous Captain GPS Ping to Backend whenever Online OR in an Active Trip
   useEffect(() => {
@@ -372,7 +406,7 @@ export function App() {
       setActiveRide(null);
       setFindingDriver(false);
       setAssignedCaptainLocation(null);
-      if (activeRole === 'passenger') {
+      if (activeRole !== 'driver' || (user && ride.rider_id === user.id)) {
         setShowRideCompletedModal(true);
       }
     });

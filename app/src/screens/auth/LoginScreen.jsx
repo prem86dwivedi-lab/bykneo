@@ -662,37 +662,25 @@ export const LoginScreen = () => {
               </div>
             </div>
 
-            {/* Direct Android APK Download Card (Marked by User) */}
+            {/* Direct Android APK Download Card */}
             {!isNativeApp() && (
-              <div className="mt-4 pt-3.5 border-t border-gray-850">
+              <div className="mt-3 pt-2.5 border-t border-gray-850">
                 <a
                   href="/bykneo.apk"
                   download="bykneo.apk"
                   onClick={handleDownloadApk}
-                  className="group relative overflow-hidden block p-3 bg-gradient-to-r from-emerald-950/50 via-gray-900 to-emerald-950/40 hover:from-emerald-950/80 hover:to-emerald-900/50 border border-emerald-500/40 hover:border-emerald-400 rounded-2xl shadow-xl transition-all active:scale-[0.98]"
+                  className="group relative overflow-hidden flex items-center justify-between px-3.5 py-2 bg-gradient-to-r from-emerald-950/40 via-gray-900 to-emerald-950/30 hover:from-emerald-950/60 hover:to-emerald-900/40 border border-emerald-500/30 hover:border-emerald-400/60 rounded-xl shadow-md transition-all active:scale-[0.98]"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-                        <Smartphone className="w-5 h-5" />
-                      </div>
-                      <div className="min-w-0 text-left">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-black text-white group-hover:text-emerald-300 transition-colors truncate">
-                            Download Android App (.APK)
-                          </span>
-                          <span className="text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shrink-0">
-                            v1.0
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-gray-400 mt-0.5 truncate">
-                          Rapido-Grade Live GPS • Direct APK Download
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-105 transition-transform">
+                      <Smartphone className="w-4 h-4" />
                     </div>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500 text-gray-950 flex items-center justify-center font-bold shrink-0 shadow-md shadow-emerald-500/30 group-hover:bg-emerald-400 transition-colors">
-                      <Download className="w-4 h-4" />
-                    </div>
+                    <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+                      Download now
+                    </span>
+                  </div>
+                  <div className="w-6 h-6 rounded-lg bg-emerald-500 text-gray-950 flex items-center justify-center font-bold shrink-0 shadow-sm shadow-emerald-500/30 group-hover:bg-emerald-400 transition-colors">
+                    <Download className="w-3.5 h-3.5" />
                   </div>
                 </a>
               </div>

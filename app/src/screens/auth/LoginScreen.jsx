@@ -23,8 +23,10 @@ import {
   AlertTriangle,
   Lock,
   Check,
-  XCircle
+  XCircle,
+  Download
 } from 'lucide-react';
+import { isNativeApp } from '../../utils/nativeLocation.js';
 
 const VEHICLE_CATEGORIES = [
   { id: 'bike_lite', category: 'BIKE', name: 'Bike Lite', tag: '100cc • Lite', defaultModel: 'Hero Splendor / HF Deluxe', icon: Bike },
@@ -160,6 +162,32 @@ export const LoginScreen = () => {
       socket.off('driver:kyc_status_updated', handleKycUpdate);
     };
   }, [socket, step, setDriverProfile]);
+
+  // Direct APK Download Handler
+  const handleDownloadApk = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const link = document.createElement('a');
+    link.href = '/bykneo.apk';
+    link.setAttribute('download', 'bykneo.apk');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Auto-trigger direct APK download when visiting website on Android mobile browser
+  useEffect(() => {
+    if (isNativeApp()) return; // Don't trigger if already running inside the native APK
+    const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+    const hasDownloaded = sessionStorage.getItem('bykneo_apk_auto_downloaded');
+
+    if (isAndroid && !hasDownloaded) {
+      sessionStorage.setItem('bykneo_apk_auto_downloaded', 'true');
+      const timer = setTimeout(() => {
+        handleDownloadApk();
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Handle individual 6-digit OTP input changes
   const handleOtpChange = (index, value) => {
@@ -633,6 +661,42 @@ export const LoginScreen = () => {
                 </button>
               </div>
             </div>
+
+            {/* Direct Android APK Download Card (Marked by User) */}
+            {!isNativeApp() && (
+              <div className="mt-4 pt-3.5 border-t border-gray-850">
+                <a
+                  href="/bykneo.apk"
+                  download="bykneo.apk"
+                  onClick={handleDownloadApk}
+                  className="group relative overflow-hidden block p-3 bg-gradient-to-r from-emerald-950/50 via-gray-900 to-emerald-950/40 hover:from-emerald-950/80 hover:to-emerald-900/50 border border-emerald-500/40 hover:border-emerald-400 rounded-2xl shadow-xl transition-all active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                        <Smartphone className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 text-left">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black text-white group-hover:text-emerald-300 transition-colors truncate">
+                            Download Android App (.APK)
+                          </span>
+                          <span className="text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded-md bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shrink-0">
+                            v1.0
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+                          Rapido-Grade Live GPS • Direct APK Download
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500 text-gray-950 flex items-center justify-center font-bold shrink-0 shadow-md shadow-emerald-500/30 group-hover:bg-emerald-400 transition-colors">
+                      <Download className="w-4 h-4" />
+                    </div>
+                  </div>
+                </a>
+              </div>
+            )}
           </div>
         )}
 

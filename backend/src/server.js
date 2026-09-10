@@ -83,6 +83,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Direct APK Download Endpoint
+app.get(['/bykneo.apk', '/download/bykneo.apk'], (req, res) => {
+  const apkPath = path.join(__dirname, '../../app/public/bykneo.apk');
+  res.download(apkPath, 'bykneo.apk', {
+    headers: {
+      'Content-Type': 'application/vnd.android.package-archive'
+    }
+  });
+});
+
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/rides', rideRoutes);

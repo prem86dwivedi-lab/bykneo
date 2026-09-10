@@ -163,7 +163,7 @@ export const LoginScreen = () => {
     };
   }, [socket, step, setDriverProfile]);
 
-  // Direct APK Download Handler
+  // Direct APK Download Handler (triggered only on manual click)
   const handleDownloadApk = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const link = document.createElement('a');
@@ -173,21 +173,6 @@ export const LoginScreen = () => {
     link.click();
     document.body.removeChild(link);
   };
-
-  // Auto-trigger direct APK download when visiting website on Android mobile browser
-  useEffect(() => {
-    if (isNativeApp()) return; // Don't trigger if already running inside the native APK
-    const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
-    const hasDownloaded = sessionStorage.getItem('bykneo_apk_auto_downloaded');
-
-    if (isAndroid && !hasDownloaded) {
-      sessionStorage.setItem('bykneo_apk_auto_downloaded', 'true');
-      const timer = setTimeout(() => {
-        handleDownloadApk();
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
   // Handle individual 6-digit OTP input changes
   const handleOtpChange = (index, value) => {

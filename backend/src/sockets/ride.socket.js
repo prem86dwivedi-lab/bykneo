@@ -1,6 +1,7 @@
 import { db } from '../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateDistance } from '../controllers/ride.controller.js';
+import { sendPushToDriver } from '../services/push.service.js';
 
 export const registerSocketHandlers = (io) => {
   io.on('connection', (socket) => {
@@ -75,12 +76,35 @@ export const registerSocketHandlers = (io) => {
 
       // Dispatch to each individual captain room with their specific distance to pickup
       driversSorted.forEach(({ driver, distance_km }) => {
+        // 1. Real-time socket event (works when app is in foreground)
         io.to(`driver:${driver.id}`).emit('driver:incoming_request', {
           ride: {
             ...rideData,
             driver_pickup_distance_km: distance_km
           }
         });
+
+        // 2. Web Push notification (works when app is backgrounded / phone locked)
+        const pushSub = db.find('push_subscriptions', s => s.driver_id === driver.id);
+        if (pushSub) {
+          const distLabel = distance_km < 1
+            ? `${Math.round(distance_km * 1000)}m`
+            : `${distance_km.toFixed(1)}km`;
+
+          sendPushToDriver(pushSub.subscription, {
+            title:    `🏍️ New Ride — ₹${rideData.fare}`,
+            body:     `Pickup ${distLabel} away · ${rideData.pickup_name || 'Nearby'}`,
+            rideId:   rideData.id,
+            fare:     rideData.fare,
+            distance: distance_km,
+            pickup:   rideData.pickup_name || ''
+          }).then(result => {
+            // Auto-purge expired/unsubscribed push tokens
+            if (result === 'stale') {
+              db.delete('push_subscriptions', pushSub.id);
+            }
+          });
+        }
       });
 
       // Broadcast to general online drivers room

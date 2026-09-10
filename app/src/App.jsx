@@ -24,6 +24,7 @@ import { DriverProfileScreen } from './screens/driver/DriverProfileScreen';
 import { CaptainKycScreen } from './screens/driver/CaptainKycScreen';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
 import { sendPwaNotification, requestNotificationPermission } from './utils/notification';
+import { subscribeToPush, unsubscribeFromPush } from './utils/pushNotification.js';
 import { ShieldCheck, X } from 'lucide-react';
 
 export function App() {
@@ -59,10 +60,9 @@ export function App() {
 
   // Driver Online State
   const [isDriverOnline, setIsDriverOnline] = useState(false);
-  const [driverGpsLocation, setDriverGpsLocation] = useState({
-    lat: 23.2599,
-    lng: 77.4126
-  });
+  // null = GPS not yet resolved; never emit hardcoded fake coords
+  const [driverGpsLocation, setDriverGpsLocation] = useState(null);
+  const [gpsReady, setGpsReady] = useState(false);
   // Active Serviceable Cities & Geofencing State
   const [activeCities, setActiveCities] = useState([]);
   const [nearbyDrivers, setNearbyDrivers] = useState([]);
@@ -138,19 +138,22 @@ export function App() {
     if (!('geolocation' in navigator)) return;
 
     const handleNewLocation = (lat, lng, isFast = false) => {
-      // Stationary Jitter Deadband Filter: Ignore sub-8m GPS satellite noise when stationary
+      // Stationary Jitter Deadband Filter: Ignore sub-3m GPS satellite noise when stationary
       if (lastGpsFixRef.current && !isFast) {
         const dLat = (lat - lastGpsFixRef.current.lat) * 111320;
         const dLng = (lng - lastGpsFixRef.current.lng) * 111320 * Math.cos((lat * Math.PI) / 180);
         const distMeters = Math.sqrt(dLat * dLat + dLng * dLng);
 
-        // If moved less than 8 meters, treat as constant/stationary and do not jitter
-        if (distMeters < 8) {
+        // If moved less than 3 meters, treat as stationary and do not jitter
+        if (distMeters < 3) {
           return;
         }
       }
 
       lastGpsFixRef.current = { lat, lng };
+
+      // Mark GPS as ready — real device coordinates are now available
+      setGpsReady(true);
 
       // 1. Immediately update driver live GPS coordinates
       setDriverGpsLocation({ lat, lng });
@@ -266,6 +269,8 @@ export function App() {
   useEffect(() => {
     if (activeRole !== 'driver' || !socket || !driverProfile) return;
     if (!isDriverOnline && !activeRide) return;
+    // Never emit until real GPS coords are available from the device
+    if (!gpsReady || !driverGpsLocation?.lat || !driverGpsLocation?.lng) return;
 
     const pingLocation = () => {
       if (driverGpsLocation?.lat && driverGpsLocation?.lng) {
@@ -281,7 +286,7 @@ export function App() {
     pingLocation();
     const interval = setInterval(pingLocation, 3000);
     return () => clearInterval(interval);
-  }, [activeRole, socket, driverProfile, isDriverOnline, activeRide, driverGpsLocation]);
+  }, [activeRole, socket, driverProfile, isDriverOnline, activeRide, driverGpsLocation, gpsReady]);
 
   // Socket.IO Event Listeners
   useEffect(() => {
@@ -611,6 +616,14 @@ export function App() {
           isOnline: newStatus
         })
       }).catch(console.error);
+
+      // Subscribe to Web Push when going online so OS can wake the app
+      // for incoming ride alerts even when another app is in the foreground.
+      if (newStatus) {
+        subscribeToPush(driverProfile.id, BACKEND_URL).catch(console.warn);
+      } else {
+        unsubscribeFromPush(driverProfile.id, BACKEND_URL).catch(console.warn);
+      }
     }
   };
 

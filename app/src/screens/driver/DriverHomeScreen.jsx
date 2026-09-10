@@ -103,23 +103,9 @@ export const DriverHomeScreen = ({
   const activeCities = zoneStatus?.activeCities || [];
   const kycStatus = driverProfile?.kyc_status || 'approved'; // default approved for demo, checked strictly
 
-  // Background GPS updater (Emits real live GPS coordinates to backend without artificial jitter)
-  useEffect(() => {
-    if (!isOnline || !socket || !driverProfile) return;
+  // Note: GPS location pinging to backend is handled centrally in App.jsx
+  // with a gpsReady guard to prevent emitting stale/null coordinates.
 
-    const interval = setInterval(() => {
-      if (driverLocation?.lat && driverLocation?.lng) {
-        socket.emit('driver:location_ping', {
-          driverId: driverProfile.id,
-          lat: driverLocation.lat,
-          lng: driverLocation.lng,
-          heading: 0
-        });
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isOnline, socket, driverProfile, driverLocation]);
 
   const handleToggleOnlineClick = () => {
     if (!isOnline && kycStatus !== 'approved') {

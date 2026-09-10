@@ -16,8 +16,10 @@ import authRoutes from './routes/auth.routes.js';
 import rideRoutes from './routes/ride.routes.js';
 import driverRoutes from './routes/driver.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import pushRoutes from './routes/push.routes.js';
 import { registerSocketHandlers } from './sockets/ride.socket.js';
 import { db } from './db/index.js';
+import { initPush } from './services/push.service.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -86,6 +88,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rides', rideRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/push', pushRoutes);
+
+// Initialise Web Push notification service (generates VAPID keys if not present)
+initPush();
 
 const PORT = process.env.PORT || 5000;
 

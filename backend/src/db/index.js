@@ -222,7 +222,8 @@ const DEFAULT_DATA = {
     razorpay_key_id: "rzp_live_TAKnbp18wnY8Mu",
     razorpay_key_secret: "KEXn7SaynyjQ0uQhIlscY1Sc",
     geofencing_enabled: true // When true, restricts booking to active cities
-  }
+  },
+  push_subscriptions: []   // { id, driver_id, subscription, created_at, updated_at }
 };
 
 class Database {

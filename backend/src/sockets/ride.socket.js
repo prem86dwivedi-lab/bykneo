@@ -24,6 +24,13 @@ export const registerSocketHandlers = (io) => {
       console.log(`💻 Admin joined 'admins' room`);
     });
 
+    socket.on('join_ride', ({ rideId }) => {
+      if (rideId) {
+        socket.join(`ride:${rideId}`);
+        console.log(`💬 Socket joined ride chat room: ride:${rideId}`);
+      }
+    });
+
     // 2. Driver Location Ping (Real-time GPS update)
     socket.on('driver:location_ping', ({ driverId, lat, lng, heading }) => {
       const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId);
@@ -332,12 +339,15 @@ export const registerSocketHandlers = (io) => {
     // 9. Real-time In-Ride Chat Messaging (Rider <-> Driver)
     socket.on('ride:send_chat_message', (messageData) => {
       const { rideId, senderRole, text } = messageData;
-      const ride = db.find('rides', r => r.id === rideId);
+      const ride = db.find('rides', r => String(r.id) === String(rideId));
       if (!ride) return;
 
       console.log(`💬 In-Ride Message [${rideId}] from ${senderRole}: ${text?.slice(0, 30)}`);
 
-      // Broadcast to both Rider and Driver rooms
+      // 1. Broadcast to ride room
+      io.to(`ride:${ride.id}`).emit('ride:chat_message', messageData);
+
+      // 2. Broadcast to specific user and driver rooms
       io.to(`user:${ride.rider_id}`).emit('ride:chat_message', messageData);
       if (ride.driver_id) {
         io.to(`driver:${ride.driver_id}`).emit('ride:chat_message', messageData);

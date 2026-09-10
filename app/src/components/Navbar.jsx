@@ -116,7 +116,7 @@ export const Navbar = ({
 
   return (
     <>
-      <header className="absolute top-0 left-0 right-0 z-30 px-1 pt-1 pointer-events-none">
+      <header className="absolute top-0 left-0 right-0 z-30 px-1 pt-[max(env(safe-area-inset-top,10px),10px)] pointer-events-none">
         {/* Single Unified Header Card - Frosted Titanium Slate (Metallic Steel-Grey) */}
         <div className="w-full max-w-full sm:max-w-2xl mx-auto bg-slate-800/95 backdrop-blur-2xl border border-slate-600/60 shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-2xl p-2 sm:p-2.5 space-y-1.5 pointer-events-auto">
           

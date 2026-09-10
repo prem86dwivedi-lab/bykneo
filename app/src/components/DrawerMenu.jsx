@@ -72,7 +72,7 @@ export const DrawerMenu = ({
       {/* Drawer Body */}
       <div className="relative w-80 max-w-[85vw] bg-gray-900 border-r border-gray-800 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-left duration-200">
         {/* Header / Profile Card */}
-        <div className="p-5 border-b border-gray-800/80 bg-gradient-to-b from-gray-850 to-gray-900">
+        <div className="p-5 pt-[max(env(safe-area-inset-top,16px),16px)] border-b border-gray-800/80 bg-gradient-to-b from-gray-850 to-gray-900 shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-brand-yellow flex items-center justify-center text-gray-950 font-black text-sm">
@@ -140,7 +140,7 @@ export const DrawerMenu = ({
         </div>
 
         {/* Navigation Menu List */}
-        <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+        <div className="flex-1 min-h-0 overflow-y-auto py-3 px-3 space-y-1">
           <div className="px-3 py-1 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
             {isCaptain ? 'Captain Menu' : 'Passenger Menu'}
           </div>
@@ -186,13 +186,13 @@ export const DrawerMenu = ({
         </div>
 
         {/* Footer Logout */}
-        <div className="p-4 border-t border-gray-800 bg-gray-900/90">
+        <div className="p-4 pb-[max(calc(env(safe-area-inset-bottom,20px)+36px),42px)] border-t border-gray-800 bg-gray-900/95 shrink-0">
           <button
             onClick={() => {
               logout();
               onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/10 text-xs font-bold transition active:scale-95 shadow-sm"
           >
             <LogOut className="w-4 h-4" />
             Sign Out

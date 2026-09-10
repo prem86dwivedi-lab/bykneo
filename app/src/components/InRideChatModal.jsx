@@ -48,12 +48,15 @@ export const InRideChatModal = ({
     }
   }, [isOpen, messages]);
 
-  // Listen for socket chat messages
+  // Listen for socket chat messages & join ride room
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !ride?.id) return;
+
+    // Join the ride room for chat
+    socket.emit('join_ride', { rideId: ride.id });
 
     const handleIncomingMessage = (msg) => {
-      if (msg.rideId === ride?.id) {
+      if (String(msg.rideId) === String(ride.id)) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) return prev;
           return [...prev, msg];
@@ -94,10 +97,10 @@ export const InRideChatModal = ({
   if (!isOpen || !ride) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-gray-900 border border-gray-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full h-[85vh] sm:h-[600px] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 pointer-events-auto">
+    <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200 pointer-events-auto">
+      <div className="bg-gray-900 border border-gray-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full h-[88vh] sm:h-[600px] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 pointer-events-auto">
         {/* Header */}
-        <div className="px-4 py-3.5 bg-gray-850 border-b border-gray-800 flex items-center justify-between shrink-0">
+        <div className="px-4 py-3.5 bg-gray-850 border-b border-gray-800 flex items-center justify-between shrink-0 relative z-10">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative">
               <div className="w-10 h-10 rounded-2xl bg-brand-yellow/20 text-brand-yellow flex items-center justify-center font-bold border border-brand-yellow/30">
@@ -130,10 +133,15 @@ export const InRideChatModal = ({
               </a>
             )}
             <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-750 text-gray-400 hover:text-white flex items-center justify-center border border-gray-700 active:scale-95 transition"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 text-white flex items-center justify-center border border-gray-600 active:scale-90 transition cursor-pointer shadow-md shrink-0"
+              title="Close Chat"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5 text-white" />
             </button>
           </div>
         </div>

@@ -64,7 +64,7 @@ export const registerSocketHandlers = (io) => {
     socket.on('ride:request_broadcast', (rideData) => {
       console.log(`📢 Broadcasting ride request ${rideData.id} to nearest online drivers`);
       
-      const onlineDrivers = db.filter('drivers', d => d.is_online && d.is_available);
+      const onlineDrivers = db.filter('drivers', d => d.is_online && d.is_available !== false);
       
       // Calculate distance from each online Captain to the rider's pickup location
       const driversSorted = onlineDrivers.map(d => {
@@ -76,16 +76,21 @@ export const registerSocketHandlers = (io) => {
 
       // Dispatch to each individual captain room with their specific distance to pickup
       driversSorted.forEach(({ driver, distance_km }) => {
-        // 1. Real-time socket event (works when app is in foreground)
-        io.to(`driver:${driver.id}`).emit('driver:incoming_request', {
+        const payload = {
           ride: {
             ...rideData,
             driver_pickup_distance_km: distance_km
           }
-        });
+        };
+
+        // 1. Real-time socket event to driver ID and driver user ID
+        io.to(`driver:${driver.id}`).emit('driver:incoming_request', payload);
+        if (driver.user_id) {
+          io.to(`user:${driver.user_id}`).emit('driver:incoming_request', payload);
+        }
 
         // 2. Web Push notification (works when app is backgrounded / phone locked)
-        const pushSub = db.find('push_subscriptions', s => s.driver_id === driver.id);
+        const pushSub = db.find('push_subscriptions', s => s.driver_id === driver.id || s.driver_id === driver.user_id);
         if (pushSub) {
           const distLabel = distance_km < 1
             ? `${Math.round(distance_km * 1000)}m`

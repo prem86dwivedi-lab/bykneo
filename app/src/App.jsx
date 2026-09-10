@@ -58,8 +58,15 @@ export function App() {
   // Dedicated Live Assigned Captain Coordinates (Received over WebSocket on Rider phone)
   const [assignedCaptainLocation, setAssignedCaptainLocation] = useState(null);
 
-  // Driver Online State
-  const [isDriverOnline, setIsDriverOnline] = useState(false);
+  // Driver Online State (synced with driverProfile)
+  const [isDriverOnline, setIsDriverOnline] = useState(() => Boolean(driverProfile?.is_online));
+
+  useEffect(() => {
+    if (driverProfile?.is_online !== undefined) {
+      setIsDriverOnline(Boolean(driverProfile.is_online));
+    }
+  }, [driverProfile?.is_online]);
+
   // null = GPS not yet resolved; never emit hardcoded fake coords
   const [driverGpsLocation, setDriverGpsLocation] = useState(null);
   const [gpsReady, setGpsReady] = useState(false);
@@ -265,23 +272,29 @@ export function App() {
               setFindingDriver(false);
             }
           } else if (activeRide && activeRole !== 'driver') {
-            // Ride ended/completed on server — fetch final ride receipt immediately
+            // Ride ended on server — fetch final ride status to verify if completed or cancelled
             fetch(`${BACKEND_URL}/api/rides/${activeRide.id}`)
               .then(r => r.json())
               .then(resData => {
-                const finalRide = resData.ride || activeRide;
-                setLastCompletedRide({ ...finalRide, status: 'COMPLETED' });
-                setActiveRide(null);
-                setFindingDriver(false);
-                setAssignedCaptainLocation(null);
-                setShowRideCompletedModal(true);
+                const finalRide = resData.ride;
+                if (finalRide && finalRide.status === 'COMPLETED') {
+                  setLastCompletedRide(finalRide);
+                  setActiveRide(null);
+                  setFindingDriver(false);
+                  setAssignedCaptainLocation(null);
+                  setShowRideCompletedModal(true);
+                } else {
+                  // Ride was cancelled or removed — clean reset WITHOUT showing completed modal!
+                  setActiveRide(null);
+                  setFindingDriver(false);
+                  setAssignedCaptainLocation(null);
+                  setShowRideCompletedModal(false);
+                }
               })
               .catch(() => {
-                setLastCompletedRide({ ...activeRide, status: 'COMPLETED' });
                 setActiveRide(null);
                 setFindingDriver(false);
                 setAssignedCaptainLocation(null);
-                setShowRideCompletedModal(true);
               });
           }
         })
@@ -289,7 +302,7 @@ export function App() {
     };
 
     checkActiveRide();
-    // Poll every 3 seconds only while in an active trip as safety fallback
+    // Poll every 3 seconds only while in an ongoing trip (IN_PROGRESS or ARRIVED)
     let interval = null;
     if (activeRide && activeRide.status !== 'REQUESTED') {
       interval = setInterval(checkActiveRide, 3000);

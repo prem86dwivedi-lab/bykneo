@@ -722,6 +722,14 @@ export const InteractiveMap = ({
       return;
     }
 
+    const getCategoryGroup = (vId = '') => {
+      const lower = String(vId).toLowerCase();
+      if (lower.includes('auto')) return 'auto';
+      if (lower.includes('cab') || lower.includes('car')) return 'cab';
+      return 'bike';
+    };
+
+    const activeCategory = getCategoryGroup(selectedVehicleId);
     const currentDriverIds = new Set();
     const pLat = pickup?.lat || center[0];
     const pLng = pickup?.lng || center[1];
@@ -729,6 +737,11 @@ export const InteractiveMap = ({
     if (Array.isArray(nearbyDrivers)) {
       nearbyDrivers.forEach((d) => {
         if (!d.lat || !d.lng || d.is_online === false) return;
+
+        // ONLY show real drivers that match the currently selected vehicle category (Rapido / Uber parity)
+        const driverCategory = getCategoryGroup(d.vehicle_category || d.vehicle_id || 'bike');
+        if (driverCategory !== activeCategory) return;
+
         const dId = d.id || `${d.lat}_${d.lng}`;
         currentDriverIds.add(dId);
 
@@ -743,7 +756,7 @@ export const InteractiveMap = ({
               <b style="font-size: 12.5px; color: #111;">Captain ${d.name || 'Partner'}</b>
               <span style="font-size: 10.5px; font-weight: 800; color: #d97706; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">★ ${d.rating || '4.85'}</span>
             </div>
-            <div style="font-size: 11px; color: #4b5563; margin-bottom: 3px;">${d.vehicle_model || 'Bykneo Vehicle'}</div>
+            <div style="font-size: 11px; color: #4b5563; margin-bottom: 3px;">${d.vehicle_model || (activeCategory === 'auto' ? 'Auto Rickshaw' : activeCategory === 'cab' ? 'Cab Sedan' : 'Bykneo Bike')}</div>
             <div style="font-size: 10px; color: #059669; font-weight: 700; display: flex; align-items: center; gap: 4px;">
               <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
               Available • ${etaMins} min away
@@ -753,10 +766,11 @@ export const InteractiveMap = ({
 
         if (realMarkersRef.current[dId]) {
           realMarkersRef.current[dId].setLatLng([dLat, dLng]);
+          realMarkersRef.current[dId].setIcon(createVehicleMarkerIcon(selectedVehicleId, d.heading || 0));
           realMarkersRef.current[dId].setPopupContent(popupHtml);
         } else {
           const m = L.marker([dLat, dLng], {
-            icon: createVehicleMarkerIcon(d.vehicle_category?.toLowerCase() || selectedVehicleId, d.heading || 0)
+            icon: createVehicleMarkerIcon(selectedVehicleId, d.heading || 0)
           })
             .addTo(map)
             .bindPopup(popupHtml);
@@ -765,7 +779,7 @@ export const InteractiveMap = ({
       });
     }
 
-    // Remove any offline real drivers
+    // Remove any offline or non-matching category real drivers
     Object.keys(realMarkersRef.current).forEach((id) => {
       if (!currentDriverIds.has(id)) {
         map.removeLayer(realMarkersRef.current[id]);
@@ -809,13 +823,25 @@ export const InteractiveMap = ({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Count real online drivers currently in zone
+    const getCategoryGroup = (vId = '') => {
+      const lower = String(vId).toLowerCase();
+      if (lower.includes('auto')) return 'auto';
+      if (lower.includes('cab') || lower.includes('car')) return 'cab';
+      return 'bike';
+    };
+
+    const activeCategory = getCategoryGroup(selectedVehicleId);
+
+    // Count real online drivers matching this specific selected category
     const realDriversCount = Array.isArray(nearbyDrivers)
-      ? nearbyDrivers.filter((d) => d.lat && d.lng && d.is_online !== false).length
+      ? nearbyDrivers.filter((d) => {
+          if (!d.lat || !d.lng || d.is_online === false) return false;
+          const driverCategory = getCategoryGroup(d.vehicle_category || d.vehicle_id || 'bike');
+          return driverCategory === activeCategory;
+        }).length
       : 0;
 
-    // Target total fleet on screen = 4.
-    // If you have >= 4 real online drivers, simulation count = 0 (100% REAL DRIVERS ONLY)
+    // Target total fleet on screen = 4 of the selected vehicle type.
     const targetSimCount = Math.max(0, 4 - realDriversCount);
 
     // If not serviceable, in Captain mode, actively on a ride, or full real drivers available, stop simulation

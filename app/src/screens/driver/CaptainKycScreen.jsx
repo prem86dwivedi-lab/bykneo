@@ -20,10 +20,11 @@ import {
   Zap,
   UserCheck,
   Lock,
-  AlertCircle,
-  Eye
+  AlertCircle
 } from 'lucide-react';
 import { BACKEND_URL } from '../../context/SocketContext';
+import { useAuth } from '../../context/AuthContext';
+import { compressImage } from '../../utils/imageOptimizer';
 
 export const VEHICLE_TYPES = [
   {
@@ -89,6 +90,7 @@ export const VEHICLE_TYPES = [
 ];
 
 export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
+  const { user } = useAuth();
   const initialVehicleId =
     driverProfile?.vehicle_id ||
     (driverProfile?.vehicle_category === 'CAB'
@@ -119,16 +121,17 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
   const vrcFileInputRef = useRef(null);
   const aadhaarFileInputRef = useRef(null);
 
-  const handleDocumentFileUpload = (setter) => (e) => {
+  const handleDocumentFileUpload = (setter) => async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setter(event.target.result);
+      try {
+        const compressed = await compressImage(file, 900, 900, 0.75);
+        if (compressed) {
+          setter(compressed);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Document file compression error:', err);
+      }
     }
   };
 
@@ -254,7 +257,7 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
     startCamera(nextMode);
   };
 
-  const captureSelfie = () => {
+  const captureSelfie = async () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
     const width = video.videoWidth || 640;
@@ -272,8 +275,13 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
     }
     ctx.drawImage(video, 0, 0, width, height);
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.90);
-    setSelfiePhoto(dataUrl);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    try {
+      const optimizedSelfie = await compressImage(dataUrl, 800, 800, 0.75);
+      setSelfiePhoto(optimizedSelfie || dataUrl);
+    } catch (e) {
+      setSelfiePhoto(dataUrl);
+    }
     stopCameraStream();
   };
 
@@ -313,31 +321,48 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
     const activeVehicle = VEHICLE_TYPES.find((v) => v.id === selectedVehicleId) || VEHICLE_TYPES[1];
 
     try {
+      const [optDl, optRc, optAadhaar, optSelfie] = await Promise.all([
+        compressImage(dlPhoto, 900, 900, 0.75),
+        compressImage(rcPhoto, 900, 900, 0.75),
+        compressImage(aadhaarPhoto, 900, 900, 0.75),
+        compressImage(selfiePhoto, 800, 800, 0.75)
+      ]);
+
+      const payload = {
+        driverId: driverProfile?.id || user?.id,
+        phone: driverProfile?.phone || user?.phone || '',
+        name: driverProfile?.name || user?.name || 'Bykneo Captain',
+        vehicle_id: activeVehicle.id,
+        vehicle_category: activeVehicle.category,
+        vehicle_type_name: activeVehicle.name,
+        vehicle_model: vehicleModel,
+        vehicle_number: vehicleNumber,
+        license_number: licenseNumber,
+        rc_number: rcNumber,
+        aadhaar_number: aadhaarNumber,
+        payout_upi: payoutUpi,
+        dl_photo: optDl || dlPhoto,
+        rc_photo: optRc || rcPhoto,
+        aadhaar_photo: optAadhaar || aadhaarPhoto,
+        selfie_photo: optSelfie || selfiePhoto
+      };
+
       const res = await fetch(`${BACKEND_URL}/api/drivers/kyc/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          driverId: driverProfile?.id,
-          vehicle_id: activeVehicle.id,
-          vehicle_category: activeVehicle.category,
-          vehicle_type_name: activeVehicle.name,
-          vehicle_model: vehicleModel,
-          vehicle_number: vehicleNumber,
-          license_number: licenseNumber,
-          rc_number: rcNumber,
-          aadhaar_number: aadhaarNumber,
-          payout_upi: payoutUpi,
-          dl_photo: dlPhoto,
-          rc_photo: rcPhoto,
-          aadhaar_photo: aadhaarPhoto,
-          selfie_photo: selfiePhoto
-        })
+        body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        console.error('Response JSON parse error:', parseErr);
+      }
+
       setSubmitting(false);
 
-      if (data.success) {
+      if (res.ok && data.success) {
         if (data.auto_approved) {
           setStatusMessage({
             type: 'success',
@@ -355,14 +380,15 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
       } else {
         setStatusMessage({
           type: 'error',
-          text: data.error || 'Failed to submit documents. Please try again.'
+          text: data.error || `Failed to submit documents (Status ${res.status}). Please try again.`
         });
       }
     } catch (err) {
+      console.error('KYC submission exception:', err);
       setSubmitting(false);
       setStatusMessage({
         type: 'error',
-        text: 'Network error. Please check your connection and try again.'
+        text: err.message ? `Error: ${err.message}` : 'Network error. Please check your connection and try again.'
       });
     }
   };

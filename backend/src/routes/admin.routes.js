@@ -3,6 +3,7 @@ import {
   getOverview,
   getDrivers,
   updateDriverKyc,
+  deleteDriver,
   getPassengers,
   getPayments,
   getComplaints,
@@ -19,6 +20,7 @@ const router = express.Router();
 router.get('/overview', getOverview);
 router.get('/drivers', getDrivers);
 router.post('/drivers/kyc', updateDriverKyc);
+router.delete('/drivers/:id', deleteDriver);
 router.get('/passengers', getPassengers);
 router.get('/payments', getPayments);
 router.get('/complaints', getComplaints);

@@ -27,7 +27,7 @@ import { sendPwaNotification, requestNotificationPermission } from './utils/noti
 import { ShieldCheck, X } from 'lucide-react';
 
 export function App() {
-  const { user, driverProfile, activeRole, loading } = useAuth();
+  const { user, driverProfile, setDriverProfile, activeRole, loading } = useAuth();
   const { socket, connected } = useSocket();
 
   // Navigation State
@@ -401,6 +401,13 @@ export function App() {
     // 10. Captain KYC Approval / Rejection Real-Time Push Notification
     socket.on('driver:kyc_status_updated', ({ status, rejectionReason, driver }) => {
       console.log('🛡️ Received driver:kyc_status_updated:', status);
+      
+      setDriverProfile((prev) => {
+        const updated = driver || (prev ? { ...prev, kyc_status: status, kyc_rejection_reason: rejectionReason || '' } : null);
+        if (updated) localStorage.setItem('bykneo_driver', JSON.stringify(updated));
+        return updated;
+      });
+
       if (status === 'approved') {
         sendPwaNotification(
           '🎉 Bykneo Captain KYC Approved!',
@@ -635,6 +642,11 @@ export function App() {
         driverProfile={driverProfile}
         onBack={() => setCurrentScreen('main')}
         onKycSubmitted={() => {
+          setDriverProfile((prev) => {
+            const updated = prev ? { ...prev, kyc_status: 'pending' } : null;
+            if (updated) localStorage.setItem('bykneo_driver', JSON.stringify(updated));
+            return updated;
+          });
           setCurrentScreen('main');
         }}
       />
@@ -677,6 +689,15 @@ export function App() {
       <Navbar
         onOpenMenu={() => setDrawerOpen(true)}
         zoneStatus={currentZoneStatus}
+        isDriverOnline={isDriverOnline}
+        onOpenKyc={() => setCurrentScreen('driver_kyc')}
+        onNavigate={(screenId) => {
+          if (screenId === 'book_ride' || screenId === 'driver_home') {
+            setCurrentScreen('main');
+          } else {
+            setCurrentScreen(screenId);
+          }
+        }}
       />
 
       {/* 2. Slide-out Drawer Menu */}

@@ -4,7 +4,7 @@ import { Wallet, PlusCircle, ArrowUpRight, ArrowDownLeft, ShieldCheck, ChevronLe
 
 export const WalletScreen = ({ onBack }) => {
   const { user, setUser } = useAuth();
-  const [balance, setBalance] = useState(user?.wallet_balance || 450.00);
+  const [balance, setBalance] = useState(Number(user?.wallet_balance || 0.00));
   const [addingAmount, setAddingAmount] = useState(null);
 
   const handleAddMoney = (amount) => {

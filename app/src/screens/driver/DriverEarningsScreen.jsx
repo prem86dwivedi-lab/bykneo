@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { BACKEND_URL } from '../../context/SocketContext';
-import { DollarSign, TrendingUp, History, Bike, ChevronLeft, ArrowDownToLine } from 'lucide-react';
+import { DollarSign, TrendingUp, History, Bike, ChevronLeft, ArrowDownToLine, Sparkles, QrCode, CheckCircle2, Clock } from 'lucide-react';
+import { DriverSubscriptionModal } from '../../components/DriverSubscriptionModal';
 
 export const DriverEarningsScreen = ({ onBack }) => {
   const { user, driverProfile } = useAuth();
   const [earningsData, setEarningsData] = useState(null);
+  const [subData, setSubData] = useState(null);
+  const [showSubModal, setShowSubModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!driverProfile) return;
+  const fetchEarningsAndSubscription = () => {
+    if (!driverProfile?.id) return;
+    
+    // 1. Fetch Earnings
     fetch(`${BACKEND_URL}/api/drivers/earnings/${driverProfile.id}`)
       .then(res => res.json())
       .then(data => {
@@ -20,7 +25,23 @@ export const DriverEarningsScreen = ({ onBack }) => {
         console.error(err);
         setLoading(false);
       });
+
+    // 2. Fetch Subscription
+    fetch(`${BACKEND_URL}/api/drivers/subscription/${driverProfile.id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setSubData(data);
+      })
+      .catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchEarningsAndSubscription();
   }, [driverProfile]);
+
+  const hasActivePass = subData?.is_active;
+  const remainingHours = subData?.remaining_seconds ? Math.floor(subData.remaining_seconds / 3600) : 0;
+  const remainingMins = subData?.remaining_seconds ? Math.floor((subData.remaining_seconds % 3600) / 60) : 0;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col p-4 max-w-lg mx-auto">
@@ -33,49 +54,80 @@ export const DriverEarningsScreen = ({ onBack }) => {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>
-          <h2 className="text-lg font-bold text-white">Captain Earnings</h2>
+          <h2 className="text-lg font-bold text-white">Captain Earnings and Recharge</h2>
           <p className="text-xs text-gray-400">Daily & total payout ledger</p>
         </div>
       </div>
 
-      {/* Main Earnings Card */}
-      <div className="my-4 bg-gradient-to-br from-amber-500/20 via-gray-900 to-gray-900 border border-brand-yellow/40 p-5 rounded-3xl space-y-4 shadow-xl">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-            Today's Earnings
-          </span>
-          <div className="w-8 h-8 rounded-xl bg-brand-yellow/20 text-brand-yellow flex items-center justify-center font-bold">
-            <DollarSign className="w-4 h-4" />
-          </div>
-        </div>
-
-        <div className="text-4xl font-black text-brand-yellow">
-          ₹{Math.round(Number(earningsData?.today_earnings || 0))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-800">
+      {/* Unified Single Master Earnings & Pass Card */}
+      <div className="my-3 bg-gradient-to-br from-amber-500/10 via-gray-900 to-gray-900 border border-brand-yellow/30 p-4 sm:p-5 rounded-3xl space-y-3.5 shadow-xl relative overflow-hidden">
+        {/* Top Header Row: Today's Earnings & Pass Quick Pill */}
+        <div className="flex items-start justify-between gap-2">
           <div>
-            <span className="text-[10px] text-gray-400 uppercase">Today's Trips</span>
-            <div className="text-base font-bold text-white">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+              Today's Earnings
+            </span>
+            <div className="text-3xl sm:text-4xl font-black text-brand-yellow leading-tight mt-0.5">
+              ₹{Math.round(Number(earningsData?.today_earnings || 0))}
+            </div>
+          </div>
+
+          {/* Integrated Pass Quick Button */}
+          <button
+            onClick={() => setShowSubModal(true)}
+            className={`px-3 py-1.5 rounded-xl font-black text-[10.5px] flex items-center gap-1.5 active:scale-95 transition shadow-md shrink-0 border ${
+              hasActivePass
+                ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25'
+                : 'bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 border-brand-yellow shadow-brand-yellow/20'
+            }`}
+          >
+            {hasActivePass ? (
+              <>
+                <Sparkles className="w-3.5 h-3.5 fill-current text-emerald-400" />
+                <span>0% Pass Active History</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 fill-current" />
+                <span>Buy Pass (₹{subData?.pass_price || 25}/d)</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Trips & Pass Validity Summary Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3 border-t border-gray-800/80 text-xs">
+          <div className="bg-gray-950/60 border border-gray-800/80 rounded-xl p-2.5">
+            <span className="text-[9px] text-gray-400 uppercase font-bold block">Today's Trips</span>
+            <div className="text-sm font-black text-white mt-0.5">
               {earningsData?.today_trips || 0} rides
             </div>
           </div>
-          <div>
-            <span className="text-[10px] text-gray-400 uppercase">Total Completed</span>
-            <div className="text-base font-bold text-white">
+
+          <div className="bg-gray-950/60 border border-gray-800/80 rounded-xl p-2.5">
+            <span className="text-[9px] text-gray-400 uppercase font-bold block">Total Completed</span>
+            <div className="text-sm font-black text-white mt-0.5">
               {earningsData?.total_completed_trips || 0} rides
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-1 bg-gray-950/60 border border-gray-800/80 rounded-xl p-2.5 flex items-center justify-between sm:flex-col sm:items-start">
+            <span className="text-[9px] text-gray-400 uppercase font-bold block">Pass Status</span>
+            <div className="text-[11px] font-bold text-emerald-400 mt-0.5 truncate">
+              {hasActivePass ? 'Keep 100% Fares' : '15% Commission'}
             </div>
           </div>
         </div>
 
-        <button className="w-full py-3 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 transition active:scale-95 shadow-lg">
+        {/* Withdraw Action Button */}
+        <button className="w-full py-2.5 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 transition active:scale-95 shadow-lg">
           <ArrowDownToLine className="w-4 h-4" />
-          Withdraw to Bank Account / UPI
+          <span>Withdraw to Bank Account / UPI</span>
         </button>
       </div>
 
       {/* Recent Trips */}
-      <div className="flex-1 overflow-y-auto space-y-2 mt-2">
+      <div className="flex-1 overflow-y-auto space-y-2 mt-1">
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">
           Recent Trip Earnings
         </h3>
@@ -96,13 +148,23 @@ export const DriverEarningsScreen = ({ onBack }) => {
 
             <div className="text-right">
               <div className="text-sm font-black text-emerald-400">
-                +₹{Math.round(trip.fare * 0.85)}
+                +₹{Math.round(hasActivePass ? trip.fare : trip.fare * 0.85)}
               </div>
-              <div className="text-[10px] text-gray-500">Gross: ₹{trip.fare}</div>
+              <div className="text-[10px] text-gray-500">
+                Gross: ₹{trip.fare} {hasActivePass && '• 0% Fee'}
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* 24-Hour Subscription Purchase Modal */}
+      <DriverSubscriptionModal
+        isOpen={showSubModal}
+        onClose={() => setShowSubModal(false)}
+        onSubscriptionActivated={() => fetchEarningsAndSubscription()}
+      />
     </div>
   );
 };
+

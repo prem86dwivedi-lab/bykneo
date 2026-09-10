@@ -4,7 +4,12 @@ import {
   updateLocation,
   getEarnings,
   getOnlineDrivers,
-  updateKyc
+  updateKyc,
+  getSubscriptionStatus,
+  createSubscriptionOrder,
+  getOrderStatus,
+  createRazorpayOrder,
+  verifyRazorpayPayment
 } from '../controllers/driver.controller.js';
 
 const router = express.Router();
@@ -15,5 +20,11 @@ router.get('/earnings/:driverId', getEarnings);
 router.get('/online', getOnlineDrivers);
 router.post('/kyc', updateKyc);
 router.post('/kyc/submit', updateKyc);
+router.get('/subscription/:driverId', getSubscriptionStatus);
+router.post('/subscription/create-order', createSubscriptionOrder);
+router.get('/subscription/order-status/:orderId', getOrderStatus);
+router.post('/subscription/create-razorpay-order', createRazorpayOrder);
+router.post('/subscription/verify-payment', verifyRazorpayPayment);
 
 export default router;
+

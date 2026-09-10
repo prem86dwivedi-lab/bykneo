@@ -54,7 +54,7 @@ export const DrawerMenu = ({
     },
     { id: 'ride_requests', label: 'Ride Requests', icon: Radio, desc: 'Incoming ride alerts' },
     { id: 'current_ride', label: 'Current Ride', icon: Navigation, desc: 'Active customer trip' },
-    { id: 'earnings', label: 'Earnings', icon: DollarSign, desc: 'Daily payout summary' },
+    { id: 'earnings', label: 'Earnings and Recharge', icon: DollarSign, desc: 'Daily payout summary' },
     { id: 'driver_kyc', label: 'KYC & Documents', icon: ShieldCheck, desc: 'DL, RC, Aadhaar verification' },
     { id: 'driver_profile', label: 'Profile Settings', icon: User, desc: 'Account & vehicle' },
   ];
@@ -91,11 +91,17 @@ export const DrawerMenu = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <img
-              src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"}
-              alt="Avatar"
-              className="w-12 h-12 rounded-2xl object-cover border-2 border-brand-yellow/50"
-            />
+            {isCaptain && (driverProfile?.avatar || user?.avatar) ? (
+              <img
+                src={driverProfile?.avatar || user?.avatar}
+                alt="Avatar"
+                className="w-12 h-12 rounded-2xl object-cover border-2 border-brand-yellow/50"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-brand-yellow/15 border-2 border-brand-yellow/40 flex items-center justify-center text-brand-yellow shrink-0 shadow-md">
+                <User className="w-6 h-6" />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-sm text-white truncate">{user?.name || 'Bykneo User'}</h3>
               <p className="text-xs text-gray-400 truncate">{user?.phone || '+91 9876543210'}</p>

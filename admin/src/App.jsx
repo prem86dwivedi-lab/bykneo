@@ -99,6 +99,15 @@ export function App() {
       fetchOverview();
     });
 
+    s.on('admin:driver_deleted', ({ driverId }) => {
+      setOnlineDrivers(prev => prev.filter(d => d.id !== driverId));
+      fetchOverview();
+    });
+
+    s.on('admin:overview_updated', () => {
+      fetchOverview();
+    });
+
     setSocket(s);
 
     return () => {
@@ -251,13 +260,25 @@ export function App() {
           <LiveDriversPage
             onlineDrivers={onlineDrivers}
             activeRides={activeRides}
+            selectedCityId={selectedCityId}
+            cities={citiesList}
           />
         )}
         {currentTab === 'active_rides' && (
-          <ActiveRidesPage activeRides={activeRides} />
+          <ActiveRidesPage
+            activeRides={activeRides}
+            selectedCityId={selectedCityId}
+            cities={citiesList}
+          />
         )}
         {currentTab === 'drivers' && (
-          <DriversPage BACKEND_URL={BACKEND_URL} />
+          <DriversPage
+            BACKEND_URL={BACKEND_URL}
+            selectedCityId={selectedCityId}
+            setSelectedCityId={setSelectedCityId}
+            cities={citiesList}
+            onUpdateOverview={fetchOverview}
+          />
         )}
         {currentTab === 'passengers' && (
           <PassengersPage BACKEND_URL={BACKEND_URL} />

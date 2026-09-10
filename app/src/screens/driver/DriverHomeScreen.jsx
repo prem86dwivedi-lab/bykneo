@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket, BACKEND_URL } from '../../context/SocketContext';
-import { Power, Radio, DollarSign, Bike, ShieldCheck, Zap, Navigation, MapPin, X, AlertTriangle } from 'lucide-react';
+import { Power, Radio, DollarSign, Bike, ShieldCheck, Zap, Navigation, MapPin, X, AlertTriangle, Sparkles, QrCode, Clock } from 'lucide-react';
+import { DriverSubscriptionModal } from '../../components/DriverSubscriptionModal';
 
 export const DriverHomeScreen = ({
   isOnline,
@@ -17,10 +18,23 @@ export const DriverHomeScreen = ({
   const [todayEarnings, setTodayEarnings] = useState(
     Math.round(Number(driverProfile?.today_earnings || 0))
   );
+  const [subData, setSubData] = useState(null);
+  const [remainingPassTime, setRemainingPassTime] = useState('');
+  const [showSubModal, setShowSubModal] = useState(false);
   const [showOutsideZoneModal, setShowOutsideZoneModal] = useState(false);
   const [showKycRequiredModal, setShowKycRequiredModal] = useState(false);
 
-  // Sync today's earnings from backend API
+  const fetchSubscription = () => {
+    if (!driverProfile?.id) return;
+    fetch(`${BACKEND_URL}/api/drivers/subscription/${driverProfile.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success) setSubData(data);
+      })
+      .catch(() => {});
+  };
+
+  // Sync today's earnings and subscription from backend API
   useEffect(() => {
     if (!driverProfile?.id) return;
     fetch(`${BACKEND_URL}/api/drivers/earnings/${driverProfile.id}`)
@@ -31,7 +45,58 @@ export const DriverHomeScreen = ({
         }
       })
       .catch(() => {});
+
+    fetchSubscription();
   }, [driverProfile]);
+
+  // Live countdown timer calculation for the top chip
+  useEffect(() => {
+    if (!subData?.is_active || !subData?.expires_at) {
+      setRemainingPassTime('');
+      return;
+    }
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const expiry = new Date(subData.expires_at).getTime();
+      const diffMs = expiry - now;
+
+      if (diffMs <= 0) {
+        setRemainingPassTime('Expired');
+        fetchSubscription();
+        return;
+      }
+
+      const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (totalHours >= 24) {
+        const days = Math.floor(totalHours / 24);
+        const remHours = totalHours % 24;
+        setRemainingPassTime(`${days}d ${remHours}h left`);
+      } else if (totalHours > 0) {
+        setRemainingPassTime(`${totalHours}h ${mins}m left`);
+      } else {
+        setRemainingPassTime(`${mins}m left`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 30000);
+    return () => clearInterval(interval);
+  }, [subData]);
+
+  // Listen to real-time subscription activation socket event
+  useEffect(() => {
+    if (!socket) return;
+    const handleSubUpdate = () => {
+      fetchSubscription();
+    };
+    socket.on('driver:subscription_activated', handleSubUpdate);
+    return () => {
+      socket.off('driver:subscription_activated', handleSubUpdate);
+    };
+  }, [socket]);
 
   const isServiceable = zoneStatus?.isServiceable !== false && !!zoneStatus?.matchedCity;
   const matchedCity = zoneStatus?.matchedCity;
@@ -70,61 +135,47 @@ export const DriverHomeScreen = ({
 
   return (
     <>
-      {/* Top Floating Captain Status Card */}
-      <div className="absolute top-14 left-3 z-30 pointer-events-none">
-        <div className="h-8 inline-flex items-center gap-1.5 px-2 bg-gray-900/95 backdrop-blur-xl border border-gray-800 rounded-xl shadow-xl pointer-events-auto">
-          {/* Left: Online Status & Operating Zone */}
+      {/* Floating Top Banner: If KYC is Rejected by Admin */}
+      {kycStatus === 'rejected' && (
+        <div className="absolute top-24 left-2.5 right-14 sm:right-auto sm:max-w-xs z-30 bg-red-950/95 border border-red-500/80 rounded-xl p-2 sm:p-2.5 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2 animate-in slide-in-from-top duration-300">
           <div className="flex items-center gap-1.5 min-w-0">
-            <div
-              className={`w-2 h-2 rounded-full shrink-0 ${
-                isOnline && isServiceable
-                  ? 'bg-emerald-400 animate-ping'
-                  : !isServiceable
-                  ? 'bg-red-400'
-                  : 'bg-gray-600'
-              }`}
-            />
-            <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[10px] font-black text-white uppercase tracking-wider">
-                {isOnline ? 'ONLINE' : 'OFFLINE'}
-              </span>
-              {matchedCity && (
-                <span className="text-[8px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold truncate">
-                  {matchedCity.name}
-                </span>
-              )}
+            <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+            <div className="min-w-0">
+              <div className="text-[11px] font-bold text-white truncate">KYC Rejected</div>
+              <div className="text-[9px] text-red-200/90 truncate">
+                {driverProfile?.kyc_rejection_reason ? `Reason: ${driverProfile.kyc_rejection_reason}` : 'Please re-upload clear documents.'}
+              </div>
             </div>
           </div>
-
-          <div className="h-3.5 w-[1px] bg-gray-800 shrink-0"></div>
-
-          {/* Center: Clickable KYC Chip matching City Badge size & font */}
           <button
             onClick={onOpenKyc}
-            className={`text-[8px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 transition active:scale-95 shrink-0 ${
-              kycStatus === 'approved'
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
-                : kycStatus === 'pending'
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30'
-                : 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30'
-            }`}
-            title="Click to view/update KYC documents"
+            className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white font-bold text-[9px] rounded-lg shrink-0 active:scale-95 transition shadow-sm"
           >
-            <ShieldCheck className="w-2.5 h-2.5 text-brand-yellow shrink-0" />
-            <span>{kycStatus === 'approved' ? 'KYC Verified' : kycStatus === 'pending' ? 'KYC Review' : 'Submit KYC'}</span>
+            Re-Submit
           </button>
-
-          <div className="h-3.5 w-[1px] bg-gray-800 shrink-0"></div>
-
-          {/* Right: Today's Earnings */}
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[8px] text-gray-400 font-bold leading-none">TODAY</span>
-            <span className="text-[10px] font-black text-brand-yellow leading-none">
-              ₹{Math.round(Number(todayEarnings || 0))}
-            </span>
-          </div>
         </div>
-      </div>
+      )}
+
+      {/* Floating Top Banner: If KYC is Pending Review */}
+      {kycStatus === 'pending' && (
+        <div className="absolute top-24 left-2.5 right-14 sm:right-auto sm:max-w-xs z-30 bg-amber-950/95 border border-amber-500/60 rounded-xl p-2 sm:p-2.5 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2 animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+            <div className="min-w-0">
+              <div className="text-[11px] font-bold text-white truncate">KYC Under Review</div>
+              <div className="text-[9px] text-amber-200/90 truncate">
+                Admin review in progress. Activated soon.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onOpenKyc}
+            className="px-2 py-1 bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 font-bold text-[9px] rounded-lg shrink-0 active:scale-95 transition shadow-sm"
+          >
+            View Docs
+          </button>
+        </div>
+      )}
 
       {/* Radar Overlay Animation when Online and Idle */}
       {isOnline && !activeRide && (
@@ -235,6 +286,14 @@ export const DriverHomeScreen = ({
           </span>
         </button>
       </div>
+
+      {/* 24-Hour Subscription Purchase Modal */}
+      <DriverSubscriptionModal
+        isOpen={showSubModal}
+        onClose={() => setShowSubModal(false)}
+        onSubscriptionActivated={() => fetchSubscription()}
+      />
     </>
   );
 };
+

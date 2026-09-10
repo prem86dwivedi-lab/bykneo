@@ -23,11 +23,9 @@ export const ProfileScreen = ({ onBack }) => {
 
       {/* User Info Card */}
       <div className="my-4 bg-gray-900 border border-gray-800 rounded-3xl p-5 text-center space-y-3">
-        <img
-          src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"}
-          alt="Avatar"
-          className="w-20 h-20 rounded-3xl object-cover border-4 border-brand-yellow/40 mx-auto shadow-xl"
-        />
+        <div className="w-16 h-16 rounded-2xl bg-brand-yellow/15 border-2 border-brand-yellow/40 flex items-center justify-center text-brand-yellow mx-auto shadow-lg">
+          <User className="w-8 h-8" />
+        </div>
         <div>
           <h3 className="text-base font-bold text-white">{user?.name || 'Rahul Sharma'}</h3>
           <p className="text-xs text-gray-400">{user?.phone || '+91 9876543210'}</p>

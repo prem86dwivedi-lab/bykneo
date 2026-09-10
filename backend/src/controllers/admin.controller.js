@@ -1,5 +1,21 @@
 import { db } from '../db/index.js';
 
+// Helper for coordinate distance calculation in KM
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 999999;
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export const getOverview = (req, res) => {
   const drivers = db.get('drivers');
   const users = db.get('users');
@@ -13,22 +29,6 @@ export const getOverview = (req, res) => {
 
   const totalGrossRevenue = completedRides.reduce((sum, r) => sum + (r.fare || 0), 0);
   const totalPlatformCommission = totalGrossRevenue * (db.data.settings.platform_commission_pct / 100);
-
-  // Helper for coordinate distance calculation in KM
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return 999999;
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
 
   // Compute City-Wise Operational Metrics Breakdown
   const cityStats = {};
@@ -107,8 +107,53 @@ export const getOverview = (req, res) => {
 };
 
 export const getDrivers = (req, res) => {
+  const { city_id } = req.query;
   const drivers = db.get('drivers');
+  const cities = db.get('cities');
+
+  if (city_id && city_id !== 'all') {
+    const city = cities.find(c => c.id === city_id);
+    if (city) {
+      const radius = Number(city.radius_km || 30);
+      const filtered = drivers.filter(d => {
+        if (d.city_id && d.city_id === city.id) return true;
+        if (d.lat && d.lng && city.lat && city.lng) {
+          return calculateDistance(d.lat, d.lng, city.lat, city.lng) <= radius;
+        }
+        return false;
+      });
+      return res.json({ drivers: filtered });
+    }
+  }
+
   return res.json({ drivers });
+};
+
+export const deleteDriver = (req, res) => {
+  const { id } = req.params;
+  const driver = db.find('drivers', d => d.id === id);
+  if (!driver) {
+    return res.status(404).json({ error: "Driver not found" });
+  }
+
+  // Remove from drivers
+  db.delete('drivers', id);
+
+  // If there's an associated user with role 'driver', delete
+  if (driver.user_id) {
+    const user = db.find('users', u => u.id === driver.user_id);
+    if (user && user.role === 'driver') {
+      db.delete('users', driver.user_id);
+    }
+  }
+
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('admin:driver_deleted', { driverId: id });
+    io.emit('admin:overview_updated');
+  }
+
+  return res.json({ success: true, message: `Captain ${driver.name} removed successfully` });
 };
 
 export const updateDriverKyc = (req, res) => {
@@ -238,7 +283,15 @@ export const updateSettings = (req, res) => {
     surge_multiplier,
     geofencing_enabled,
     auto_kyc_enabled,
-    vehicle_pricing
+    subscription_enabled,
+    admin_upi_id,
+    admin_merchant_name,
+    razorpay_key_id,
+    razorpay_key_secret,
+    subscription_pricing,
+    vehicle_pricing,
+    allowed_pass_durations,
+    pass_pack_discounts
   } = req.body;
 
   db.data.settings = {
@@ -250,7 +303,15 @@ export const updateSettings = (req, res) => {
     surge_multiplier: surge_multiplier !== undefined ? Number(surge_multiplier) : db.data.settings.surge_multiplier,
     geofencing_enabled: geofencing_enabled !== undefined ? Boolean(geofencing_enabled) : db.data.settings.geofencing_enabled,
     auto_kyc_enabled: auto_kyc_enabled !== undefined ? Boolean(auto_kyc_enabled) : (db.data.settings.auto_kyc_enabled ?? true),
-    vehicle_pricing: vehicle_pricing !== undefined ? vehicle_pricing : db.data.settings.vehicle_pricing
+    subscription_enabled: subscription_enabled !== undefined ? Boolean(subscription_enabled) : (db.data.settings.subscription_enabled ?? true),
+    admin_upi_id: (admin_upi_id || db.data.settings.admin_upi_id || 'bykneo@okhdfcbank').trim(),
+    admin_merchant_name: (admin_merchant_name || db.data.settings.admin_merchant_name || 'Bykneo Mobility').trim(),
+    razorpay_key_id: (razorpay_key_id !== undefined ? razorpay_key_id : (db.data.settings.razorpay_key_id || '')).trim(),
+    razorpay_key_secret: (razorpay_key_secret !== undefined ? razorpay_key_secret : (db.data.settings.razorpay_key_secret || '')).trim(),
+    subscription_pricing: subscription_pricing !== undefined ? subscription_pricing : (db.data.settings.subscription_pricing || {}),
+    vehicle_pricing: vehicle_pricing !== undefined ? vehicle_pricing : db.data.settings.vehicle_pricing,
+    allowed_pass_durations: allowed_pass_durations !== undefined ? allowed_pass_durations : (db.data.settings.allowed_pass_durations || [1, 2, 3, 5, 7, 10, 20, 30]),
+    pass_pack_discounts: pass_pack_discounts !== undefined ? pass_pack_discounts : (db.data.settings.pass_pack_discounts || {})
   };
   db.save();
 

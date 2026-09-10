@@ -1,7 +1,35 @@
 import React from 'react';
 import { Navigation, Bike, User, MapPin, KeyRound, Clock } from 'lucide-react';
 
-export const ActiveRidesPage = ({ activeRides }) => {
+export const ActiveRidesPage = ({ activeRides, selectedCityId = 'all', cities = [] }) => {
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 999999;
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const activeCity = cities.find(c => c.id === selectedCityId);
+
+  const displayRides = activeRides.filter(r => {
+    if (!selectedCityId || selectedCityId === 'all') return true;
+    if (!activeCity) return true;
+    if (r.city_id && r.city_id === activeCity.id) return true;
+    const radius = Number(activeCity.radius_km || 30);
+    if (r.pickup_lat && r.pickup_lng && activeCity.lat && activeCity.lng) {
+      return calculateDistance(r.pickup_lat, r.pickup_lng, activeCity.lat, activeCity.lng) <= radius;
+    }
+    return false;
+  });
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
@@ -14,19 +42,21 @@ export const ActiveRidesPage = ({ activeRides }) => {
         </p>
       </div>
 
-      {activeRides.length === 0 ? (
+      {displayRides.length === 0 ? (
         <div className="bg-gray-900 border border-gray-800 rounded-2xl sm:rounded-3xl p-6 sm:p-12 text-center space-y-3">
           <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-850 flex items-center justify-center mx-auto text-gray-600">
             <Bike className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <p className="text-sm sm:text-base font-bold text-gray-400">No active rides right now</p>
           <p className="text-[11px] sm:text-xs text-gray-600 max-w-sm mx-auto">
-            When a passenger requests a ride in the app, it will appear here in real-time.
+            {selectedCityId !== 'all' && activeCity
+              ? `No ongoing rides found in ${activeCity.name}.`
+              : 'When a passenger requests a ride in the app, it will appear here in real-time.'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-          {activeRides.map((ride) => (
+          {displayRides.map((ride) => (
             <div
               key={ride.id}
               className="bg-gray-900 border border-gray-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 space-y-3 sm:space-y-4 shadow-xl hover:border-brand-yellow/40 transition"

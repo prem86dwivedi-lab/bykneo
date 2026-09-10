@@ -14,6 +14,17 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* Allow text copying and selection across the whole app */
+*, *::before, *::after {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+button, a, input, select, textarea {
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+}
+
 /* Offset Leaflet zoom controls above mobile bottom action buttons */
 .leaflet-bottom.leaflet-right {
   bottom: 88px !important;

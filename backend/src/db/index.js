@@ -15,8 +15,8 @@ const DEFAULT_DATA = {
       name: "Rahul Sharma",
       email: "rahul@bykneo.com",
       role: "passenger",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-      wallet_balance: 450.00,
+      avatar: null,
+      wallet_balance: 0.00,
       rating: 4.9,
       created_at: new Date().toISOString()
     },
@@ -27,7 +27,7 @@ const DEFAULT_DATA = {
       email: "vikram@bykneo.com",
       role: "driver",
       avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-      wallet_balance: 1280.50,
+      wallet_balance: 0.00,
       rating: 4.85,
       created_at: new Date().toISOString()
     },
@@ -38,7 +38,7 @@ const DEFAULT_DATA = {
       email: "amit@bykneo.com",
       role: "driver",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-      wallet_balance: 840.00,
+      wallet_balance: 0.00,
       rating: 4.92,
       created_at: new Date().toISOString()
     },
@@ -49,7 +49,7 @@ const DEFAULT_DATA = {
       email: "admin@bykneo.com",
       role: "admin",
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
-      wallet_balance: 50000.00,
+      wallet_balance: 0.00,
       rating: 5.0,
       created_at: new Date().toISOString()
     }
@@ -190,11 +190,37 @@ const DEFAULT_DATA = {
   ],
   settings: {
     base_fare: 25.00, // covers first 1.5 km
-    rate_per_km: 9.00,
-    rate_per_min: 1.00,
+    rate_per_km: 6.80,
+    rate_per_min: 0.15,
     surge_multiplier: 1.0,
     platform_commission_pct: 15.0, // Bykneo takes 15%
     cancellation_fee: 15.00,
+    auto_kyc_enabled: true,
+    subscription_enabled: true,
+    admin_upi_id: "bykneo@okhdfcbank",
+    admin_merchant_name: "Bykneo Mobility",
+    subscription_pricing: {
+      bike_lite: 20,
+      bike: 25,
+      auto_lite: 30,
+      auto: 35,
+      cab_economy: 55,
+      cab_premium: 70
+    },
+    allowed_pass_durations: [1, 2, 3, 5, 7, 10, 20, 30],
+    pass_pack_discounts: {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "5": 0,
+      "7": 5,
+      "10": 5,
+      "15": 10,
+      "20": 10,
+      "30": 15
+    },
+    razorpay_key_id: "rzp_live_TAKnbp18wnY8Mu",
+    razorpay_key_secret: "KEXn7SaynyjQ0uQhIlscY1Sc",
     geofencing_enabled: true // When true, restricts booking to active cities
   }
 };

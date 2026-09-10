@@ -233,7 +233,11 @@ export const registerSocketHandlers = (io) => {
       if (ride.driver_id) {
         const driver = db.find('drivers', d => d.id === ride.driver_id);
         if (driver) {
-          const platformFee = ride.fare * (db.data.settings.platform_commission_pct / 100);
+          const now = new Date();
+          const hasActivePass = driver.subscription_expires_at && new Date(driver.subscription_expires_at) > now;
+          
+          // 0% Commission if Driver has Active 24-Hour Subscription Pass!
+          const platformFee = hasActivePass ? 0 : (ride.fare * (db.data.settings.platform_commission_pct / 100));
           const driverEarning = ride.fare - platformFee;
           
           db.update('drivers', driver.id, {
@@ -247,10 +251,12 @@ export const registerSocketHandlers = (io) => {
             id: `pay_${uuidv4().slice(0, 8)}`,
             ride_id: ride.id,
             user_id: ride.rider_id,
+            driver_id: driver.id,
             amount: ride.fare,
             commission_amount: Number(platformFee.toFixed(2)),
             driver_amount: Number(driverEarning.toFixed(2)),
             method: ride.payment_mode || 'CASH',
+            has_subscription_pass: hasActivePass,
             status: 'SUCCESS',
             created_at: new Date().toISOString()
           });

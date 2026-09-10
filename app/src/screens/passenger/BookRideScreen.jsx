@@ -712,7 +712,7 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20 px-2 sm:px-3 pb-2 sm:pb-3 pb-[env(safe-area-inset-bottom,12px)] pointer-events-none">
-      <div className="max-w-md mx-auto bg-gray-900/98 backdrop-blur-2xl border border-gray-800 rounded-3xl p-3 shadow-2xl pointer-events-auto space-y-2 max-h-[50vh] sm:max-h-[52vh] flex flex-col justify-between overflow-hidden">
+      <div className="max-w-md mx-auto bg-gray-900/98 backdrop-blur-2xl border border-gray-800 rounded-2xl p-3 shadow-2xl pointer-events-auto space-y-2 max-h-[50vh] sm:max-h-[52vh] flex flex-col justify-between overflow-hidden">
         {/* Mobile Top Drag Handle Bar */}
         <div className="w-8 h-1 bg-gray-700 rounded-full mx-auto shrink-0 opacity-70"></div>
 

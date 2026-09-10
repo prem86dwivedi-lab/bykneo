@@ -3,6 +3,14 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config();
 
 import authRoutes from './routes/auth.routes.js';
 import rideRoutes from './routes/ride.routes.js';
@@ -10,8 +18,6 @@ import driverRoutes from './routes/driver.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import { registerSocketHandlers } from './sockets/ride.socket.js';
 import { db } from './db/index.js';
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +28,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Serve uploaded documents and photos statically
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Setup Socket.IO
 const io = new Server(server, {
@@ -40,7 +50,7 @@ registerSocketHandlers(io);
 // Public Active Cities endpoint for Rider & Driver Geofencing
 app.get('/api/cities/active', (req, res) => {
   const cities = db.get('cities') || [];
-  const settings = db.data.settings || {};
+  const settings = db.data?.settings || {};
   return res.json({
     geofencing_enabled: settings.geofencing_enabled !== false,
     cities: cities.filter(c => c.is_active !== false)
@@ -55,7 +65,8 @@ app.get('/', (req, res) => {
     message: '🚀 Bykneo Real-time Backend is running smoothly',
     endpoints: {
       health: '/api/health',
-      active_cities: '/api/cities/active'
+      active_cities: '/api/cities/active',
+      auth: '/api/auth'
     },
     time: new Date().toISOString()
   });

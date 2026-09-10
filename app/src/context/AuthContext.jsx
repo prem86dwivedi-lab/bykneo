@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [activeRole, setActiveRole] = useState('passenger'); // 'passenger' | 'driver'
   const [loading, setLoading] = useState(true);
 
-  // Initialize from localStorage
+  // Initialize from localStorage and sync latest driver status from server
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem('bykneo_user');
@@ -18,15 +18,40 @@ export const AuthProvider = ({ children }) => {
       const savedDriver = localStorage.getItem('bykneo_driver');
 
       if (savedUser) {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
         setActiveRole(savedRole);
-        if (savedDriver) setDriverProfile(JSON.parse(savedDriver));
+        if (savedDriver) {
+          const parsedDriver = JSON.parse(savedDriver);
+          setDriverProfile(parsedDriver);
+
+          // Fetch fresh status from backend server
+          fetch(`${BACKEND_URL}/api/drivers/profile/${parsedDriver.id}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.success && data.driver) {
+                setDriverProfile(data.driver);
+                localStorage.setItem('bykneo_driver', JSON.stringify(data.driver));
+              }
+            })
+            .catch(() => {});
+        }
       }
     } catch (e) {
       console.warn("Error parsing local storage auth session:", e);
     }
     setLoading(false);
   }, []);
+
+  const updateDriverProfile = (updatedData) => {
+    setDriverProfile((prev) => {
+      const updated = typeof updatedData === 'function' ? updatedData(prev) : { ...prev, ...updatedData };
+      if (updated) {
+        localStorage.setItem('bykneo_driver', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
 
   // Sync with socket rooms whenever user/role changes OR socket reconnects
   useEffect(() => {
@@ -215,6 +240,7 @@ export const AuthProvider = ({ children }) => {
         setUser,
         driverProfile,
         setDriverProfile,
+        updateDriverProfile,
         activeRole,
         setActiveRole,
         sendOtp,

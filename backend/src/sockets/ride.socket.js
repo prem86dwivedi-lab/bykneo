@@ -17,6 +17,23 @@ export const registerSocketHandlers = (io) => {
       socket.join(`driver:${driverId}`);
       socket.join('drivers:online');
       console.log(`🏍️ Driver joined rooms: driver:${driverId}, drivers:online`);
+
+      // Immediately check if there is an active REQUESTED ride to offer to this newly connected/resumed captain
+      try {
+        const now = new Date().getTime();
+        const pendingRides = db.filter('rides', r => {
+          if (r.status !== 'REQUESTED' || r.driver_id) return false;
+          const createdAt = new Date(r.created_at).getTime();
+          return (now - createdAt) < 180000;
+        });
+
+        if (pendingRides.length > 0) {
+          const latestRide = pendingRides.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+          socket.emit('driver:incoming_request', { ride: latestRide });
+        }
+      } catch (err) {
+        console.error("Error checking pending rides on join_driver:", err);
+      }
     });
 
     socket.on('join_admin', () => {

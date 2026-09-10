@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  getDriverProfile,
   toggleOnline,
   updateLocation,
   getEarnings,
@@ -14,6 +15,7 @@ import {
 
 const router = express.Router();
 
+router.get('/profile/:driverId', getDriverProfile);
 router.post('/toggle-online', toggleOnline);
 router.post('/update-location', updateLocation);
 router.get('/earnings/:driverId', getEarnings);

@@ -286,13 +286,13 @@ export const requestRide = (req, res) => {
 };
 
 export const getActiveRideForUser = (req, res) => {
-  const { userId, role } = req.query;
+  const { userId, role, driverId } = req.query;
   const rides = db.get('rides');
 
   const active = rides.find(r => {
     const isOngoing = ['REQUESTED', 'ACCEPTED', 'ARRIVED', 'IN_PROGRESS'].includes(r.status);
     if (role === 'driver') {
-      const driver = db.find('drivers', d => d.user_id === userId);
+      const driver = db.find('drivers', d => d.user_id === userId || d.id === driverId || d.id === userId);
       return isOngoing && driver && r.driver_id === driver.id;
     }
     return isOngoing && r.rider_id === userId;
@@ -301,6 +301,27 @@ export const getActiveRideForUser = (req, res) => {
   return res.json({
     activeRide: active || null
   });
+};
+
+export const getPendingRequestsForDriver = (req, res) => {
+  const { driverId, lat, lng } = req.query;
+  const rides = db.get('rides');
+  const now = new Date().getTime();
+
+  // Find active requested rides created in the last 3 minutes
+  const pending = rides.filter(r => {
+    if (r.status !== 'REQUESTED' || r.driver_id) return false;
+    const createdAt = new Date(r.created_at).getTime();
+    return (now - createdAt) < 180000; // 3 minutes window
+  });
+
+  if (pending.length === 0) {
+    return res.json({ success: true, ride: null });
+  }
+
+  // Sort by newest first
+  pending.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  return res.json({ success: true, ride: pending[0] });
 };
 
 export const getUserRides = (req, res) => {

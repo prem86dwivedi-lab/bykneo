@@ -29,7 +29,7 @@ import { getPreciseCurrentPosition, watchPreciseLocation, requestLocationPermiss
 import { ShieldCheck, X } from 'lucide-react';
 
 export function App() {
-  const { user, driverProfile, setDriverProfile, activeRole, loading } = useAuth();
+  const { user, driverProfile, setDriverProfile, updateDriverProfile, activeRole, loading } = useAuth();
   const { socket, connected } = useSocket();
 
   // Navigation State
@@ -59,12 +59,17 @@ export function App() {
   // Dedicated Live Assigned Captain Coordinates (Received over WebSocket on Rider phone)
   const [assignedCaptainLocation, setAssignedCaptainLocation] = useState(null);
 
-  // Driver Online State (synced with driverProfile)
-  const [isDriverOnline, setIsDriverOnline] = useState(() => Boolean(driverProfile?.is_online));
+  // Driver Online State (persisted across restarts - never automatically switched off)
+  const [isDriverOnline, setIsDriverOnline] = useState(() => {
+    const saved = localStorage.getItem('bykneo_driver_online');
+    if (saved !== null) return saved === 'true';
+    return Boolean(driverProfile?.is_online);
+  });
 
   useEffect(() => {
     if (driverProfile?.is_online !== undefined) {
       setIsDriverOnline(Boolean(driverProfile.is_online));
+      localStorage.setItem('bykneo_driver_online', String(Boolean(driverProfile.is_online)));
     }
   }, [driverProfile?.is_online]);
 
@@ -242,7 +247,7 @@ export function App() {
     if (!user) return;
 
     const checkActiveRide = () => {
-      fetch(`${BACKEND_URL}/api/rides/active?userId=${user.id}&role=${activeRole}`)
+      fetch(`${BACKEND_URL}/api/rides/active?userId=${user.id}&role=${activeRole}&driverId=${driverProfile?.id || ''}`)
         .then(res => res.json())
         .then(data => {
           if (data.activeRide) {
@@ -280,6 +285,18 @@ export function App() {
           }
         })
         .catch(console.error);
+
+      // If captain is online without an active trip, proactively check for pending ride requests
+      if (activeRole === 'driver' && isDriverOnline && !activeRide && driverProfile?.id) {
+        fetch(`${BACKEND_URL}/api/rides/pending-request?driverId=${driverProfile.id}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data?.success && data?.ride && !activeRide) {
+              setIncomingRequest(data.ride);
+            }
+          })
+          .catch(() => {});
+      }
     };
 
     checkActiveRide();
@@ -291,7 +308,35 @@ export function App() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [user, activeRole, activeRide?.id, activeRide?.status]);
+  }, [user, activeRole, activeRide?.id, activeRide?.status, isDriverOnline, driverProfile?.id]);
+
+  // Resume & App Visibility Listener: Re-sync pending rides when driver returns to app
+  useEffect(() => {
+    const handleAppResume = () => {
+      if (document.visibilityState === 'visible' && activeRole === 'driver' && isDriverOnline && !activeRide) {
+        if (socket && driverProfile?.id) {
+          socket.emit('join_driver', { driverId: driverProfile.id });
+        }
+        if (driverProfile?.id) {
+          fetch(`${BACKEND_URL}/api/rides/pending-request?driverId=${driverProfile.id}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data?.success && data?.ride && !activeRide) {
+                setIncomingRequest(data.ride);
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleAppResume);
+    window.addEventListener('focus', handleAppResume);
+    return () => {
+      document.removeEventListener('visibilitychange', handleAppResume);
+      window.removeEventListener('focus', handleAppResume);
+    };
+  }, [activeRole, isDriverOnline, activeRide, socket, driverProfile?.id]);
 
   // Continuous Captain GPS Ping to Backend whenever Online OR in an Active Trip
   useEffect(() => {
@@ -362,6 +407,11 @@ export function App() {
       if (activeRole === 'driver' && isDriverOnline && !activeRide) {
         console.log('🔔 Incoming ride request:', ride);
         setIncomingRequest(ride);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          try {
+            navigator.vibrate([300, 150, 300, 150, 500]);
+          } catch (e) {}
+        }
       }
     });
 
@@ -633,11 +683,15 @@ export function App() {
     socket.emit('driver:complete_ride', { rideId });
   };
 
-  // CAPTAIN: Toggle Online / Offline
+  // CAPTAIN: Toggle Online / Offline (Strictly Manual)
   const handleToggleDriverOnline = async () => {
     const newStatus = !isDriverOnline;
     setIsDriverOnline(newStatus);
+    localStorage.setItem('bykneo_driver_online', String(newStatus));
+
     if (driverProfile) {
+      updateDriverProfile({ is_online: newStatus, is_available: newStatus });
+
       fetch(`${BACKEND_URL}/api/drivers/toggle-online`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -650,6 +704,19 @@ export function App() {
       // Subscribe to Web Push when going online so OS can wake the app
       // for incoming ride alerts even when another app is in the foreground.
       if (newStatus) {
+        if (socket) {
+          socket.emit('join_driver', { driverId: driverProfile.id });
+        }
+        // Immediately fetch any active pending ride request
+        fetch(`${BACKEND_URL}/api/rides/pending-request?driverId=${driverProfile.id}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data?.success && data?.ride && !activeRide) {
+              setIncomingRequest(data.ride);
+            }
+          })
+          .catch(() => {});
+
         subscribeToPush(driverProfile.id, BACKEND_URL).catch(console.warn);
       } else {
         unsubscribeFromPush(driverProfile.id, BACKEND_URL).catch(console.warn);

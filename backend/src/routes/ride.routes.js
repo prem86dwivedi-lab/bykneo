@@ -3,6 +3,7 @@ import {
   estimateFare,
   requestRide,
   getActiveRideForUser,
+  getPendingRequestsForDriver,
   getUserRides,
   rateRide,
   cancelRide,
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post('/estimate', estimateFare);
 router.post('/request', requestRide);
 router.get('/active', getActiveRideForUser);
+router.get('/pending-request', getPendingRequestsForDriver);
 router.get('/history', getUserRides);
 router.post('/rate', rateRide);
 router.post('/cancel', cancelRide);

@@ -4,15 +4,28 @@ import { saveBase64Image } from '../utils/fileStorage.js';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 
+export const getDriverProfile = (req, res) => {
+  const { driverId } = req.params;
+  const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId);
+  if (!driver) return res.status(404).json({ success: false, error: "Driver profile not found" });
+  return res.json({ success: true, driver });
+};
+
 export const toggleOnline = (req, res) => {
   const { driverId, isOnline } = req.body;
   const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId);
   if (!driver) return res.status(404).json({ error: "Driver profile not found" });
 
   const updated = db.update('drivers', driver.id, {
-    is_online: isOnline,
-    is_available: isOnline
+    is_online: Boolean(isOnline),
+    is_available: Boolean(isOnline),
+    last_ping: new Date().toISOString()
   });
+
+  const io = req.app.get('io');
+  if (io) {
+    io.to('admins').emit('admin:driver_updated', { driver: updated });
+  }
 
   return res.json({ success: true, driver: updated });
 };

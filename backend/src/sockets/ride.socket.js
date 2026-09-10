@@ -184,8 +184,8 @@ export const registerSocketHandlers = (io) => {
       }
       socket.emit('ride:assigned_success', { ride: updatedRide });
 
-      // Notify other drivers to dismiss the incoming request modal
-      socket.broadcast.to('drivers:online').emit('ride:request_cancelled', { rideId });
+      // Notify other drivers to dismiss their pending incoming request modal
+      socket.broadcast.to('drivers:online').emit('driver:dismiss_request', { rideId });
 
       // Notify admin
       io.to('admins').emit('admin:ride_updated', { ride: updatedRide });
@@ -320,7 +320,7 @@ export const registerSocketHandlers = (io) => {
       }
 
       io.to(`user:${ride.rider_id}`).emit('ride:cancelled_by_other', { ride: updated, cancelledBy, reason });
-      io.to('drivers:online').emit('ride:request_cancelled', { rideId });
+      io.to('drivers:online').emit('driver:dismiss_request', { rideId });
       io.to('admins').emit('admin:ride_updated', { ride: updated });
     });
 

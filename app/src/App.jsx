@@ -305,10 +305,10 @@ export function App() {
       console.log('✅ Captain Matched:', driver);
       setActiveRide(ride);
       setFindingDriver(false);
-      if (driver && driver.lat && driver.lng) {
+      if (driver) {
         setAssignedCaptainLocation({
-          lat: Number(driver.lat),
-          lng: Number(driver.lng),
+          lat: Number(driver.lat || ride.pickup_lat || 23.2599),
+          lng: Number(driver.lng || ride.pickup_lng || 77.4126),
           heading: Number(driver.heading || 0),
           name: driver.name,
           model: driver.vehicle_model,
@@ -337,15 +337,13 @@ export function App() {
       }
     });
 
-    // 4. Request Cancelled
+    // 4. Driver: Dismiss pending incoming request when accepted by another driver or expired
+    socket.on('driver:dismiss_request', ({ rideId }) => {
+      setIncomingRequest((prev) => (prev?.id === rideId ? null : prev));
+    });
+
     socket.on('ride:request_cancelled', ({ rideId }) => {
-      if (incomingRequest?.id === rideId) {
-        setIncomingRequest(null);
-      }
-      if (activeRide?.id === rideId) {
-        setActiveRide(null);
-        setAssignedCaptainLocation(null);
-      }
+      setIncomingRequest((prev) => (prev?.id === rideId ? null : prev));
     });
 
     // 5. Driver: Assigned Successfully
@@ -441,6 +439,7 @@ export function App() {
       socket.off('ride:matched');
       socket.off('ride:driver_location');
       socket.off('driver:incoming_request');
+      socket.off('driver:dismiss_request');
       socket.off('ride:request_cancelled');
       socket.off('ride:assigned_success');
       socket.off('ride:driver_arrived');

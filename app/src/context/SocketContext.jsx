@@ -1,11 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
+import { Capacitor } from '@capacitor/core';
+
 const SocketContext = createContext(null);
 
 const getBackendUrl = () => {
   if (import.meta.env.VITE_BACKEND_URL) return import.meta.env.VITE_BACKEND_URL;
+
   if (typeof window !== 'undefined') {
+    // Native Android / iOS APK (Capacitor runtime)
+    if (Capacitor.isNativePlatform() || window.location.protocol === 'capacitor:' || (window.location.hostname === 'localhost' && !window.location.port)) {
+      return 'https://bykneo-backend.onrender.com';
+    }
+
     const hostname = window.location.hostname;
     // Cloudflare Pages, Render, or any live production domain
     if (

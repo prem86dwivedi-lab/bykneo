@@ -662,25 +662,21 @@ export const LoginScreen = () => {
               </div>
             </div>
 
-            {/* Direct Android APK Download Card */}
+            {/* Direct Android APK Download Button (Compact Pill) */}
             {!isNativeApp() && (
-              <div className="mt-3 pt-2.5 border-t border-gray-850">
+              <div className="mt-3 pt-2.5 border-t border-gray-850 flex justify-center">
                 <a
                   href="/bykneo.apk"
                   download="bykneo.apk"
                   onClick={handleDownloadApk}
-                  className="group relative overflow-hidden flex items-center justify-between px-3.5 py-2 bg-gradient-to-r from-emerald-950/40 via-gray-900 to-emerald-950/30 hover:from-emerald-950/60 hover:to-emerald-900/40 border border-emerald-500/30 hover:border-emerald-400/60 rounded-xl shadow-md transition-all active:scale-[0.98]"
+                  className="group inline-flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-emerald-950/60 via-emerald-900/40 to-emerald-950/60 hover:from-emerald-900/60 hover:to-emerald-850/50 border border-emerald-500/40 hover:border-emerald-400 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-105 transition-transform">
-                      <Smartphone className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
-                      Download now
-                    </span>
-                  </div>
-                  <div className="w-6 h-6 rounded-lg bg-emerald-500 text-gray-950 flex items-center justify-center font-bold shrink-0 shadow-sm shadow-emerald-500/30 group-hover:bg-emerald-400 transition-colors">
-                    <Download className="w-3.5 h-3.5" />
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+                    Download now
+                  </span>
+                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-gray-950 flex items-center justify-center font-bold shadow-sm group-hover:bg-emerald-400 transition-colors shrink-0">
+                    <Download className="w-3 h-3" />
                   </div>
                 </a>
               </div>

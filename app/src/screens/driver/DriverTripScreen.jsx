@@ -27,6 +27,22 @@ export const DriverTripScreen = ({
   const [otpError, setOtpError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [hasUnreadChat, setHasUnreadChat] = useState(false);
+
+  useEffect(() => {
+    if (!socket || !ride?.id) return;
+    socket.emit('join_ride', { rideId: ride.id });
+
+    const handleMsg = (msg) => {
+      if (String(msg.rideId) === String(ride.id) && msg.senderRole !== 'driver') {
+        if (!showChatModal) {
+          setHasUnreadChat(true);
+        }
+      }
+    };
+    socket.on('ride:chat_message', handleMsg);
+    return () => socket.off('ride:chat_message', handleMsg);
+  }, [socket, ride?.id, showChatModal]);
 
   if (!ride) return null;
 
@@ -84,11 +100,17 @@ export const DriverTripScreen = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowChatModal(true)}
-              className="w-10 h-10 rounded-2xl bg-brand-yellow/15 border border-brand-yellow/40 flex items-center justify-center text-brand-yellow shadow-lg active:scale-95 transition"
+              onClick={() => {
+                setShowChatModal(true);
+                setHasUnreadChat(false);
+              }}
+              className="relative w-10 h-10 rounded-2xl bg-brand-yellow/15 border border-brand-yellow/40 flex items-center justify-center text-brand-yellow shadow-lg active:scale-95 transition"
               title="Message Passenger"
             >
               <MessageSquare className="w-4 h-4" />
+              {hasUnreadChat && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 border-2 border-gray-900 rounded-full animate-bounce" />
+              )}
             </button>
             <a
               href={`tel:${ride.rider_phone || '+919876543210'}`}

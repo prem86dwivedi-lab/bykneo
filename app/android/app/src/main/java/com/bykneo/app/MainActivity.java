@@ -10,6 +10,7 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(DriverKeepAlivePlugin.class);
         super.onCreate(savedInstanceState);
         configureScreenWakeFlags();
         configureWebViewTextZoom();

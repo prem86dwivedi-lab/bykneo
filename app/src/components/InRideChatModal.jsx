@@ -50,7 +50,7 @@ export const InRideChatModal = ({
     }
   }, [isOpen, messages]);
 
-  // Fetch message history from REST API on mount/open
+  // Fetch message history from REST API on mount/open & poll every 2.5s
   useEffect(() => {
     if (!isOpen || !ride?.id) return;
 
@@ -63,12 +63,19 @@ export const InRideChatModal = ({
           if (data.success && Array.isArray(data.messages) && isMounted) {
             setMessages((prev) => {
               const existingIds = new Set(prev.map((m) => m.id));
+              let hasNewFromOther = false;
               const combined = [...prev];
               data.messages.forEach((m) => {
                 if (!existingIds.has(m.id)) {
                   combined.push(m);
+                  if (m.senderRole !== currentUserRole) {
+                    hasNewFromOther = true;
+                  }
                 }
               });
+              if (hasNewFromOther && prev.length > 0) {
+                playNotificationSound();
+              }
               return combined.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
             });
           }
@@ -79,10 +86,12 @@ export const InRideChatModal = ({
     };
 
     fetchHistory();
+    const interval = setInterval(fetchHistory, 2500);
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
-  }, [isOpen, ride?.id]);
+  }, [isOpen, ride?.id, currentUserRole]);
 
   // Listen for socket chat messages & join ride room
   useEffect(() => {

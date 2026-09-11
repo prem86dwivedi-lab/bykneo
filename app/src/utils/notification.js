@@ -1,6 +1,8 @@
 // Bykneo Mobile & PWA OS-Level High-Priority Notification Utility
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+export const DriverKeepAlive = registerPlugin('DriverKeepAlive');
 
 const isNativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
 
@@ -57,33 +59,45 @@ export const initNotificationChannels = async () => {
   }
 };
 
-// Sticky Ongoing Notification to keep Driver Process Alive in Background
+// Sticky Ongoing Foreground Service to keep Driver Process Alive in Background (even screen-off Doze Mode)
 export const showDriverOnlineNotification = async () => {
-  if (!Capacitor.isNativePlatform()) return;
-  try {
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: 888888,
-          title: '🟢 Bykneo Captain is ONLINE',
-          body: 'Active and searching for nearby ride bookings',
-          channelId: 'bykneo-general',
-          ongoing: true,
-          autoCancel: false,
-          smallIcon: 'ic_launcher'
-        }
-      ]
-    });
-  } catch (e) {}
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await DriverKeepAlive.startService();
+    } catch (e) {
+      console.warn('DriverKeepAlive.startService error:', e);
+    }
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 888888,
+            title: '🟢 Bykneo Captain is ONLINE',
+            body: 'Active and searching for nearby ride bookings',
+            channelId: 'bykneo-general',
+            ongoing: true,
+            autoCancel: false,
+            smallIcon: 'ic_launcher'
+          }
+        ]
+      });
+    } catch (e) {}
+  }
 };
 
 export const clearDriverOnlineNotification = async () => {
-  if (!Capacitor.isNativePlatform()) return;
-  try {
-    await LocalNotifications.cancel({
-      notifications: [{ id: 888888 }]
-    });
-  } catch (e) {}
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await DriverKeepAlive.stopService();
+    } catch (e) {
+      console.warn('DriverKeepAlive.stopService error:', e);
+    }
+    try {
+      await LocalNotifications.cancel({
+        notifications: [{ id: 888888 }]
+      });
+    } catch (e) {}
+  }
 };
 
 // 2. Request Notification Permissions (Native Android 13+ & Web)
@@ -168,14 +182,6 @@ const getNotificationId = (str) => {
 export const sendRideAlertNotification = async (ride) => {
   if (!ride) return;
 
-  // In-app vibration & sound
-  playNotificationSound('ride_alert');
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    try {
-      navigator.vibrate([400, 150, 400, 150, 400, 150, 400]);
-    } catch (e) {}
-  }
-
   const notifId = getNotificationId(ride.id || ride._id || `ride_${Date.now()}`);
   const title = `🚨 NEW RIDE: ₹${ride.fare || 50} (${ride.vehicle_name || 'Ride'})`;
   const pickupShort = ride.pickup_name?.split(',')[0] || 'Pickup Location';
@@ -183,8 +189,18 @@ export const sendRideAlertNotification = async (ride) => {
   const distText = ride.distance_km ? ` • ${ride.distance_km} km` : '';
   const body = `📍 ${pickupShort} ➔ 🎯 ${dropShort}${distText}\n⚡ Tap immediately to Accept before timer ends!`;
 
-  // Native Android Notification
+  // Native Android Alert & Screen Wakeup
   if (Capacitor.isNativePlatform()) {
+    try {
+      await DriverKeepAlive.triggerRideAlert({
+        rideId: ride.id || ride._id,
+        title,
+        body
+      });
+    } catch (e) {
+      console.warn('DriverKeepAlive.triggerRideAlert error:', e);
+    }
+
     try {
       await LocalNotifications.schedule({
         notifications: [
@@ -210,21 +226,31 @@ export const sendRideAlertNotification = async (ride) => {
     }
   }
 
+  // In-app vibration & sound fallback for Web / PWA
+  playNotificationSound('ride_alert');
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate([400, 150, 400, 150, 400, 150, 400]);
+    } catch (e) {}
+  }
+
   // Web / PWA Notification Fallback
   sendPwaNotification(title, body, `ride-${ride.id}`);
 };
 
 // 5. Cancel Native Ride Notification (when ride is accepted/rejected or expired)
 export const cancelRideAlertNotification = async (rideId) => {
-  if (!rideId) return;
-  const notifId = getNotificationId(rideId);
   if (Capacitor.isNativePlatform()) {
     try {
-      await LocalNotifications.cancel({
-        notifications: [{ id: notifId }]
-      });
-    } catch (e) {
-      // ignore
+      await DriverKeepAlive.stopRideAlert();
+    } catch (e) {}
+    if (rideId) {
+      const notifId = getNotificationId(rideId);
+      try {
+        await LocalNotifications.cancel({
+          notifications: [{ id: notifId }]
+        });
+      } catch (e) {}
     }
   }
 };

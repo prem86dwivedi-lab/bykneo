@@ -25,7 +25,23 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
   const [showSosModal, setShowSosModal]         = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showChatModal, setShowChatModal]       = useState(false);
+  const [hasUnreadChat, setHasUnreadChat]       = useState(false);
   const [isExpanded, setIsExpanded]             = useState(false);
+
+  useEffect(() => {
+    if (!socket || !ride?.id) return;
+    socket.emit('join_ride', { rideId: ride.id });
+
+    const handleMsg = (msg) => {
+      if (String(msg.rideId) === String(ride.id) && msg.senderRole !== 'rider') {
+        if (!showChatModal) {
+          setHasUnreadChat(true);
+        }
+      }
+    };
+    socket.on('ride:chat_message', handleMsg);
+    return () => socket.off('ride:chat_message', handleMsg);
+  }, [socket, ride?.id, showChatModal]);
 
   if (!ride) return null;
 
@@ -124,11 +140,17 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
             {/* Chat, Call & SOS Buttons */}
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setShowChatModal(true)}
-                className="w-10 h-10 rounded-2xl bg-brand-yellow/15 hover:bg-brand-yellow/25 border border-brand-yellow/40 flex items-center justify-center text-brand-yellow shadow-lg active:scale-95 transition"
+                onClick={() => {
+                  setShowChatModal(true);
+                  setHasUnreadChat(false);
+                }}
+                className="relative w-10 h-10 rounded-2xl bg-brand-yellow/15 hover:bg-brand-yellow/25 border border-brand-yellow/40 flex items-center justify-center text-brand-yellow shadow-lg active:scale-95 transition"
                 title="Message Captain"
               >
                 <MessageSquare className="w-4 h-4" />
+                {hasUnreadChat && (
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 border-2 border-gray-900 rounded-full animate-bounce" />
+                )}
               </button>
               <a
                 href={`tel:${ride.driver_phone || '+919123456780'}`}

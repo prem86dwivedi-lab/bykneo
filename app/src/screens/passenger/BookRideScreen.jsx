@@ -47,19 +47,19 @@ const VehicleIcon = ({ id, category }) => {
   const isPremium = id === 'cab_premium';
 
   return (
-    <div className="relative w-11 h-7 flex items-center justify-center shrink-0">
+    <div className="relative w-8 h-5 flex items-center justify-center shrink-0">
       <img
         src={src}
         alt={id}
-        className="max-h-6 max-w-full object-contain filter drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.6)]"
+        className="max-h-5 max-w-full object-contain filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
       />
       {isLite && (
-        <span className="absolute -top-1 -right-1 bg-emerald-500 text-gray-950 text-[6.5px] font-black px-0.8 py-0.1 rounded-full shadow">
+        <span className="absolute -top-1 -right-1 bg-emerald-500 text-gray-950 text-[5.5px] font-black px-0.5 rounded-full shadow">
           %
         </span>
       )}
       {isPremium && (
-        <span className="absolute -top-1 -right-1 bg-amber-400 text-gray-950 text-[7px] font-black px-0.8 py-0.1 rounded-full shadow">
+        <span className="absolute -top-1 -right-1 bg-amber-400 text-gray-950 text-[6px] font-black px-0.5 rounded-full shadow">
           ✨
         </span>
       )}
@@ -750,23 +750,23 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
         {/* 1. ROUTE SUMMARY (When Destination is Chosen & Fare Estimated) */}
         {estimatedFare && pickup?.name && drop?.name && !isEditingAddress && !activeInput ? (
-          <div className="bg-gray-850/90 px-3 py-2 rounded-2xl border border-gray-800 flex items-center justify-between gap-2 shrink-0 shadow-lg">
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="flex items-center gap-1.5 text-[11px] truncate">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+          <div className="bg-gray-850/90 px-2.5 py-1.5 rounded-xl border border-gray-800 flex items-center justify-between gap-2 shrink-0 shadow-lg">
+            <div className="flex-1 min-w-0 space-y-0.5">
+              <div className="flex items-center gap-1.5 text-[10px] truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                 <span className="text-gray-300 font-medium truncate">{pickup.name}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[11px] truncate">
-                <span className="w-2 h-2 rounded-full bg-red-400 shrink-0"></span>
+              <div className="flex items-center gap-1.5 text-[10px] truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>
                 <span className="text-white font-bold truncate">{drop.name}</span>
               </div>
             </div>
             <button
               onClick={() => setIsEditingAddress(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-gray-800 hover:bg-gray-750 text-brand-yellow shrink-0 flex items-center gap-1 text-[11px] font-bold transition active:scale-95 border border-gray-700"
+              className="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-750 text-brand-yellow shrink-0 flex items-center gap-1 text-[10px] font-bold transition active:scale-95 border border-gray-700 cursor-pointer"
               title="Change Route"
             >
-              <Edit2 className="w-3 h-3" />
+              <Edit2 className="w-2.5 h-2.5" />
               <span>Edit</span>
             </button>
           </div>
@@ -915,22 +915,6 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
         {/* Live Address Search Autocomplete Dropdown */}
         {activeInput && (
           <div className="bg-gray-850 border border-brand-yellow/40 rounded-2xl p-2 max-h-56 overflow-y-auto space-y-1 shadow-2xl animate-in fade-in-50 duration-150">
-            {/* Dedicated "Select on map" action button (Rapido style matching reference) */}
-            <div className="px-0.5 pb-1.5 border-b border-gray-800">
-              <button
-                type="button"
-                onClick={() => {
-                  if (onStartSearchMode) onStartSearchMode(activeInput || 'drop');
-                  setActiveInput(null);
-                  setSuggestions([]);
-                }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-gray-800 via-gray-750 to-gray-800 hover:border-brand-yellow/50 border border-gray-700 text-brand-yellow text-[11px] font-bold shadow transition active:scale-95 cursor-pointer group"
-              >
-                <MapPin className="w-3.5 h-3.5 text-brand-yellow group-hover:scale-110 transition-transform" />
-                <span>Select on map</span>
-              </button>
-            </div>
-
             <div className="flex items-center justify-between px-2 py-1 text-[9.5px] font-bold text-brand-yellow uppercase tracking-wider border-b border-gray-800 pb-1">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -1037,11 +1021,11 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
           </div>
         )}
 
-        {/* Rapido-Style Half-Screen Multi-Vehicle Selector (Only visible when zone is Active & Serviceable) */}
+        {/* Rapido-Style Multi-Vehicle Selector (All Vehicles in Single Compact View) */}
         {zoneStatus?.isServiceable !== false && activeCities?.length > 0 && estimatedFare && estimatedFare.is_serviceable !== false && Array.isArray(estimatedFare.vehicles) && estimatedFare.vehicles.length > 0 && (
-          <div className="space-y-1.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between">
+          <div className="space-y-1 flex-1 min-h-0 overflow-hidden flex flex-col justify-between">
             {/* Serving Zone Tag & Stats */}
-            <div className="flex items-center justify-between px-1 text-[10px] shrink-0">
+            <div className="flex items-center justify-between px-1 text-[9px] shrink-0">
               <span className="font-bold text-emerald-400 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 {estimatedFare.matched_city ? `Serving ${estimatedFare.matched_city}` : 'Available Rides'}
@@ -1051,30 +1035,30 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
               </span>
             </div>
 
-            {/* Vehicle Cards Scrollable List */}
-            <div className={`space-y-1.5 overflow-y-auto pr-0.5 scrollbar-thin ${showAllVehicles ? 'max-h-[175px]' : 'max-h-[145px]'}`}>
-              {vehiclesToDisplay.map((v) => {
+            {/* Vehicle Cards Compact List (All vehicles directly displayed) */}
+            <div className="space-y-1 overflow-y-auto pr-0.5 max-h-[175px] sm:max-h-[195px] scrollbar-thin">
+              {allVehiclesList.map((v) => {
                 const isSelected = selectedVehicleId === v.id;
                 return (
                   <div
                     key={v.id}
                     onClick={() => setSelectedVehicleId(v.id)}
-                    className={`w-full text-left p-2 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2.5 ${
+                    className={`w-full text-left py-1.5 px-2 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2 ${
                       isSelected
-                        ? 'bg-brand-yellow/15 border-brand-yellow shadow-md shadow-brand-yellow/10'
+                        ? 'bg-brand-yellow/15 border-brand-yellow shadow-sm shadow-brand-yellow/10'
                         : 'bg-gray-850/70 border-gray-800/80 hover:border-gray-700 hover:bg-gray-800/80'
                     }`}
                   >
-                    {/* Left: Compact Vehicle Vector Render */}
+                    {/* Left: Compact Vehicle Icon */}
                     <VehicleIcon id={v.id} category={v.category} />
 
-                    {/* Middle: Name, Tagline & ETA */}
+                    {/* Middle: Name, Badges & ETA */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[11px] font-bold text-white truncate">{v.name}</span>
+                      <div className="flex items-center gap-1 leading-none">
+                        <span className="text-[10px] font-bold text-white truncate">{v.name}</span>
                         {v.badge && (
                           <span
-                            className={`text-[7.5px] font-black px-1 py-0.1 rounded ${
+                            className={`text-[6.5px] font-black px-1 py-0.2 rounded ${
                               v.badge === 'FASTEST'
                                 ? 'bg-brand-yellow text-gray-950'
                                 : v.badge === 'POPULAR'
@@ -1090,18 +1074,15 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                           </span>
                         )}
                         {v.discount_percent && (
-                          <span className="text-[7.5px] font-bold bg-emerald-500/20 text-emerald-400 px-1 py-0.1 rounded">
+                          <span className="text-[6.5px] font-bold bg-emerald-500/20 text-emerald-400 px-1 py-0.2 rounded">
                             {v.discount_percent}
                           </span>
                         )}
                       </div>
-                      <div className="text-[9px] text-gray-400 truncate leading-tight mt-0.5">{v.tagline}</div>
-                      <div className="text-[8.5px] text-gray-300 flex items-center gap-1 mt-0.5">
-                        <span className="font-semibold text-brand-yellow">
-                          {v.eta_mins}m away
-                        </span>
+                      <div className="text-[8px] text-gray-300 flex items-center gap-1 mt-0.5 leading-none">
+                        <span className="font-bold text-brand-yellow">{v.eta_mins}m</span>
                         <span className="text-gray-600">•</span>
-                        <span>{v.drop_time}</span>
+                        <span className="truncate">{v.drop_time}</span>
                         <span className="text-gray-600">•</span>
                         <span className="flex items-center gap-0.5 text-gray-400">
                           <User className="w-2 h-2" />
@@ -1112,11 +1093,11 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
                     {/* Right: Price */}
                     <div className="text-right shrink-0">
-                      <div className="text-sm font-black text-brand-yellow">
+                      <div className="text-[12px] font-black text-brand-yellow leading-tight">
                         ₹{v.fare}
                       </div>
                       {v.original_fare && (
-                        <div className="text-[9px] text-gray-400 line-through leading-none">
+                        <div className="text-[8px] text-gray-400 line-through leading-none">
                           ₹{v.original_fare}
                         </div>
                       )}
@@ -1126,31 +1107,16 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
               })}
             </div>
 
-            {/* View More / View Less Toggle Button */}
-            {allVehiclesList.length > 3 && (
-              <button
-                onClick={() => setShowAllVehicles(!showAllVehicles)}
-                className="w-full py-0.5 text-center text-[10px] font-bold text-gray-400 hover:text-brand-yellow flex items-center justify-center gap-1 transition shrink-0"
-              >
-                <span>
-                  {showAllVehicles
-                    ? 'Show Fewer Options'
-                    : `View More (${allVehiclesList.length - 3} Cabs & Autos)`}
-                </span>
-                {showAllVehicles ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
-            )}
-
             {/* Bottom Payment & Offers Bar */}
-            <div className="bg-gray-850/80 px-2.5 py-1.5 rounded-xl border border-gray-800 flex items-center justify-between text-xs shrink-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-gray-400 text-[10px] font-medium">Payment:</span>
+            <div className="bg-gray-850/80 px-2 py-1 rounded-xl border border-gray-800 flex items-center justify-between text-xs shrink-0">
+              <div className="flex items-center gap-1">
+                <span className="text-gray-400 text-[9px] font-medium">Payment:</span>
                 <div className="flex items-center gap-1">
                   {['UPI', 'CASH', 'WALLET'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setPaymentMode(m)}
-                      className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold transition ${
+                      className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold transition cursor-pointer ${
                         paymentMode === m
                           ? 'bg-brand-yellow text-gray-950'
                           : 'bg-gray-800 text-gray-400 hover:text-gray-200'
@@ -1162,8 +1128,8 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
-                <Percent className="w-2.5 h-2.5" />
+              <div className="flex items-center gap-1 text-[8.5px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+                <Percent className="w-2 h-2" />
                 <span>Offer Applied</span>
               </div>
             </div>
@@ -1184,9 +1150,9 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
               onRequestRide(paymentMode, chosen);
             }}
             disabled={loadingEstimate || zoneStatus?.isServiceable === false || estimatedFare?.is_serviceable === false || !activeCities?.length || !estimatedFare?.vehicles?.length}
-            className="w-full bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-brand-yellow/15 transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="w-full bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 py-2 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-brand-yellow/15 transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
           >
-            <Zap className="w-4 h-4 fill-current" />
+            <Zap className="w-3.5 h-3.5 fill-current" />
             {loadingEstimate
               ? 'Calculating Route & Fares...'
               : (zoneStatus?.isServiceable === false || estimatedFare?.is_serviceable === false || !activeCities?.length)

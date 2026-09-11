@@ -649,7 +649,7 @@ export const InteractiveMap = ({
             }
 
             const bounds = L.latLngBounds(coordinates);
-            map.fitBounds(bounds, { padding: [70, 70] });
+            map.fitBounds(bounds, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
           } else {
             const fallback = [[routeOrigin.lat, routeOrigin.lng], [routeDestination.lat, routeDestination.lng]];
             currentRouteCoordsRef.current = fallback;
@@ -659,7 +659,7 @@ export const InteractiveMap = ({
             } else {
               markersRef.current.polyline = L.polyline(fallback, { color: routeColor, weight: 4 }).addTo(map);
             }
-            map.fitBounds(fallback, { padding: [70, 70] });
+            map.fitBounds(fallback, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
           }
         })
         .catch(() => {
@@ -671,7 +671,7 @@ export const InteractiveMap = ({
           } else {
             markersRef.current.polyline = L.polyline(fallback, { color: routeColor, weight: 4 }).addTo(map);
           }
-          map.fitBounds(fallback, { padding: [70, 70] });
+          map.fitBounds(fallback, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
         });
     } else if (markersRef.current.polyline) {
       map.removeLayer(markersRef.current.polyline);

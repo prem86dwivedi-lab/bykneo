@@ -390,6 +390,7 @@ export const InteractiveMap = ({
   const realMarkersRef = useRef({});
   const animFrameRef = useRef(null);
   const lastAnchorRef = useRef(null);
+  const hasInitiallyCenteredRef = useRef(false);
 
   // Initialize Map Once
   useEffect(() => {
@@ -480,18 +481,20 @@ export const InteractiveMap = ({
           }
         });
       }
-      if (!drop || !drop.lat) {
+      // Auto-center ONLY once on initial GPS fix, NEVER snap while selectingMode is active or when browsing
+      if (!selectingMode && (!drop || !drop.lat) && !hasInitiallyCenteredRef.current) {
+        hasInitiallyCenteredRef.current = true;
         const currentCenter = map.getCenter();
         const distMeters = currentCenter ? currentCenter.distanceTo([pickup.lat, pickup.lng]) : 999;
         if (distMeters > 15) {
-          map.flyTo([pickup.lat, pickup.lng], 19, { duration: 1.0, easeLinearity: 0.25 });
+          map.flyTo([pickup.lat, pickup.lng], 17, { duration: 1.0, easeLinearity: 0.25 });
         }
       }
     } else if (markersRef.current.pickup) {
       map.removeLayer(markersRef.current.pickup);
       markersRef.current.pickup = null;
     }
-  }, [pickup, drop, deviceCompassHeading]);
+  }, [pickup, drop, selectingMode]);
 
   // Update Drop Marker
   useEffect(() => {
@@ -591,7 +594,7 @@ export const InteractiveMap = ({
   // Real Road-Following Street Routing via Free OSRM Service
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    if (!map || selectingMode) return;
 
     let routeOrigin = null;
     let routeDestination = null;

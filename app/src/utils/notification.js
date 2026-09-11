@@ -4,36 +4,86 @@ import { Capacitor } from '@capacitor/core';
 
 const isNativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
 
-// 1. Initialize High-Importance Android Notification Channels
+// 1. Initialize High-Importance Android Notification Channels & Action Types
 export const initNotificationChannels = async () => {
   if (!isNativeAndroid) return;
   try {
+    // Register Action Buttons (Accept / Reject directly from notification banner)
+    await LocalNotifications.registerActionTypes({
+      types: [
+        {
+          id: 'OPEN_RIDE_REQUEST',
+          actions: [
+            {
+              id: 'accept',
+              title: '⚡ ACCEPT RIDE',
+              foreground: true
+            },
+            {
+              id: 'reject',
+              title: '❌ DECLINE',
+              destructive: true,
+              foreground: false
+            }
+          ]
+        }
+      ]
+    });
+
     // High-Priority Ride Request Alert Channel (Loud, vibrating, heads-up banner over all apps)
     await LocalNotifications.createChannel({
-      id: 'bykneo-ride-alerts',
-      name: '🚨 New Ride Requests',
+      id: 'bykneo-ride-urgent-v3',
+      name: '🚨 Urgent Ride Requests',
       description: 'Loud high-priority sound & banner alerts for incoming ride requests',
       importance: 5, // IMPORTANCE_HIGH / MAX (pops up over WhatsApp, Facebook, etc.)
       visibility: 1, // VISIBILITY_PUBLIC
-      sound: undefined, // uses system high-alert sound
       vibration: true,
       lights: true,
       lightColor: '#FFB800'
     });
 
-    // General Updates & KYC Channel
+    // General Updates & Ongoing Duty Channel
     await LocalNotifications.createChannel({
       id: 'bykneo-general',
-      name: 'Bykneo Notifications',
-      description: 'Trip updates, KYC status, and wallet alerts',
-      importance: 4,
+      name: 'Bykneo Status & Notifications',
+      description: 'Active shift status, trip updates, and wallet alerts',
+      importance: 3,
       visibility: 1,
-      vibration: true,
+      vibration: false,
       lights: false
     });
   } catch (e) {
     console.warn('Could not initialize Android notification channels:', e);
   }
+};
+
+// Sticky Ongoing Notification to keep Driver Process Alive in Background
+export const showDriverOnlineNotification = async () => {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 888888,
+          title: '🟢 Bykneo Captain is ONLINE',
+          body: 'Active and searching for nearby ride bookings',
+          channelId: 'bykneo-general',
+          ongoing: true,
+          autoCancel: false,
+          smallIcon: 'ic_launcher'
+        }
+      ]
+    });
+  } catch (e) {}
+};
+
+export const clearDriverOnlineNotification = async () => {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    await LocalNotifications.cancel({
+      notifications: [{ id: 888888 }]
+    });
+  } catch (e) {}
 };
 
 // 2. Request Notification Permissions (Native Android 13+ & Web)
@@ -142,7 +192,7 @@ export const sendRideAlertNotification = async (ride) => {
             id: notifId,
             title,
             body,
-            channelId: 'bykneo-ride-alerts',
+            channelId: 'bykneo-ride-urgent-v3',
             smallIcon: 'ic_launcher',
             largeIcon: 'ic_launcher',
             actionTypeId: 'OPEN_RIDE_REQUEST',

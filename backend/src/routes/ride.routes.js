@@ -7,7 +7,9 @@ import {
   getUserRides,
   rateRide,
   cancelRide,
-  getRideById
+  getRideById,
+  getRideMessages,
+  sendRideMessage
 } from '../controllers/ride.controller.js';
 
 const router = express.Router();
@@ -19,6 +21,8 @@ router.get('/pending-request', getPendingRequestsForDriver);
 router.get('/history', getUserRides);
 router.post('/rate', rateRide);
 router.post('/cancel', cancelRide);
+router.get('/:id/messages', getRideMessages);
+router.post('/:id/messages', sendRideMessage);
 router.get('/:id', getRideById);
 
 export default router;

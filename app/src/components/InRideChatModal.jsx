@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, MessageSquare, Phone, User, Bike } from 'lucide-react';
+import { BACKEND_URL } from '../context/SocketContext';
+import { playNotificationSound } from '../utils/notification';
 
 export const InRideChatModal = ({
   isOpen,
@@ -48,6 +50,40 @@ export const InRideChatModal = ({
     }
   }, [isOpen, messages]);
 
+  // Fetch message history from REST API on mount/open
+  useEffect(() => {
+    if (!isOpen || !ride?.id) return;
+
+    let isMounted = true;
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/rides/${ride.id}/messages`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.messages) && isMounted) {
+            setMessages((prev) => {
+              const existingIds = new Set(prev.map((m) => m.id));
+              const combined = [...prev];
+              data.messages.forEach((m) => {
+                if (!existingIds.has(m.id)) {
+                  combined.push(m);
+                }
+              });
+              return combined.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch chat history:', err);
+      }
+    };
+
+    fetchHistory();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, ride?.id]);
+
   // Listen for socket chat messages & join ride room
   useEffect(() => {
     if (!socket || !ride?.id) return;
@@ -61,6 +97,11 @@ export const InRideChatModal = ({
           if (prev.some((m) => m.id === msg.id)) return prev;
           return [...prev, msg];
         });
+
+        // Play chime sound if message is from the other party
+        if (msg.senderRole !== currentUserRole) {
+          playNotificationSound();
+        }
       }
     };
 
@@ -69,11 +110,11 @@ export const InRideChatModal = ({
     return () => {
       socket.off('ride:chat_message', handleIncomingMessage);
     };
-  }, [socket, ride?.id]);
+  }, [socket, ride?.id, currentUserRole]);
 
-  const handleSendMessage = (textToSend) => {
+  const handleSendMessage = async (textToSend) => {
     const text = (textToSend || inputText).trim();
-    if (!text || !socket || !ride?.id) return;
+    if (!text || !ride?.id) return;
 
     const messageObj = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
@@ -90,8 +131,21 @@ export const InRideChatModal = ({
     setMessages((prev) => [...prev, messageObj]);
     setInputText('');
 
-    // Emit via WebSocket to backend
-    socket.emit('ride:send_chat_message', messageObj);
+    // Emit via WebSocket
+    if (socket) {
+      socket.emit('ride:send_chat_message', messageObj);
+    }
+
+    // Persist to REST API
+    try {
+      await fetch(`${BACKEND_URL}/api/rides/${ride.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageObj)
+      });
+    } catch (err) {
+      console.warn('Failed to persist message via REST:', err);
+    }
   };
 
   if (!isOpen || !ride) return null;

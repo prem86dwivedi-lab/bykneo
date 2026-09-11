@@ -397,3 +397,51 @@ export const getRideById = (req, res) => {
   if (!ride) return res.status(404).json({ success: false, error: 'Ride not found' });
   return res.json({ success: true, ride });
 };
+
+export const getRideMessages = (req, res) => {
+  const { id } = req.params;
+  const ride = db.find('rides', r => String(r.id) === String(id));
+  if (!ride) return res.status(404).json({ success: false, error: 'Ride not found' });
+  return res.json({ success: true, messages: ride.messages || [] });
+};
+
+export const sendRideMessage = (req, res) => {
+  const { id } = req.params;
+  const { text, senderRole, senderName, senderId } = req.body;
+  const ride = db.find('rides', r => String(r.id) === String(id));
+  if (!ride) return res.status(404).json({ success: false, error: 'Ride not found' });
+
+  if (!text || !text.trim()) {
+    return res.status(400).json({ success: false, error: 'Message text is required' });
+  }
+
+  const messageObj = {
+    id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+    rideId: ride.id,
+    senderId: senderId || 'usr_unknown',
+    senderRole: senderRole || 'rider',
+    senderName: senderName || (senderRole === 'driver' ? 'Captain' : 'Rider'),
+    text: text.trim(),
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    timestamp: Date.now()
+  };
+
+  const existingMessages = Array.isArray(ride.messages) ? ride.messages : [];
+  const updatedMessages = [...existingMessages, messageObj];
+  db.update('rides', ride.id, { messages: updatedMessages });
+
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`ride:${ride.id}`).emit('ride:chat_message', messageObj);
+    io.to(`user:${ride.rider_id}`).emit('ride:chat_message', messageObj);
+    if (ride.driver_id) {
+      io.to(`driver:${ride.driver_id}`).emit('ride:chat_message', messageObj);
+      const drv = db.find('drivers', d => d.id === ride.driver_id);
+      if (drv?.user_id) {
+        io.to(`user:${drv.user_id}`).emit('ride:chat_message', messageObj);
+      }
+    }
+  }
+
+  return res.json({ success: true, message: messageObj });
+};

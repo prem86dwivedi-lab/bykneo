@@ -361,6 +361,12 @@ export const registerSocketHandlers = (io) => {
 
       console.log(`💬 In-Ride Message [${rideId}] from ${senderRole}: ${text?.slice(0, 30)}`);
 
+      // Persist to database so messages are never lost
+      const existing = Array.isArray(ride.messages) ? ride.messages : [];
+      if (!existing.some(m => m.id === messageData.id)) {
+        db.update('rides', ride.id, { messages: [...existing, messageData] });
+      }
+
       // 1. Broadcast to ride room
       io.to(`ride:${ride.id}`).emit('ride:chat_message', messageData);
 

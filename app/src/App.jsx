@@ -28,7 +28,9 @@ import {
   requestNotificationPermission,
   initNotificationChannels,
   sendRideAlertNotification,
-  cancelRideAlertNotification
+  cancelRideAlertNotification,
+  showDriverOnlineNotification,
+  clearDriverOnlineNotification
 } from './utils/notification';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { subscribeToPush, unsubscribeFromPush } from './utils/pushNotification.js';
@@ -246,8 +248,14 @@ export function App() {
     try {
       LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
         const extra = notificationAction?.notification?.extra;
-        if (extra?.type === 'INCOMING_RIDE') {
+        const actionId = notificationAction?.actionId;
+        if (extra?.type === 'INCOMING_RIDE' && extra?.rideId) {
           setCurrentScreen('main');
+          if (actionId === 'accept') {
+            handleAcceptRide(extra.rideId);
+          } else if (actionId === 'reject') {
+            handleRejectRide(extra.rideId);
+          }
         }
       }).then((l) => {
         notifListener = l;
@@ -736,9 +744,10 @@ export function App() {
         })
       }).catch(console.error);
 
-      // Subscribe to Web Push when going online so OS can wake the app
+      // Subscribe to Web Push & sticky notification when going online so OS can wake the app
       // for incoming ride alerts even when another app is in the foreground.
       if (newStatus) {
+        showDriverOnlineNotification();
         if (socket) {
           socket.emit('join_driver', { driverId: driverProfile.id });
         }
@@ -748,12 +757,14 @@ export function App() {
           .then(data => {
             if (data?.success && data?.ride && !activeRide) {
               setIncomingRequest(data.ride);
+              sendRideAlertNotification(data.ride);
             }
           })
           .catch(() => {});
 
         subscribeToPush(driverProfile.id, BACKEND_URL).catch(console.warn);
       } else {
+        clearDriverOnlineNotification();
         unsubscribeFromPush(driverProfile.id, BACKEND_URL).catch(console.warn);
       }
     }

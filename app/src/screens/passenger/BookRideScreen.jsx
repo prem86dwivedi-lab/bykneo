@@ -770,6 +770,21 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   placeholder="Enter pickup location (default: GPS)"
                   className="w-full bg-transparent text-[11px] font-semibold text-white placeholder-gray-500 focus:outline-none focus:text-emerald-300 transition"
                 />
+                {/* Pick from Map Option for Pickup */}
+                <div className="flex items-center pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onStartSearchMode) onStartSearchMode('pickup');
+                      setActiveInput(null);
+                      setSuggestions([]);
+                    }}
+                    className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400/90 hover:text-emerald-300 transition active:scale-95 py-0.5 px-1 rounded hover:bg-emerald-950/40 cursor-pointer"
+                  >
+                    <MapPin className="w-2.5 h-2.5 text-emerald-400" />
+                    <span>Pick from map</span>
+                  </button>
+                </div>
               </div>
 
               {pickupQuery && (
@@ -829,6 +844,21 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   placeholder="Where do you want to go?"
                   className="w-full bg-transparent text-[11.5px] font-bold text-white placeholder-gray-400 focus:outline-none focus:text-white transition"
                 />
+                {/* Pick from Map Option for Drop */}
+                <div className="flex items-center pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onStartSearchMode) onStartSearchMode('drop');
+                      setActiveInput(null);
+                      setSuggestions([]);
+                    }}
+                    className="inline-flex items-center gap-1 text-[9px] font-bold text-brand-yellow/90 hover:text-yellow-300 transition active:scale-95 py-0.5 px-1 rounded hover:bg-yellow-950/40 cursor-pointer"
+                  >
+                    <MapPin className="w-2.5 h-2.5 text-brand-yellow" />
+                    <span>Pick from map</span>
+                  </button>
+                </div>
               </div>
 
               {dropQuery && (
@@ -864,7 +894,23 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
         {/* Live Address Search Autocomplete Dropdown */}
         {activeInput && (
-          <div className="bg-gray-850 border border-brand-yellow/40 rounded-2xl p-2 max-h-48 overflow-y-auto space-y-1 shadow-2xl animate-in fade-in-50 duration-150">
+          <div className="bg-gray-850 border border-brand-yellow/40 rounded-2xl p-2 max-h-56 overflow-y-auto space-y-1 shadow-2xl animate-in fade-in-50 duration-150">
+            {/* Dedicated "Select on map" action button (Rapido style matching reference) */}
+            <div className="px-0.5 pb-1.5 border-b border-gray-800">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onStartSearchMode) onStartSearchMode(activeInput || 'drop');
+                  setActiveInput(null);
+                  setSuggestions([]);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-gray-800 via-gray-750 to-gray-800 hover:border-brand-yellow/50 border border-gray-700 text-brand-yellow text-[11px] font-bold shadow transition active:scale-95 cursor-pointer group"
+              >
+                <MapPin className="w-3.5 h-3.5 text-brand-yellow group-hover:scale-110 transition-transform" />
+                <span>Select on map</span>
+              </button>
+            </div>
+
             <div className="flex items-center justify-between px-2 py-1 text-[9.5px] font-bold text-brand-yellow uppercase tracking-wider border-b border-gray-800 pb-1">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>

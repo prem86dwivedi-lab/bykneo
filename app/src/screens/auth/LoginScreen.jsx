@@ -174,13 +174,58 @@ export const LoginScreen = () => {
     document.body.removeChild(link);
   };
 
+  // Automatic SMS OTP Autofill & Instant Submit (WebOTP API on Android / WebView)
+  useEffect(() => {
+    if (step !== 'otp') return;
+
+    // Auto-focus first digit input
+    const focusTimer = setTimeout(() => {
+      otpInputRefs.current[0]?.focus();
+    }, 150);
+
+    let ac = null;
+    if (typeof window !== 'undefined' && 'OTPCredential' in window && navigator.credentials) {
+      try {
+        ac = new AbortController();
+        navigator.credentials
+          .get({
+            otp: { transport: ['sms'] },
+            signal: ac.signal
+          })
+          .then((content) => {
+            if (content && content.code) {
+              const digits = content.code.replace(/\D/g, '').slice(0, 6);
+              if (digits.length === 6) {
+                const arr = digits.split('');
+                setOtpValues(arr);
+                setSuccessMsg('SMS OTP detected! Verifying...');
+                submitOtp(digits);
+              }
+            }
+          })
+          .catch((err) => {
+            if (err.name !== 'AbortError') {
+              console.log('[WebOTP] SMS detection:', err.message);
+            }
+          });
+      } catch (e) {
+        console.warn('[WebOTP] init error:', e);
+      }
+    }
+
+    return () => {
+      clearTimeout(focusTimer);
+      if (ac) ac.abort();
+    };
+  }, [step]);
+
   // Handle individual 6-digit OTP input changes
   const handleOtpChange = (index, value) => {
     const sanitized = value.replace(/\D/g, '');
     if (!sanitized && value !== '') return;
 
     const newValues = [...otpValues];
-    // Handle pasted full 6-digit code
+    // Handle pasted full 6-digit code or autofill
     if (sanitized.length > 1) {
       const pastedDigits = sanitized.slice(0, 6).split('');
       pastedDigits.forEach((digit, i) => {
@@ -205,7 +250,7 @@ export const LoginScreen = () => {
       otpInputRefs.current[index + 1]?.focus();
     }
 
-    // Auto submit when all 6 digits are filled
+    // Auto submit immediately when all 6 digits are filled
     if (newValues.every((d) => d !== '')) {
       submitOtp(newValues.join(''));
     }
@@ -233,11 +278,22 @@ export const LoginScreen = () => {
 
     if (res.success) {
       setStep('otp');
-      setOtpValues(['', '', '', '', '', '']);
       setTimer(30);
       setCanResend(false);
-      setSuccessMsg(res.message || '6-digit OTP sent successfully via SMS!');
-      setTimeout(() => setSuccessMsg(''), 4000);
+
+      // Auto-fill & auto-submit if OTP is provided (e.g. demo / test accounts)
+      if (res.otp && String(res.otp).length === 6) {
+        const digits = String(res.otp).split('');
+        setOtpValues(digits);
+        setSuccessMsg('OTP received! Verifying automatically...');
+        setTimeout(() => {
+          submitOtp(String(res.otp));
+        }, 400);
+      } else {
+        setOtpValues(['', '', '', '', '', '']);
+        setSuccessMsg(res.message || '6-digit OTP sent successfully via SMS!');
+        setTimeout(() => setSuccessMsg(''), 4000);
+      }
     } else {
       setError(res.error || 'Failed to send OTP. Please check your internet connection.');
     }
@@ -254,8 +310,18 @@ export const LoginScreen = () => {
     if (res.success) {
       setTimer(30);
       setCanResend(false);
-      setSuccessMsg('New 6-digit OTP sent to your phone!');
-      setTimeout(() => setSuccessMsg(''), 4000);
+
+      if (res.otp && String(res.otp).length === 6) {
+        const digits = String(res.otp).split('');
+        setOtpValues(digits);
+        setSuccessMsg('New OTP received! Verifying automatically...');
+        setTimeout(() => {
+          submitOtp(String(res.otp));
+        }, 400);
+      } else {
+        setSuccessMsg('New 6-digit OTP sent to your phone!');
+        setTimeout(() => setSuccessMsg(''), 4000);
+      }
     } else {
       setError(res.error || 'Failed to resend OTP');
     }
@@ -720,6 +786,11 @@ export const LoginScreen = () => {
                       value={digit}
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pasted = e.clipboardData?.getData('text') || '';
+                        handleOtpChange(idx, pasted);
+                      }}
                       className={`h-14 text-center text-xl font-black rounded-2xl bg-gray-950 border transition focus:outline-none ${
                         digit
                           ? 'border-brand-yellow text-brand-yellow bg-brand-yellow/5'

@@ -83,14 +83,26 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+import fs from 'fs';
+
 // Direct APK Download Endpoint
 app.get(['/bykneo.apk', '/download/bykneo.apk'], (req, res) => {
-  const apkPath = path.join(__dirname, '../../app/public/bykneo.apk');
-  res.download(apkPath, 'bykneo.apk', {
-    headers: {
-      'Content-Type': 'application/vnd.android.package-archive'
-    }
-  });
+  const possiblePaths = [
+    path.join(__dirname, '../../app/android/app/build/outputs/apk/debug/app-debug.apk'),
+    path.join(__dirname, '../../app/android/app/build/outputs/apk/release/app-release-unsigned.apk'),
+    path.join(__dirname, '../../app/android/app/build/outputs/apk/release/app-release.apk'),
+    path.join(__dirname, '../downloads/bykneo.apk')
+  ];
+  const apkPath = possiblePaths.find(p => fs.existsSync(p));
+  if (apkPath) {
+    res.download(apkPath, 'bykneo.apk', {
+      headers: {
+        'Content-Type': 'application/vnd.android.package-archive'
+      }
+    });
+  } else {
+    res.status(404).json({ error: 'APK build not found on server.' });
+  }
 });
 
 // Mount Routes

@@ -541,10 +541,15 @@ export function App() {
   }
 
   // Handle Location selection tap on map or pin drag with instant reverse geocoding
-  const handleLocationSelect = async ({ lat, lng, type, name }) => {
+  const handleLocationSelect = async ({ lat, lng, type, name } = {}) => {
+    if (!type) {
+      setSelectingMode(null);
+      return;
+    }
+
     let finalName = name;
     
-    if (!finalName || finalName.startsWith('Custom Location')) {
+    if ((!finalName || finalName.startsWith('Custom Location') || finalName.startsWith('Location (')) && lat && lng) {
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -559,14 +564,17 @@ export function App() {
       }
     }
 
-    const loc = {
-      name: finalName || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
-      lat,
-      lng
-    };
+    if (lat && lng) {
+      const loc = {
+        name: finalName || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+        lat,
+        lng
+      };
 
-    if (type === 'pickup') setPickup(loc);
-    else if (type === 'drop') setDrop(loc);
+      if (type === 'pickup') setPickup(loc);
+      else if (type === 'drop') setDrop(loc);
+    }
+
     setSelectingMode(null);
   };
 
@@ -864,7 +872,7 @@ export function App() {
       {!isCaptain && (
         <>
           {/* Default State: Booking Sheet */}
-          {!activeRide && !findingDriver && (
+          {!activeRide && !findingDriver && !selectingMode && (
             <BookRideScreen
               pickup={pickup}
               drop={drop}

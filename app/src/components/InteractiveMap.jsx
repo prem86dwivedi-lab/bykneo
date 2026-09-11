@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { Crosshair, Satellite, Map as MapIcon, Layers, Sparkles, Check } from 'lucide-react';
+import {
+  Crosshair,
+  Satellite,
+  Map as MapIcon,
+  Layers,
+  Sparkles,
+  Check,
+  MapPin,
+  ArrowLeft,
+  Navigation,
+  Compass,
+  Loader2
+} from 'lucide-react';
+import { useDeviceCompass } from '../utils/useDeviceCompass';
 
 // Fix default Leaflet icon paths
 delete L.Icon.Default.prototype._getIconUrl;
@@ -178,30 +191,50 @@ const createVehicleMarkerIcon = (vehicleId = 'bike', heading = 0) => {
   });
 };
 
-const PICKUP_ICON_HTML = `
-  <div style="position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; pointer-events: auto;">
-    <!-- Directional Soft Blue Accuracy Beam (Pointing upward / forward) -->
-    <div style="position: absolute; width: 56px; height: 56px; top: 0; left: 0; pointer-events: none;">
-      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;">
+// Dynamic Google / Rapido Material Blue Dot with Real-Time Rotating Directional Compass Cone
+const getCompassUserIconHtml = (heading = 0) => `
+  <div style="position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; pointer-events: auto;">
+    <!-- Rotating Compass Flashlight Cone / Beam (Rotates with phone orientation) -->
+    <div id="user-compass-beam" style="position: absolute; width: 64px; height: 64px; top: 0; left: 0; pointer-events: none; transform: rotate(${heading}deg); transform-origin: 32px 32px; transition: transform 0.15s ease-out; will-change: transform;">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;">
         <defs>
-          <radialGradient id="gmBeamGrad" cx="28" cy="28" r="28" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#4285F4" stop-opacity="0.45" />
-            <stop offset="60%" stop-color="#4285F4" stop-opacity="0.18" />
-            <stop offset="100%" stop-color="#4285F4" stop-opacity="0" />
+          <radialGradient id="compassBeamGrad" cx="32" cy="32" r="32" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.65" />
+            <stop offset="40%" stop-color="#60a5fa" stop-opacity="0.3" />
+            <stop offset="85%" stop-color="#93c5fd" stop-opacity="0.08" />
+            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
           </radialGradient>
         </defs>
-        <path d="M28 28 L14 4 A28 28 0 0 1 42 4 Z" fill="url(#gmBeamGrad)" />
+        <path d="M32 32 L13 2 A32 32 0 0 1 51 2 Z" fill="url(#compassBeamGrad)" />
       </svg>
     </div>
 
-    <!-- Soft Blue Accuracy Outer Circle -->
-    <div style="position: absolute; width: 40px; height: 40px; border-radius: 50%; background: rgba(66, 133, 244, 0.16); border: 1px solid rgba(66, 133, 244, 0.32);"></div>
+    <!-- Soft Blue Accuracy Radar Pulse Wave -->
+    <div class="google-live-pulse" style="position: absolute; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle, rgba(59, 130, 246, 0.45) 0%, rgba(59, 130, 246, 0) 75%); pointer-events: none;"></div>
 
-    <!-- Soft Blue Pulsing Radar Wave -->
-    <div class="google-live-pulse" style="position: absolute; width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle, rgba(66, 133, 244, 0.4) 0%, rgba(66, 133, 244, 0) 75%);"></div>
+    <!-- Outer Accuracy Halo -->
+    <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); border: 1.2px solid rgba(147, 197, 253, 0.4); pointer-events: none;"></div>
 
-    <!-- Core Google Material Blue Dot with Crisp White Ring -->
-    <div style="position: relative; width: 15px; height: 15px; background-color: #1a73e8; border: 2.5px solid #ffffff; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.45), 0 0 8px rgba(26,115,232,0.6); z-index: 2;"></div>
+    <!-- Core Blue Dot with Directional Pointer (Rotates with compass) -->
+    <div id="user-compass-dot" style="position: relative; width: 18px; height: 18px; background: #1d4ed8; border: 2.5px solid #ffffff; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 10px rgba(59, 130, 246, 0.8); z-index: 2; display: flex; align-items: center; justify-content: center; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.15s ease-out; will-change: transform;">
+      <svg width="8" height="8" viewBox="0 0 12 12" fill="#ffffff" style="margin-top: -1px;">
+        <path d="M6 1 L10 10 L6 8 L2 10 Z" />
+      </svg>
+    </div>
+  </div>
+`;
+
+const PICKUP_PIN_BADGE_HTML = `
+  <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; pointer-events: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">
+    <!-- Green "Pickup Point" Pill Badge -->
+    <div style="background: #059669; color: #ffffff; font-size: 11px; font-weight: 800; font-family: system-ui, -apple-system, sans-serif; padding: 4px 10px; border-radius: 12px; white-space: nowrap; border: 1.5px solid #34d399; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+      <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ffffff;"></span>
+      <span>Pickup Point</span>
+    </div>
+    <!-- Pin Needle / Stem -->
+    <div style="width: 2.5px; height: 12px; background: #059669; margin-top: -1px;"></div>
+    <!-- Pin Base Dot -->
+    <div style="width: 8px; height: 8px; border-radius: 50%; background: #059669; border: 2px solid #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-top: -2px;"></div>
   </div>
 `;
 
@@ -234,6 +267,77 @@ export const InteractiveMap = ({
   const [mapType, setMapType] = useState('hybrid'); // Default to Google Hybrid
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const tileLayerRef = useRef(null);
+
+  // Real-time hardware device compass orientation (0° - 360°)
+  const deviceCompassHeading = useDeviceCompass();
+
+  // Interactive Map Pin Picker state (for 'pickup' or 'drop' map selection)
+  const [pickerCenter, setPickerCenter] = useState(null);
+  const [pickerAddress, setPickerAddress] = useState('');
+  const [isResolvingAddress, setIsResolvingAddress] = useState(false);
+  const [isMapMoving, setIsMapMoving] = useState(false);
+
+  // Real-time 60fps DOM compass orientation sync (Smooth rotate without triggering React / Leaflet re-renders)
+  useEffect(() => {
+    const beam = document.getElementById('user-compass-beam');
+    const dot = document.getElementById('user-compass-dot');
+    if (beam) beam.style.transform = `rotate(${deviceCompassHeading}deg)`;
+    if (dot) dot.style.transform = `rotate(${deviceCompassHeading}deg)`;
+  }, [deviceCompassHeading]);
+
+  // Track map center & reverse geocode when selecting on map
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (selectingMode) {
+      const c = map.getCenter();
+      setPickerCenter(c);
+
+      const onMove = () => {
+        setIsMapMoving(true);
+        setPickerCenter(map.getCenter());
+      };
+
+      let timer = null;
+      const onMoveEnd = () => {
+        setIsMapMoving(false);
+        const centerCoords = map.getCenter();
+        setPickerCenter(centerCoords);
+        setIsResolvingAddress(true);
+
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(async () => {
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${centerCoords.lat}&lon=${centerCoords.lng}&zoom=18&addressdetails=1`,
+              { headers: { 'Accept-Language': 'en,hi' } }
+            );
+            const data = await res.json();
+            if (data && data.display_name) {
+              setPickerAddress(data.display_name.split(',').slice(0, 3).join(', '));
+            } else {
+              setPickerAddress(`Location (${centerCoords.lat.toFixed(4)}, ${centerCoords.lng.toFixed(4)})`);
+            }
+          } catch (e) {
+            setPickerAddress(`Location (${centerCoords.lat.toFixed(4)}, ${centerCoords.lng.toFixed(4)})`);
+          } finally {
+            setIsResolvingAddress(false);
+          }
+        }, 300);
+      };
+
+      map.on('move', onMove);
+      map.on('moveend', onMoveEnd);
+      onMoveEnd();
+
+      return () => {
+        if (timer) clearTimeout(timer);
+        map.off('move', onMove);
+        map.off('moveend', onMoveEnd);
+      };
+    }
+  }, [selectingMode]);
 
   const MAP_LAYERS = {
     hybrid: {
@@ -339,17 +443,19 @@ export const InteractiveMap = ({
     tileLayerRef.current = L.tileLayer(cfg.url, cfg.options).addTo(map);
   };
 
-  // Update Pickup Marker
+  // Update Pickup Marker with Dynamic Compass Heading Cone (Screenshot 3 & 4)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
     if (pickup && pickup.lat && pickup.lng) {
+      const isCustomLocation = pickup.name && !pickup.name.includes('GPS') && !pickup.name.includes('Current Location');
+      
       const pickupIcon = L.divIcon({
         className: 'custom-pickup-icon',
-        html: PICKUP_ICON_HTML,
-        iconSize: [56, 56],
-        iconAnchor: [28, 28]
+        html: isCustomLocation ? PICKUP_PIN_BADGE_HTML : getCompassUserIconHtml(deviceCompassHeading),
+        iconSize: isCustomLocation ? [40, 48] : [64, 64],
+        iconAnchor: isCustomLocation ? [20, 48] : [32, 32]
       });
 
       if (markersRef.current.pickup) {
@@ -385,7 +491,7 @@ export const InteractiveMap = ({
       map.removeLayer(markersRef.current.pickup);
       markersRef.current.pickup = null;
     }
-  }, [pickup, drop]);
+  }, [pickup, drop, deviceCompassHeading]);
 
   // Update Drop Marker
   useEffect(() => {
@@ -1201,12 +1307,130 @@ export const InteractiveMap = ({
         </div>
       </div>
 
-      {/* Tapping selection tooltip */}
+      {/* Full Interactive "Pick from Map" Overlay (Rapido / Uber Parity) */}
       {selectingMode && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-md px-4 py-2 rounded-full border border-brand-yellow text-brand-yellow text-xs font-bold shadow-2xl flex items-center gap-2 z-10 animate-bounce">
-          <span className="w-2 h-2 rounded-full bg-brand-yellow animate-ping"></span>
-          Tap anywhere on map or drag pin to set {selectingMode.toUpperCase()}
-        </div>
+        <>
+          {/* 1. Top Floating Navigation Header */}
+          <div className="absolute top-4 left-3.5 right-3.5 z-[1000] flex items-center justify-between bg-gray-900/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-gray-700 shadow-2xl animate-in slide-in-from-top-4 duration-200">
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => onLocationSelect && onLocationSelect({ type: null })}
+                className="p-1.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white transition active:scale-95 border border-gray-600 shadow cursor-pointer"
+                title="Cancel and return"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <div className="text-xs font-black text-white">
+                  {selectingMode === 'pickup' ? 'Choose Pickup on Map' : 'Choose Drop Destination'}
+                </div>
+                <div className="text-[10px] text-gray-400 font-medium">
+                  Pan & drag map to position exact door / gate
+                </div>
+              </div>
+            </div>
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide border ${
+                selectingMode === 'pickup'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+              }`}
+            >
+              {selectingMode === 'pickup' ? 'Pickup' : 'Drop'}
+            </span>
+          </div>
+
+          {/* 2. Center-Screen Floating Animated Map Pin (Points to map center) */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full pointer-events-none z-[999] flex flex-col items-center select-none">
+            {/* Dynamic Status Badge above Pin */}
+            <div
+              className={`px-3 py-1 rounded-xl text-[10px] font-extrabold shadow-2xl border flex items-center gap-1.5 mb-1 transition-all duration-200 ${
+                isMapMoving ? 'scale-110 -translate-y-1 opacity-90' : 'scale-100 opacity-100'
+              } ${
+                selectingMode === 'pickup'
+                  ? 'bg-emerald-600 text-white border-emerald-400 shadow-emerald-500/40'
+                  : 'bg-brand-yellow text-gray-950 border-yellow-300 shadow-brand-yellow/40'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+              <span>{selectingMode === 'pickup' ? 'Pickup Point' : 'Drop Point'}</span>
+            </div>
+
+            {/* 3D Map Pin SVG with bounce movement */}
+            <div
+              className={`transition-transform duration-150 ${
+                isMapMoving ? '-translate-y-2 scale-110' : 'translate-y-0'
+              }`}
+            >
+              <MapPin
+                className={`w-9 h-9 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] ${
+                  selectingMode === 'pickup'
+                    ? 'text-emerald-400 fill-emerald-500'
+                    : 'text-brand-yellow fill-amber-500'
+                }`}
+              />
+            </div>
+
+            {/* Ground Contact Shadow */}
+            <div className="w-3.5 h-1.5 bg-black/50 rounded-full blur-[1px] -mt-1"></div>
+          </div>
+
+          {/* 3. Bottom Floating Location Confirmation Card */}
+          <div className="absolute bottom-6 left-3.5 right-3.5 z-[1000] bg-gray-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-gray-700 shadow-2xl space-y-2.5 animate-in slide-in-from-bottom-4 duration-200">
+            <div className="flex items-start gap-2.5">
+              <div
+                className={`p-2 rounded-xl shrink-0 mt-0.5 border ${
+                  selectingMode === 'pickup'
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                    : 'bg-brand-yellow/20 text-brand-yellow border-brand-yellow/40'
+                }`}
+              >
+                <MapPin className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                  {selectingMode === 'pickup' ? 'Selected Pickup Point' : 'Selected Drop Destination'}
+                </div>
+                <div className="text-xs font-bold text-white truncate mt-0.5">
+                  {isResolvingAddress ? (
+                    <span className="flex items-center gap-1.5 text-gray-400">
+                      <Loader2 className="w-3 h-3 animate-spin text-brand-yellow" />
+                      Locating address...
+                    </span>
+                  ) : (
+                    pickerAddress || 'Point on Map'
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Confirm Selection CTA Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (pickerCenter && onLocationSelect) {
+                  onLocationSelect({
+                    lat: Number(pickerCenter.lat.toFixed(6)),
+                    lng: Number(pickerCenter.lng.toFixed(6)),
+                    type: selectingMode,
+                    name: pickerAddress || `Location (${pickerCenter.lat.toFixed(4)}, ${pickerCenter.lng.toFixed(4)})`
+                  });
+                }
+              }}
+              className={`w-full py-2.5 px-4 rounded-xl font-black text-xs transition active:scale-98 flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
+                selectingMode === 'pickup'
+                  ? 'bg-emerald-500 hover:bg-emerald-400 text-gray-950 shadow-emerald-500/30'
+                  : 'bg-brand-yellow hover:bg-yellow-400 text-gray-950 shadow-brand-yellow/30'
+              }`}
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>
+                Confirm {selectingMode === 'pickup' ? 'Pickup Location' : 'Drop Destination'}
+              </span>
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

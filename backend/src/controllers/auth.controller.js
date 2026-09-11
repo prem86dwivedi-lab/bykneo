@@ -72,6 +72,7 @@ export const sendOtp = async (req, res) => {
       success: true,
       message: result.message || "OTP sent successfully to your mobile number",
       reqId: result.reqId,
+      otp: result.otp || null,
       isExistingUser: !!existingUser,
       user: existingUser ? {
         id: existingUser.id,

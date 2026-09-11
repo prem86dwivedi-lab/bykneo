@@ -62,17 +62,16 @@ export const IncomingRequestModal = ({ request, onAccept, onReject }) => {
 
     // Play 1st beep immediately
     playUrgentBeep();
-    beepCount = 1;
 
-    // Schedule remaining 5 beeps (total 6 beeps at 500ms intervals)
+    // Loop alert chimes every 1.5s until modal is accepted/rejected/dismissed
     beepInterval = setInterval(() => {
-      if (beepCount < 6) {
-        playUrgentBeep();
-        beepCount++;
-      } else {
-        clearInterval(beepInterval);
-      }
-    }, 500);
+      playUrgentBeep();
+      try {
+        if ('vibrate' in navigator) {
+          navigator.vibrate([350, 150, 350, 150, 350]);
+        }
+      } catch (e) {}
+    }, 1500);
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {

@@ -1,34 +1,58 @@
-// Bykneo Mobile & PWA OS-Level Notification Utility
+// Bykneo Mobile & PWA OS-Level High-Priority Notification Utility
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 
-export const playNotificationSound = (type = 'default') => {
+const isNativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+
+// 1. Initialize High-Importance Android Notification Channels
+export const initNotificationChannels = async () => {
+  if (!isNativeAndroid) return;
   try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
+    // High-Priority Ride Request Alert Channel (Loud, vibrating, heads-up banner over all apps)
+    await LocalNotifications.createChannel({
+      id: 'bykneo-ride-alerts',
+      name: '🚨 New Ride Requests',
+      description: 'Loud high-priority sound & banner alerts for incoming ride requests',
+      importance: 5, // IMPORTANCE_HIGH / MAX (pops up over WhatsApp, Facebook, etc.)
+      visibility: 1, // VISIBILITY_PUBLIC
+      sound: undefined, // uses system high-alert sound
+      vibration: true,
+      lights: true,
+      lightColor: '#FFB800'
+    });
 
-    if (type === 'success') {
-      // Upward happy chime (D5 -> A5)
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12);
-    } else {
-      // Alert chime (A5 -> D6)
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-      osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.12);
-    }
-
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.35);
+    // General Updates & KYC Channel
+    await LocalNotifications.createChannel({
+      id: 'bykneo-general',
+      name: 'Bykneo Notifications',
+      description: 'Trip updates, KYC status, and wallet alerts',
+      importance: 4,
+      visibility: 1,
+      vibration: true,
+      lights: false
+    });
   } catch (e) {
-    // audio context might be blocked if no user interaction
+    console.warn('Could not initialize Android notification channels:', e);
   }
 };
 
+// 2. Request Notification Permissions (Native Android 13+ & Web)
 export const requestNotificationPermission = async () => {
-  if ('Notification' in window && Notification.permission === 'default') {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const status = await LocalNotifications.checkPermissions();
+      if (status.display !== 'granted') {
+        await LocalNotifications.requestPermissions();
+      }
+      await initNotificationChannels();
+      return;
+    }
+  } catch (e) {
+    console.warn('Native notification permission error:', e);
+  }
+
+  // Web / PWA fallback
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
     try {
       await Notification.requestPermission();
     } catch (e) {
@@ -37,23 +61,144 @@ export const requestNotificationPermission = async () => {
   }
 };
 
+// 3. Synthesize In-App Audio Chime (Foreground Only)
+export const playNotificationSound = (type = 'default') => {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+
+    if (type === 'ride_alert') {
+      // Urgent siren dual-tone (880Hz -> 1175Hz)
+      const now = audioCtx.currentTime;
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.setValueAtTime(1175, now + 0.12);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+      return;
+    }
+
+    if (type === 'success') {
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12);
+    } else {
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.12);
+    }
+
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
+  } catch (e) {
+    // audio context might be blocked if backgrounded
+  }
+};
+
+// Helper to convert string IDs to positive 32-bit integer for LocalNotifications
+const getNotificationId = (str) => {
+  if (!str) return Math.floor(Math.random() * 900000) + 100000;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) % 1000000;
+};
+
+// 4. Send High-Priority Native Android Ride Request Notification (Heads-up over all apps)
+export const sendRideAlertNotification = async (ride) => {
+  if (!ride) return;
+
+  // In-app vibration & sound
+  playNotificationSound('ride_alert');
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate([400, 150, 400, 150, 400, 150, 400]);
+    } catch (e) {}
+  }
+
+  const notifId = getNotificationId(ride.id || ride._id || `ride_${Date.now()}`);
+  const title = `🚨 NEW RIDE: ₹${ride.fare || 50} (${ride.vehicle_name || 'Ride'})`;
+  const pickupShort = ride.pickup_name?.split(',')[0] || 'Pickup Location';
+  const dropShort = ride.drop_name?.split(',')[0] || 'Drop Destination';
+  const distText = ride.distance_km ? ` • ${ride.distance_km} km` : '';
+  const body = `📍 ${pickupShort} ➔ 🎯 ${dropShort}${distText}\n⚡ Tap immediately to Accept before timer ends!`;
+
+  // Native Android Notification
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: notifId,
+            title,
+            body,
+            channelId: 'bykneo-ride-alerts',
+            smallIcon: 'ic_launcher',
+            largeIcon: 'ic_launcher',
+            actionTypeId: 'OPEN_RIDE_REQUEST',
+            autoCancel: true,
+            extra: {
+              rideId: ride.id || ride._id,
+              type: 'INCOMING_RIDE'
+            }
+          }
+        ]
+      });
+      return;
+    } catch (e) {
+      console.warn('Native LocalNotification schedule error:', e);
+    }
+  }
+
+  // Web / PWA Notification Fallback
+  sendPwaNotification(title, body, `ride-${ride.id}`);
+};
+
+// 5. Cancel Native Ride Notification (when ride is accepted/rejected or expired)
+export const cancelRideAlertNotification = async (rideId) => {
+  if (!rideId) return;
+  const notifId = getNotificationId(rideId);
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await LocalNotifications.cancel({
+        notifications: [{ id: notifId }]
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+};
+
+// 6. Generic PWA Notification
 export const sendPwaNotification = (title, body, tag = 'bykneo-notif') => {
   playNotificationSound(title.toLowerCase().includes('approved') ? 'success' : 'default');
 
-  if ('Notification' in window) {
+  if (typeof window !== 'undefined' && 'Notification' in window) {
     if (Notification.permission === 'granted') {
       if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
-        navigator.serviceWorker.ready.then((reg) => {
-          reg.showNotification(title, {
-            body,
-            icon: '/logo.svg',
-            badge: '/favicon.ico',
-            vibrate: [250, 100, 250],
-            tag
+        navigator.serviceWorker.ready
+          .then((reg) => {
+            reg.showNotification(title, {
+              body,
+              icon: '/favicon.ico',
+              badge: '/favicon.ico',
+              vibrate: [350, 150, 350, 150, 350],
+              tag
+            });
+          })
+          .catch(() => {
+            new Notification(title, { body, icon: '/favicon.ico', tag });
           });
-        }).catch(() => {
-          new Notification(title, { body, icon: '/favicon.ico', tag });
-        });
       } else {
         new Notification(title, { body, icon: '/favicon.ico', tag });
       }

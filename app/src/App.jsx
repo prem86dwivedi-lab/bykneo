@@ -23,7 +23,14 @@ import { DriverEarningsScreen } from './screens/driver/DriverEarningsScreen';
 import { DriverProfileScreen } from './screens/driver/DriverProfileScreen';
 import { CaptainKycScreen } from './screens/driver/CaptainKycScreen';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
-import { sendPwaNotification, requestNotificationPermission } from './utils/notification';
+import {
+  sendPwaNotification,
+  requestNotificationPermission,
+  initNotificationChannels,
+  sendRideAlertNotification,
+  cancelRideAlertNotification
+} from './utils/notification';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { subscribeToPush, unsubscribeFromPush } from './utils/pushNotification.js';
 import { getPreciseCurrentPosition, watchPreciseLocation, requestLocationPermissions } from './utils/nativeLocation.js';
 import { ShieldCheck, X } from 'lucide-react';
@@ -232,6 +239,26 @@ export function App() {
 
   useEffect(() => {
     fetchActiveCities();
+    initNotificationChannels();
+    requestNotificationPermission();
+
+    let notifListener = null;
+    try {
+      LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+        const extra = notificationAction?.notification?.extra;
+        if (extra?.type === 'INCOMING_RIDE') {
+          setCurrentScreen('main');
+        }
+      }).then((l) => {
+        notifListener = l;
+      });
+    } catch (e) {}
+
+    return () => {
+      if (notifListener && notifListener.remove) {
+        notifListener.remove();
+      }
+    };
   }, []);
 
   // Fetch online drivers for map
@@ -402,26 +429,24 @@ export function App() {
       }));
     });
 
-    // 3. Driver: Incoming Request Alert
+    // 3. Driver: Incoming Request Alert (High-priority heads-up notification with loud siren & vibration)
     socket.on('driver:incoming_request', ({ ride }) => {
       if (activeRole === 'driver' && isDriverOnline && !activeRide) {
         console.log('🔔 Incoming ride request:', ride);
         setIncomingRequest(ride);
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-          try {
-            navigator.vibrate([300, 150, 300, 150, 500]);
-          } catch (e) {}
-        }
+        sendRideAlertNotification(ride);
       }
     });
 
     // 4. Driver: Dismiss pending incoming request when accepted by another driver or expired
     socket.on('driver:dismiss_request', ({ rideId }) => {
       setIncomingRequest((prev) => (prev?.id === rideId ? null : prev));
+      cancelRideAlertNotification(rideId);
     });
 
     socket.on('ride:request_cancelled', ({ rideId }) => {
       setIncomingRequest((prev) => (prev?.id === rideId ? null : prev));
+      cancelRideAlertNotification(rideId);
     });
 
     // 5. Driver: Assigned Successfully
@@ -655,6 +680,7 @@ export function App() {
   // CAPTAIN: Accept Incoming Ride
   const handleAcceptRide = (rideId) => {
     if (!driverProfile) return;
+    cancelRideAlertNotification(rideId);
     socket.emit('driver:accept_ride', {
       rideId,
       driverId: driverProfile.id,
@@ -665,6 +691,7 @@ export function App() {
 
   // CAPTAIN: Reject Incoming Ride
   const handleRejectRide = (rideId) => {
+    cancelRideAlertNotification(rideId);
     setIncomingRequest(null);
   };
 

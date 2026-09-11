@@ -725,8 +725,28 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20 px-2 sm:px-3 pb-2 sm:pb-3 pb-[env(safe-area-inset-bottom,12px)] pointer-events-none">
       <div className="max-w-md mx-auto bg-gray-900/98 backdrop-blur-2xl border border-gray-800 rounded-2xl p-3 shadow-2xl pointer-events-auto space-y-2 max-h-[50vh] sm:max-h-[52vh] flex flex-col justify-between overflow-hidden">
-        {/* Mobile Top Drag Handle Bar */}
-        <div className="w-8 h-1 bg-gray-700 rounded-full mx-auto shrink-0 opacity-70"></div>
+        {/* Mobile Top Header with Drag Handle & Close/Cancel Button */}
+        <div className="relative flex items-center justify-center shrink-0 min-h-[18px]">
+          <div className="w-8 h-1 bg-gray-700 rounded-full opacity-70"></div>
+          {(drop || dropQuery || estimatedFare || isEditingAddress || activeInput) && (
+            <button
+              type="button"
+              onClick={() => {
+                setDrop(null);
+                setDropQuery('');
+                setEstimatedFare(null);
+                setIsEditingAddress(false);
+                setActiveInput(null);
+                setSuggestions([]);
+              }}
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 px-1.5 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white border border-gray-700 transition active:scale-90 flex items-center gap-1 shadow cursor-pointer"
+              title="Close & Go to Main Screen"
+            >
+              <span className="text-[9px] font-bold text-gray-300">Close</span>
+              <X className="w-3 h-3 text-red-400" />
+            </button>
+          )}
+        </div>
 
         {/* 1. ROUTE SUMMARY (When Destination is Chosen & Fare Estimated) */}
         {estimatedFare && pickup?.name && drop?.name && !isEditingAddress && !activeInput ? (
@@ -741,14 +761,30 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 <span className="text-white font-bold truncate">{drop.name}</span>
               </div>
             </div>
-            <button
-              onClick={() => setIsEditingAddress(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-gray-800 hover:bg-gray-750 text-brand-yellow shrink-0 flex items-center gap-1 text-[11px] font-bold transition active:scale-95 border border-gray-700"
-              title="Change Route"
-            >
-              <Edit2 className="w-3 h-3" />
-              <span>Edit</span>
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setIsEditingAddress(true)}
+                className="px-2.5 py-1.5 rounded-xl bg-gray-800 hover:bg-gray-750 text-brand-yellow shrink-0 flex items-center gap-1 text-[11px] font-bold transition active:scale-95 border border-gray-700"
+                title="Change Route"
+              >
+                <Edit2 className="w-3 h-3" />
+                <span>Edit</span>
+              </button>
+              <button
+                onClick={() => {
+                  setDrop(null);
+                  setDropQuery('');
+                  setEstimatedFare(null);
+                  setIsEditingAddress(false);
+                  setActiveInput(null);
+                  setSuggestions([]);
+                }}
+                className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 transition active:scale-95"
+                title="Cancel Route & Go Back"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         ) : (
           /* 2. RAPIDO-STYLE EDITABLE PICKUP + DROP CARD WITH SWAP/REVERSE BUTTON */

@@ -10,7 +10,8 @@ import {
   ShieldCheck,
   Zap,
   MapPin,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 
 export const ADMIN_NAV_ITEMS = [
@@ -79,9 +80,22 @@ export const AdminSidebar = ({
   cities = [],
   selectedCityId = 'all',
   onSelectCity,
-  onClose
+  onClose,
+  onLogout
 }) => {
   const activeCity = cities.find(c => c.id === selectedCityId);
+
+  const handleLogoutClick = () => {
+    if (window.confirm('Are you sure you want to log out of RiderXO Admin Panel?')) {
+      if (onLogout) {
+        onLogout();
+      } else {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/';
+      }
+    }
+  };
 
   return (
     <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0 h-full select-none">
@@ -197,20 +211,30 @@ export const AdminSidebar = ({
         })}
       </nav>
 
-      {/* Admin Status Pill */}
-      <div className="p-3.5 sm:p-4 border-t border-gray-800 bg-gray-950/60">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
-            <Zap className="w-3.5 h-3.5" />
+      {/* Admin Footer with Live Status Pill & Logout Button */}
+      <div className="p-3 border-t border-gray-800 bg-gray-950/80 space-y-2">
+        <div className="flex items-center gap-2.5 px-1 py-0.5">
+          <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
+            <Zap className="w-3 h-3" />
           </div>
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-white truncate">Live Operations API</div>
-            <div className="text-[9.5px] text-emerald-400 font-semibold flex items-center gap-1 truncate">
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-bold text-white truncate">Live Operations API</div>
+            <div className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1 truncate">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
               Socket.IO Live
             </div>
           </div>
         </div>
+
+        {/* Dedicated Admin Logout Button */}
+        <button
+          onClick={handleLogoutClick}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50 font-bold text-xs transition active:scale-95 shadow-sm"
+          title="Log out of Admin Panel"
+        >
+          <LogOut className="w-3.5 h-3.5 shrink-0" />
+          <span>Logout Admin</span>
+        </button>
       </div>
     </aside>
   );

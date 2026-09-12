@@ -577,13 +577,13 @@ export const LoginScreen = () => {
   };
 
   return (
-    <div className="h-[100dvh] min-h-[100dvh] max-h-[100dvh] bg-gray-950 text-white flex flex-col justify-between px-4 py-3 max-w-md mx-auto relative overflow-hidden select-none">
+    <div className="min-h-[100dvh] bg-gray-950 text-white flex flex-col justify-between px-4 py-3.5 max-w-md mx-auto relative overflow-x-hidden overflow-y-auto select-none">
       {/* Background Glows */}
       <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-yellow/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header */}
-      <div className="pt-1 relative z-10">
+      <div className="pt-1 relative z-10 shrink-0">
         <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-1.5 bg-gray-900 border border-gray-800 px-3 py-1 rounded-full shadow-lg">
             <Zap className="w-3 h-3 text-brand-yellow" />
@@ -614,7 +614,7 @@ export const LoginScreen = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="my-auto py-1 relative z-10">
+      <div className="py-3 relative z-10 flex-1 flex flex-col justify-center">
         {/* ======================================================== */}
         {/* STEP 1: MOBILE NUMBER & ROLE SELECTION */}
         {/* ======================================================== */}
@@ -776,9 +776,10 @@ export const LoginScreen = () => {
                     <input
                       key={idx}
                       ref={(el) => (otpInputRefs.current[idx] = el)}
-                      type="text"
+                      type="tel"
                       inputMode="numeric"
-                      autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+                      pattern="[0-9]*"
+                      autoComplete="one-time-code"
                       maxLength={6}
                       value={digit}
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
@@ -901,7 +902,7 @@ export const LoginScreen = () => {
         {/* STEP 3B: FULL CAPTAIN KYC & VEHICLE REGISTRATION */}
         {/* ======================================================== */}
         {step === 'details' && selectedRole === 'driver' && (
-          <div className="animate-in fade-in slide-in-from-right duration-200 space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="animate-in fade-in slide-in-from-right duration-200 space-y-4">
             <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 space-y-4 shadow-xl">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-brand-yellow/15 border border-brand-yellow/30 flex items-center justify-center text-brand-yellow font-black">

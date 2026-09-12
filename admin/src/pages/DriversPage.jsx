@@ -57,6 +57,15 @@ export const DriversPage = ({
   const [confirmDeleteDriver, setConfirmDeleteDriver] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Helper to resolve full image URLs from backend storage
+  const getResolvedPhotoUrl = (url, fallback = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400') => {
+    if (!url) return fallback;
+    if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return url;
+    const cleanBase = (BACKEND_URL || '').replace(/\/+$/, '');
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `${cleanBase}${cleanPath}`;
+  };
+
   const fetchDrivers = () => {
     fetch(`${BACKEND_URL}/api/admin/drivers`)
       .then(res => res.json())
@@ -903,17 +912,20 @@ export const DriversPage = ({
                   </div>
                   <div className="text-[9px] text-gray-400 truncate">Real Owner Scan</div>
                   <img
-                    src={
-                      inspectingDriver.selfie_photo ||
-                      inspectingDriver.avatar ||
+                    src={getResolvedPhotoUrl(
+                      inspectingDriver.selfie_photo || inspectingDriver.avatar,
                       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400'
-                    }
+                    )}
                     alt="Live Selfie"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400';
+                    }}
                     onClick={() =>
                       setPreviewImage(
-                        inspectingDriver.selfie_photo ||
-                        inspectingDriver.avatar ||
-                        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400'
+                        getResolvedPhotoUrl(
+                          inspectingDriver.selfie_photo || inspectingDriver.avatar,
+                          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400'
+                        )
                       )
                     }
                     className="w-full h-24 rounded-lg sm:rounded-xl object-cover border border-purple-500/40 cursor-pointer hover:opacity-80 transition"
@@ -931,15 +943,20 @@ export const DriversPage = ({
                     {inspectingDriver.license_number || 'N/A'}
                   </div>
                   <img
-                    src={
-                      inspectingDriver.dl_photo ||
+                    src={getResolvedPhotoUrl(
+                      inspectingDriver.dl_photo,
                       'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400'
-                    }
+                    )}
                     alt="Driving License"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400';
+                    }}
                     onClick={() =>
                       setPreviewImage(
-                        inspectingDriver.dl_photo ||
-                        'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400'
+                        getResolvedPhotoUrl(
+                          inspectingDriver.dl_photo,
+                          'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400'
+                        )
                       )
                     }
                     className="w-full h-24 rounded-lg sm:rounded-xl object-cover border border-gray-700 cursor-pointer hover:opacity-80 transition"
@@ -957,15 +974,20 @@ export const DriversPage = ({
                     {inspectingDriver.rc_number || 'RC-MP04-998877'}
                   </div>
                   <img
-                    src={
-                      inspectingDriver.rc_photo ||
+                    src={getResolvedPhotoUrl(
+                      inspectingDriver.rc_photo,
                       'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400'
-                    }
+                    )}
                     alt="Vehicle Registration Certificate (VRC)"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400';
+                    }}
                     onClick={() =>
                       setPreviewImage(
-                        inspectingDriver.rc_photo ||
-                        'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400'
+                        getResolvedPhotoUrl(
+                          inspectingDriver.rc_photo,
+                          'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400'
+                        )
                       )
                     }
                     className="w-full h-24 rounded-lg sm:rounded-xl object-cover border border-gray-700 cursor-pointer hover:opacity-80 transition"
@@ -983,15 +1005,20 @@ export const DriversPage = ({
                     {inspectingDriver.aadhaar_number || '9876 5432 1098'}
                   </div>
                   <img
-                    src={
-                      inspectingDriver.aadhaar_photo ||
+                    src={getResolvedPhotoUrl(
+                      inspectingDriver.aadhaar_photo,
                       'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400'
-                    }
+                    )}
                     alt="Aadhaar Card"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400';
+                    }}
                     onClick={() =>
                       setPreviewImage(
-                        inspectingDriver.aadhaar_photo ||
-                        'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400'
+                        getResolvedPhotoUrl(
+                          inspectingDriver.aadhaar_photo,
+                          'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400'
+                        )
                       )
                     }
                     className="w-full h-24 rounded-lg sm:rounded-xl object-cover border border-gray-700 cursor-pointer hover:opacity-80 transition"

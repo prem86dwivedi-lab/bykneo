@@ -158,10 +158,10 @@ export function App() {
 
             <div className="flex items-center gap-1.5">
               <div className="w-6 h-6 rounded-lg bg-brand-yellow flex items-center justify-center text-gray-950 font-black text-xs shadow-md">
-                B
+                R
               </div>
               <div className="font-black text-sm text-white tracking-tight flex items-center gap-1">
-                BYK<span className="text-brand-yellow">NEO</span>
+                RIDER<span className="text-brand-yellow">XO</span>
               </div>
             </div>
           </div>

@@ -26,7 +26,7 @@ export const WalletScreen = ({ onBack }) => {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>
-          <h2 className="text-lg font-bold text-white">Bykneo Wallet</h2>
+          <h2 className="text-lg font-bold text-white">RiderXO Wallet</h2>
           <p className="text-xs text-gray-400">Instant 1-tap ride checkout</p>
         </div>
       </div>

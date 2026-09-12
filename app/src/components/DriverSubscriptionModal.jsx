@@ -165,7 +165,7 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
         key: orderData.key_id,
         amount: orderData.amount_paise,
         currency: orderData.currency || 'INR',
-        name: orderData.merchant_name || 'Bykneo Mobility',
+        name: orderData.merchant_name || 'RiderXO Mobility',
         description: `${selectedDays}-Day Unlimited Pass (0% Platform Commission)`,
         image: 'https://cdn-icons-png.flaticon.com/512/3063/3063822.png',
         order_id: orderData.order_id?.startsWith('order_') && !orderData.order_id.includes('Mock') ? orderData.order_id : undefined,
@@ -219,14 +219,14 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
 
       if (window.Razorpay) {
         const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (resp) {
+        rzp.on('payment.failed', function (response) {
           setProcessingPayment(false);
-          setError(`Payment Failed: ${resp.error?.description || 'Transaction declined by bank.'}`);
+          setError(`Payment Failed: ${response.error.description || 'Transaction declined'}`);
         });
         rzp.open();
       } else {
         setProcessingPayment(false);
-        setError('Payment Gateway SDK is loading. Please check your internet connection.');
+        setError('Payment gateway SDK is loading. Please retry.');
       }
     } catch (err) {
       setProcessingPayment(false);
@@ -240,12 +240,11 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
     setTimeout(() => setCopiedUpi(false), 2500);
   };
 
-  const formatExpiryDate = (isoDate) => {
+  const formatDate = (isoDate) => {
     if (!isoDate) return 'N/A';
     try {
       const d = new Date(isoDate);
       return d.toLocaleDateString('en-IN', {
-        weekday: 'short',
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -271,7 +270,7 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
             </div>
             <div className="min-w-0">
               <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5 leading-tight truncate">
-                <span>Bykneo Unlimited Pass</span>
+                <span>RiderXO Unlimited Pass</span>
                 {isActive ? (
                   <span className="text-[8px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1 py-0.2 rounded font-black">
                     ● ACTIVE

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Bykneo</string>
-    <string name="title_activity_main">Bykneo</string>
+    <string name="app_name">RiderXO</string>
+    <string name="title_activity_main">RiderXO</string>
     <string name="package_name">com.bykneo.app</string>
     <string name="custom_url_scheme">com.bykneo.app</string>
 </resources>

@@ -29,7 +29,7 @@ export const InstallPwaBanner = () => {
       setIsInstalled(true);
       setShowBanner(false);
       setDeferredPrompt(null);
-      console.log('🎉 Bykneo PWA was installed successfully!');
+      console.log('🎉 RiderXO PWA was installed successfully!');
     });
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -59,7 +59,7 @@ export const InstallPwaBanner = () => {
           <Smartphone className="w-5 h-5" />
         </div>
         <div>
-          <div className="text-xs font-black text-white">Install Bykneo App</div>
+          <div className="text-xs font-black text-white">Install RiderXO App</div>
           <div className="text-[10px] text-gray-400">Fast 1-tap booking & live GPS tracking</div>
         </div>
       </div>

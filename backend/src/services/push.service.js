@@ -51,7 +51,7 @@ function ensureVapidKeys() {
 export function initPush() {
   const { publicKey, privateKey } = ensureVapidKeys();
   webpush.setVapidDetails(
-    'mailto:support@bykneo.com',
+    'mailto:support@riderxo.in',
     publicKey,
     privateKey
   );

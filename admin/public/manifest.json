@@ -1,7 +1,7 @@
 {
-  "short_name": "Bykneo Admin",
-  "name": "Bykneo Admin Control Panel",
-  "description": "Bykneo Central Operations, Fleet Management & Captain KYC Verification Portal",
+  "short_name": "RiderXO Admin",
+  "name": "RiderXO Admin Control Panel",
+  "description": "RiderXO Central Operations, Fleet Management & Captain KYC Verification Portal",
   "icons": [
     {
       "src": "/favicon.ico",

@@ -89,11 +89,11 @@ export const AdminSidebar = ({
       <div className="p-4 sm:p-5 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-brand-yellow flex items-center justify-center text-gray-950 font-black text-sm shadow-lg shadow-brand-yellow/20 shrink-0">
-            B
+            R
           </div>
           <div>
             <div className="font-black text-base tracking-tight text-white flex items-center gap-1">
-              BYK<span className="text-brand-yellow">NEO</span>
+              RIDER<span className="text-brand-yellow">XO</span>
               <span className="text-[9px] bg-brand-yellow/20 text-brand-yellow px-1.5 py-0.5 rounded font-bold ml-1">
                 ADMIN
               </span>

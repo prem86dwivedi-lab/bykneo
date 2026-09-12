@@ -47,7 +47,7 @@ export const ProfileScreen = ({ onBack }) => {
       {/* Switch to Captain Action Card */}
       <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/15 to-amber-500/10 border border-brand-yellow/30 rounded-2xl p-4 flex items-center justify-between my-2">
         <div>
-          <h4 className="text-xs font-bold text-brand-yellow">Earn with Bykneo</h4>
+          <h4 className="text-xs font-bold text-brand-yellow">Earn with RiderXO</h4>
           <p className="text-[11px] text-gray-300">Have a bike? Switch to Captain mode & earn daily.</p>
         </div>
         <button

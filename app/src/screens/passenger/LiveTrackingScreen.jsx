@@ -342,7 +342,7 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
               </div>
             </div>
             <p className="text-xs text-gray-300">
-              Your live GPS location and ride details will be shared immediately with Bykneo 24/7 Safety Team and local authorities (112).
+              Your live GPS location and ride details will be shared immediately with RiderXO 24/7 Safety Team and local authorities (112).
             </p>
             <div className="space-y-2">
               <a

@@ -238,7 +238,7 @@ export const requestRide = (req, res) => {
     drop_lng,
     fare,
     vehicle_id = 'bike',
-    vehicle_name = 'Bykneo Bike',
+    vehicle_name = 'RiderXO Bike',
     vehicle_category = 'BIKE',
     distance_km,
     duration_mins,

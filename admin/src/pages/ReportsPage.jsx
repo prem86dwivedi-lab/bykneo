@@ -29,7 +29,7 @@ const DEFAULT_VEHICLE_PRICING = {
     rate_per_km: 6.0
   },
   bike: {
-    name: 'Bykneo Bike',
+    name: 'RiderXO Bike',
     category: 'BIKE',
     icon: '🏍️',
     tagline: 'Fastest solo ride through traffic',
@@ -45,7 +45,7 @@ const DEFAULT_VEHICLE_PRICING = {
     rate_per_km: 12.5
   },
   auto: {
-    name: 'Bykneo Auto',
+    name: 'RiderXO Auto',
     category: 'AUTO',
     icon: '🛺',
     tagline: 'Doorstep 3-seater Auto Rickshaw',

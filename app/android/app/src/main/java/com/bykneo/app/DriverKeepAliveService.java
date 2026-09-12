@@ -79,7 +79,7 @@ public class DriverKeepAliveService extends Service {
                 "Driver Online Background Service",
                 NotificationManager.IMPORTANCE_LOW
             );
-            serviceChannel.setDescription("Keeps BYKNEO driver online and ready for incoming bookings in background");
+            serviceChannel.setDescription("Keeps RiderXO driver online and ready for incoming bookings in background");
             serviceChannel.setShowBadge(false);
             manager.createNotificationChannel(serviceChannel);
 
@@ -109,7 +109,7 @@ public class DriverKeepAliveService extends Service {
         );
 
         return new NotificationCompat.Builder(this, CHANNEL_SERVICE_ID)
-            .setContentTitle("🟢 BYKNEO Captain Online")
+            .setContentTitle("🟢 RIDERXO Captain Online")
             .setContentText("Active & searching for nearby passenger ride requests...")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
@@ -123,13 +123,13 @@ public class DriverKeepAliveService extends Service {
         try {
             PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
             if (powerManager != null && partialWakeLock == null) {
-                partialWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "BYKNEO::DriverPartialWakeLock");
+                partialWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "RIDERXO::DriverPartialWakeLock");
                 partialWakeLock.acquire();
             }
 
             WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             if (wifiManager != null && wifiLock == null) {
-                wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "BYKNEO::DriverWifiLock");
+                wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "RIDERXO::DriverWifiLock");
                 wifiLock.acquire();
             }
         } catch (Exception e) {

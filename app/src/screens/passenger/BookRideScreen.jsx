@@ -1003,7 +1003,7 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
           <div className="bg-red-500/15 border border-red-500/30 p-2.5 rounded-xl space-y-1 animate-in fade-in-50 shrink-0">
             <div className="flex items-center gap-1.5 text-red-400 font-bold text-[11px]">
               <MapPin className="w-3.5 h-3.5 shrink-0" />
-              <span>Bykneo is launching soon in this area!</span>
+              <span>RiderXO is launching soon in this area!</span>
             </div>
             <p className="text-[10px] text-gray-300">
               Our fleet is currently offline or not operating in this zone. Driver availability is turned OFF.

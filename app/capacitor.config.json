@@ -1,6 +1,6 @@
 {
   "appId": "com.bykneo.app",
-  "appName": "Bykneo",
+  "appName": "RiderXO",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {

@@ -40,7 +40,7 @@ export const VEHICLE_TYPES = [
   {
     id: 'bike',
     category: 'BIKE',
-    name: 'Bykneo Bike',
+    name: 'RiderXO Bike',
     tag: '125cc • Moto',
     iconSrc: '/vehicles/bike.png',
     fallbackEmoji: '🏍️',

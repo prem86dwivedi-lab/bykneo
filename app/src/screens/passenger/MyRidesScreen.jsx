@@ -48,7 +48,7 @@ export const MyRidesScreen = ({ onBack }) => {
               <Bike className="w-8 h-8" />
             </div>
             <p className="text-sm font-semibold text-gray-400">No rides yet</p>
-            <p className="text-xs text-gray-600">Book your first bike ride on Bykneo today!</p>
+            <p className="text-xs text-gray-600">Book your first ride on RiderXO today!</p>
           </div>
         ) : (
           rides.map((ride) => (

@@ -185,7 +185,7 @@ export async function sendOtpToPhone(rawPhone, role = 'passenger') {
   });
 
   console.log(`\n======================================================`);
-  console.log(`🔑 [BYKNEO LOCAL DEV OTP] Phone: +${cleaned} | Code: ${localOtp}`);
+  console.log(`🔑 [RIDERXO LOCAL DEV OTP] Phone: +${cleaned} | Code: ${localOtp}`);
   console.log(`======================================================\n`);
 
   return {

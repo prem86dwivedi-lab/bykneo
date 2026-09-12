@@ -63,8 +63,8 @@ app.get('/api/cities/active', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
-    app: 'Bykneo API & Real-time Server',
-    message: '🚀 Bykneo Real-time Backend is running smoothly',
+    app: 'RiderXO API & Real-time Server',
+    message: '🚀 RiderXO Real-time Backend is running smoothly',
     endpoints: {
       health: '/api/health',
       active_cities: '/api/cities/active',
@@ -78,7 +78,7 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
-    app: 'Bykneo API & Real-time Server',
+    app: 'RiderXO API & Real-time Server',
     time: new Date().toISOString()
   });
 });
@@ -86,16 +86,17 @@ app.get('/api/health', (req, res) => {
 import fs from 'fs';
 
 // Direct APK Download Endpoint
-app.get(['/bykneo.apk', '/download/bykneo.apk'], (req, res) => {
+app.get(['/riderxo.apk', '/download/riderxo.apk', '/bykneo.apk', '/download/bykneo.apk'], (req, res) => {
   const possiblePaths = [
     path.join(__dirname, '../../app/android/app/build/outputs/apk/debug/app-debug.apk'),
     path.join(__dirname, '../../app/android/app/build/outputs/apk/release/app-release-unsigned.apk'),
     path.join(__dirname, '../../app/android/app/build/outputs/apk/release/app-release.apk'),
+    path.join(__dirname, '../downloads/riderxo.apk'),
     path.join(__dirname, '../downloads/bykneo.apk')
   ];
   const apkPath = possiblePaths.find(p => fs.existsSync(p));
   if (apkPath) {
-    res.download(apkPath, 'bykneo.apk', {
+    res.download(apkPath, 'riderxo.apk', {
       headers: {
         'Content-Type': 'application/vnd.android.package-archive'
       }
@@ -119,7 +120,7 @@ const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`=============================================`);
-  console.log(`🚀 Bykneo Real-time Backend running on port ${PORT}`);
+  console.log(`🚀 RiderXO Real-time Backend running on port ${PORT}`);
   console.log(`🌐 Local REST API: http://localhost:${PORT}/api`);
   console.log(`🌐 Network REST API: http://0.0.0.0:${PORT}/api`);
   console.log(`⚡ WebSocket Server: ws://localhost:${PORT}`);

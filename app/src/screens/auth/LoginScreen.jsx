@@ -30,7 +30,7 @@ import { isNativeApp } from '../../utils/nativeLocation.js';
 
 const VEHICLE_CATEGORIES = [
   { id: 'bike_lite', category: 'BIKE', name: 'Bike Lite', tag: '100cc • Lite', defaultModel: 'Hero Splendor / HF Deluxe', icon: Bike },
-  { id: 'bike', category: 'BIKE', name: 'Bykneo Bike', tag: '125cc • Moto', defaultModel: 'Honda Shine 125', icon: Bike },
+  { id: 'bike', category: 'BIKE', name: 'RiderXO Bike', tag: '125cc • Moto', defaultModel: 'Honda Shine 125', icon: Bike },
   { id: 'auto', category: 'AUTO', name: 'Auto Rickshaw', tag: '3-Seater Auto', defaultModel: 'Bajaj Compact / Maxima', icon: Car },
   { id: 'cab_economy', category: 'CAB', name: 'Cab Economy', tag: 'AC Hatchback', defaultModel: 'Maruti WagonR / Swift', icon: Car }
 ];
@@ -58,7 +58,7 @@ export const LoginScreen = () => {
     email: '',
     vehicle_id: 'bike',
     vehicle_category: 'BIKE',
-    vehicle_type_name: 'Bykneo Bike',
+    vehicle_type_name: 'RiderXO Bike',
     vehicle_model: 'Honda Shine 125',
     vehicle_number: '',
     license_number: '',

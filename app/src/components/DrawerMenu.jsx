@@ -76,10 +76,10 @@ export const DrawerMenu = ({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-brand-yellow flex items-center justify-center text-gray-950 font-black text-sm">
-                B
+                R
               </div>
               <span className="font-extrabold text-base tracking-tight text-white">
-                BYK<span className="text-brand-yellow">NEO</span>
+                RIDER<span className="text-brand-yellow">XO</span>
               </span>
             </div>
             <button

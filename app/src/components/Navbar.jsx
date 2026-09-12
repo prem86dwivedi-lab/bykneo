@@ -132,13 +132,13 @@ export const Navbar = ({
                 <Menu className="w-4 h-4 text-slate-100" />
               </button>
 
-              {/* Bykneo Brand Logo */}
+              {/* RiderXO Brand Logo */}
               <div className="flex items-center gap-1 shrink-0">
                 <div className="w-5 h-5 rounded-md bg-brand-yellow flex items-center justify-center text-gray-950 font-black text-[10px] shadow-sm">
-                  B
+                  R
                 </div>
                 <span className="font-extrabold text-xs tracking-tight text-white">
-                  BYK<span className="text-brand-yellow">NEO</span>
+                  RIDER<span className="text-brand-yellow">XO</span>
                 </span>
               </div>
 

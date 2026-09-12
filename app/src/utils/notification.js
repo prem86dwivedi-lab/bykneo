@@ -47,7 +47,7 @@ export const initNotificationChannels = async () => {
     // General Updates & Ongoing Duty Channel
     await LocalNotifications.createChannel({
       id: 'bykneo-general',
-      name: 'Bykneo Status & Notifications',
+      name: 'RiderXO Status & Notifications',
       description: 'Active shift status, trip updates, and wallet alerts',
       importance: 3,
       visibility: 1,
@@ -72,7 +72,7 @@ export const showDriverOnlineNotification = async () => {
         notifications: [
           {
             id: 888888,
-            title: '🟢 Bykneo Captain is ONLINE',
+            title: '🟢 RiderXO Captain is ONLINE',
             body: 'Active and searching for nearby ride bookings',
             channelId: 'bykneo-general',
             ongoing: true,

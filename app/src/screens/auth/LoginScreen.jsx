@@ -577,7 +577,7 @@ export const LoginScreen = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gray-950 text-white flex flex-col justify-between px-4 py-3.5 max-w-md mx-auto relative overflow-x-hidden overflow-y-auto select-none">
+    <div className="min-h-[100dvh] bg-gray-950 text-white flex flex-col justify-between px-4 py-3 max-w-md mx-auto relative overflow-x-hidden overflow-y-auto select-none">
       {/* Background Glows */}
       <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-yellow/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -614,7 +614,7 @@ export const LoginScreen = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="py-3 relative z-10 flex-1 flex flex-col justify-center">
+      <div className="py-2 relative z-10 flex-1 flex flex-col justify-center my-auto">
         {/* ======================================================== */}
         {/* STEP 1: MOBILE NUMBER & ROLE SELECTION */}
         {/* ======================================================== */}

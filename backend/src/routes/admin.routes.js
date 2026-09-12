@@ -12,10 +12,20 @@ import {
   getCities,
   addCity,
   updateCity,
-  deleteCity
+  deleteCity,
+  adminLogin,
+  sendAdminResetOtp,
+  verifyAdminResetOtp,
+  updateAdminPin
 } from '../controllers/admin.controller.js';
 
 const router = express.Router();
+
+// Admin Authentication & SMS Recovery Routes
+router.post('/login', adminLogin);
+router.post('/send-reset-otp', sendAdminResetOtp);
+router.post('/verify-reset-otp', verifyAdminResetOtp);
+router.post('/update-pin', updateAdminPin);
 
 router.get('/overview', getOverview);
 router.get('/drivers', getDrivers);
@@ -34,3 +44,4 @@ router.patch('/cities/:id', updateCity);
 router.delete('/cities/:id', deleteCity);
 
 export default router;
+

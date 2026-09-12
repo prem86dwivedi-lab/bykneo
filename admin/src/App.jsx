@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { AdminSidebar, ADMIN_NAV_ITEMS } from './components/AdminSidebar';
+import { AdminLoginGate } from './components/AdminLoginGate';
 import { LiveDriversPage } from './pages/LiveDriversPage';
 import { ActiveRidesPage } from './pages/ActiveRidesPage';
 import { DriversPage } from './pages/DriversPage';
@@ -39,6 +40,9 @@ const getBackendUrl = () => {
 const BACKEND_URL = getBackendUrl();
 
 export function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return Boolean(sessionStorage.getItem('riderxo_admin_token'));
+  });
   const [currentTab, setCurrentTab] = useState('cities'); // Default to Serviceable Cities
   const [selectedCityId, setSelectedCityId] = useState('all'); // 'all' or specific city.id
   const [overview, setOverview] = useState(null);
@@ -60,6 +64,8 @@ export function App() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     fetchOverview();
     requestNotificationPermission();
 
@@ -113,7 +119,21 @@ export function App() {
     return () => {
       s.disconnect();
     };
-  }, []);
+  }, [isAuthenticated]);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('riderxo_admin_token');
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <AdminLoginGate
+        onLoginSuccess={() => setIsAuthenticated(true)}
+        BACKEND_URL={BACKEND_URL}
+      />
+    );
+  }
 
   const citiesList = overview?.cities || [];
   const activeCity = citiesList.find(c => c.id === selectedCityId);
@@ -140,6 +160,7 @@ export function App() {
           cities={citiesList}
           selectedCityId={selectedCityId}
           onSelectCity={setSelectedCityId}
+          onLogout={handleLogout}
         />
       </div>
 
@@ -209,6 +230,7 @@ export function App() {
               selectedCityId={selectedCityId}
               onSelectCity={setSelectedCityId}
               onClose={() => setIsMobileNavOpen(false)}
+              onLogout={handleLogout}
             />
           </div>
         </div>

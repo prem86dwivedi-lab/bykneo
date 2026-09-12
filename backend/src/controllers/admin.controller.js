@@ -204,6 +204,49 @@ export const getPassengers = (req, res) => {
   return res.json({ passengers });
 };
 
+export const deletePassenger = (req, res) => {
+  const { id } = req.params;
+  const user = db.find('users', u => u.id === id);
+  if (!user) {
+    return res.status(404).json({ error: "Passenger not found" });
+  }
+
+  db.delete('users', id);
+
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('admin:passenger_deleted', { passengerId: id });
+    io.emit('admin:overview_updated');
+  }
+
+  return res.json({ success: true, message: `Passenger ${user.name || user.phone} removed permanently` });
+};
+
+export const purgeDemoData = (req, res) => {
+  const demoPhones = ["9876543210", "9123456780", "9811223344", "9871100223", "+91 9876543210", "+91 9123456780", "+91 9811223344", "+91 9871100223"];
+  const demoDriverIds = ["drv_1", "drv_2", "drv_3"];
+  const demoUserIds = ["usr_passenger_1", "usr_driver_1", "usr_driver_2", "usr_driver_3"];
+
+  // Filter out demo entries
+  db.data.users = (db.data.users || []).filter(u => !demoUserIds.includes(u.id) && !demoPhones.some(p => u.phone && u.phone.includes(p)));
+  db.data.drivers = (db.data.drivers || []).filter(d => !demoDriverIds.includes(d.id) && !demoPhones.some(p => d.phone && d.phone.includes(p)));
+  db.data.rides = (db.data.rides || []).filter(r => r.id !== 'ride_101');
+  db.data.payments = (db.data.payments || []).filter(p => p.id !== 'pay_101');
+  db.data.complaints = (db.data.complaints || []).filter(c => c.id !== 'cmp_1');
+
+  db.save();
+
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('admin:overview_updated');
+  }
+
+  return res.json({
+    success: true,
+    message: "All mock/demo accounts purged. Database is now running purely on real registered users & drivers."
+  });
+};
+
 export const getPayments = (req, res) => {
   const payments = db.get('payments');
   return res.json({ payments });

@@ -5,6 +5,8 @@ import {
   updateDriverKyc,
   deleteDriver,
   getPassengers,
+  deletePassenger,
+  purgeDemoData,
   getPayments,
   getComplaints,
   updateComplaintStatus,
@@ -32,6 +34,8 @@ router.get('/drivers', getDrivers);
 router.post('/drivers/kyc', updateDriverKyc);
 router.delete('/drivers/:id', deleteDriver);
 router.get('/passengers', getPassengers);
+router.delete('/passengers/:id', deletePassenger);
+router.post('/purge-demo-data', purgeDemoData);
 router.get('/payments', getPayments);
 router.get('/complaints', getComplaints);
 router.post('/complaints/status', updateComplaintStatus);
@@ -44,4 +48,5 @@ router.patch('/cities/:id', updateCity);
 router.delete('/cities/:id', deleteCity);
 
 export default router;
+
 

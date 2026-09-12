@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Send, MessageSquare, Phone, User, Bike } from 'lucide-react';
 import { BACKEND_URL } from '../context/SocketContext';
 import { playNotificationSound } from '../utils/notification';
@@ -159,11 +160,14 @@ export const InRideChatModal = ({
 
   if (!isOpen || !ride) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200 pointer-events-auto">
-      <div className="bg-gray-900 border border-gray-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full h-[88vh] sm:h-[600px] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 pointer-events-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex flex-col justify-end sm:justify-center p-0 sm:p-4 animate-in fade-in duration-200 pointer-events-auto">
+      {/* Backdrop click to close */}
+      <div className="absolute inset-0" onClick={onClose} />
+
+      <div className="relative z-10 bg-gray-900 border-t sm:border border-gray-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full mx-auto h-[80vh] max-h-[calc(100vh-88px)] mt-20 sm:mt-0 flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 pointer-events-auto">
         {/* Header */}
-        <div className="px-4 py-3.5 bg-gray-850 border-b border-gray-800 flex items-center justify-between shrink-0 relative z-10">
+        <div className="px-4 py-3 bg-gray-850 border-b border-gray-800 flex items-center justify-between shrink-0 relative z-20">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative">
               <div className="w-10 h-10 rounded-2xl bg-brand-yellow/20 text-brand-yellow flex items-center justify-center font-bold border border-brand-yellow/30">
@@ -189,7 +193,7 @@ export const InRideChatModal = ({
             {otherPartyPhone && (
               <a
                 href={`tel:${otherPartyPhone}`}
-                className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-750 text-emerald-400 flex items-center justify-center border border-gray-700 active:scale-95 transition"
+                className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-750 text-emerald-400 flex items-center justify-center border border-gray-750 active:scale-95 transition shadow-sm"
                 title="Call"
               >
                 <Phone className="w-4 h-4" />
@@ -201,7 +205,7 @@ export const InRideChatModal = ({
                 e.stopPropagation();
                 onClose();
               }}
-              className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 text-white flex items-center justify-center border border-gray-600 active:scale-90 transition cursor-pointer shadow-md shrink-0"
+              className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 text-white flex items-center justify-center border border-gray-650 active:scale-90 transition cursor-pointer shadow-md shrink-0"
               title="Close Chat"
             >
               <X className="w-5 h-5 text-white" />
@@ -210,10 +214,10 @@ export const InRideChatModal = ({
         </div>
 
         {/* Message Stream */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-950/60">
-          <div className="text-center my-2">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-950/80">
+          <div className="text-center my-1">
             <span className="text-[10px] text-gray-400 bg-gray-900 border border-gray-800 px-3 py-1 rounded-full inline-block">
-              🔒 In-ride direct chat. Messages auto-clear after trip.
+              🔒 In-ride direct chat • Active trip
             </span>
           </div>
 
@@ -285,6 +289,7 @@ export const InRideChatModal = ({
           </button>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

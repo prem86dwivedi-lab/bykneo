@@ -49,8 +49,8 @@
       "phone": "9653245632",
       "name": "New Rider",
       "email": "9653245632@bykneo.com",
-      "role": "passenger",
-      "avatar": null,
+      "role": "driver",
+      "avatar": "/uploads/kyc/selfie_drv_b29d14ce_1789228092699.jpg",
       "wallet_balance": 0,
       "rating": 5,
       "created_at": "2026-09-08T19:28:59.894Z"
@@ -159,8 +159,8 @@
       "phone": "+91 9876543210",
       "name": "Rahul Sharma",
       "email": "rahul@bykneo.com",
-      "role": "driver",
-      "avatar": null,
+      "role": "passenger",
+      "avatar": "/uploads/kyc/selfie_drv_788b3770_1789225989736.jpg",
       "wallet_balance": 0,
       "rating": 4.9,
       "created_at": "2026-09-05T18:24:53.234Z"
@@ -210,14 +210,28 @@
       "license_number": "DL-SWITCH-01928",
       "is_online": true,
       "is_available": true,
-      "lat": 23.248869,
-      "lng": 77.50197,
-      "heading": 142,
+      "lat": 23.244818,
+      "lng": 77.506021,
+      "heading": 320,
       "rating": 5,
       "total_rides": 0,
       "today_earnings": 0,
       "kyc_status": "approved",
-      "last_ping": "2026-09-11T06:29:23.358Z"
+      "last_ping": "2026-09-12T15:43:02.985Z",
+      "vehicle_id": "bike",
+      "vehicle_category": "BIKE",
+      "vehicle_type_name": "RiderXO Bike",
+      "rc_number": "RC-MP04-998877",
+      "aadhaar_number": "9876 5432 1098",
+      "payout_upi": "+91 9876543210@upi",
+      "dl_photo": "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400",
+      "rc_photo": "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400",
+      "aadhaar_photo": "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400",
+      "selfie_photo": "/uploads/kyc/selfie_drv_788b3770_1789225989736.jpg",
+      "avatar": "/uploads/kyc/selfie_drv_788b3770_1789225989736.jpg",
+      "kyc_rejection_reason": "",
+      "kyc_verified_mode": "AI_AUTOMATIC",
+      "kyc_submitted_at": "2026-09-12T15:13:09.737Z"
     },
     {
       "id": "drv_cfbe275d",
@@ -316,20 +330,31 @@
       "vehicle_model": "TVS King Deluxe Auto",
       "vehicle_number": "MP 09 XY 3456",
       "license_number": "DL-SWITCH-01928",
-      "is_online": false,
-      "is_available": false,
-      "lat": 23.243723,
-      "lng": 77.507656,
+      "is_online": true,
+      "is_available": true,
+      "lat": 23.244339,
+      "lng": 77.506223,
       "heading": 0,
       "rating": 5,
-      "total_rides": 0,
-      "today_earnings": 0,
+      "total_rides": 2,
+      "today_earnings": 162,
       "kyc_status": "approved",
       "city_id": "city_1788756232314",
       "vehicle_id": "auto_lite",
       "vehicle_category": "AUTO",
       "vehicle_type_name": "Auto Lite",
-      "last_ping": "2026-09-11T21:40:09.485Z"
+      "last_ping": "2026-09-12T15:59:28.525Z",
+      "rc_number": "RC-MP04-998877",
+      "aadhaar_number": "9876 5432 1098",
+      "payout_upi": "9653245632@upi",
+      "dl_photo": "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400",
+      "rc_photo": "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400",
+      "aadhaar_photo": "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400",
+      "selfie_photo": "/uploads/kyc/selfie_drv_b29d14ce_1789228092699.jpg",
+      "avatar": "/uploads/kyc/selfie_drv_b29d14ce_1789228092699.jpg",
+      "kyc_rejection_reason": "",
+      "kyc_verified_mode": "AI_AUTOMATIC",
+      "kyc_submitted_at": "2026-09-12T15:48:12.700Z"
     },
     {
       "id": "drv_9439c2fa",
@@ -644,6 +669,178 @@
     }
   ],
   "rides": [
+    {
+      "id": "ride_22b1e085",
+      "rider_id": "usr_passenger_1",
+      "rider_name": "Rahul Sharma",
+      "rider_phone": "+91 9876543210",
+      "driver_id": "drv_b29d14ce",
+      "driver_name": "New Rider",
+      "driver_phone": "9653245632",
+      "vehicle_id": "auto_lite",
+      "vehicle_name": "Bykneo Bike",
+      "vehicle_category": "AUTO",
+      "vehicle_model": "TVS King Deluxe Auto",
+      "vehicle_number": "MP 09 XY 3456",
+      "pickup_name": "Gopal Nagar,  Bhopal,  Huzur Tahsil",
+      "pickup_lat": 23.244481,
+      "pickup_lng": 77.505959,
+      "drop_name": "Ratnagiri Tiraha / Bypass, Bhopal",
+      "drop_lat": 23.2514,
+      "drop_lng": 77.4245,
+      "fare": 95,
+      "distance_km": 12.8,
+      "duration_mins": 16,
+      "status": "COMPLETED",
+      "otp": "6839",
+      "payment_mode": "UPI",
+      "payment_status": "PAID",
+      "rider_rating": null,
+      "driver_rating": 5,
+      "created_at": "2026-09-12T15:43:09.786Z",
+      "driver_avatar": null,
+      "accepted_at": "2026-09-12T15:43:17.893Z",
+      "messages": [
+        {
+          "id": "msg_1789227816141_iolw",
+          "rideId": "ride_22b1e085",
+          "senderId": "usr_8ce36f55",
+          "senderRole": "driver",
+          "senderName": "New Rider",
+          "text": "📍 I have reached pickup point",
+          "time": "21:13",
+          "timestamp": 1789227816341
+        },
+        {
+          "id": "msg_1789227821569_h10x",
+          "rideId": "ride_22b1e085",
+          "senderId": "usr_passenger_1",
+          "senderRole": "rider",
+          "senderName": "Rahul Sharma",
+          "text": "📍 I am at pickup location",
+          "time": "09:13 pm",
+          "timestamp": 1789227821570
+        },
+        {
+          "id": "msg_1789227826653_gkk4",
+          "rideId": "ride_22b1e085",
+          "senderId": "usr_passenger_1",
+          "senderRole": "rider",
+          "senderName": "Rahul Sharma",
+          "text": "Call me when you reach",
+          "time": "09:13 pm",
+          "timestamp": 1789227826654
+        },
+        {
+          "id": "msg_1789227851063_8p1l",
+          "rideId": "ride_22b1e085",
+          "senderId": "usr_passenger_1",
+          "senderRole": "rider",
+          "senderName": "Rahul Sharma",
+          "text": "👕 Wearing black shirt/jacket",
+          "time": "09:14 pm",
+          "timestamp": 1789227851064
+        },
+        {
+          "id": "msg_1789227863434_tzn6",
+          "rideId": "ride_22b1e085",
+          "senderId": "usr_8ce36f55",
+          "senderRole": "driver",
+          "senderName": "New Rider",
+          "text": "Call me once outside",
+          "time": "21:14",
+          "timestamp": 1789227863447
+        }
+      ],
+      "started_at": "2026-09-12T15:44:53.978Z",
+      "completed_at": "2026-09-12T15:47:02.640Z"
+    },
+    {
+      "id": "ride_87447d49",
+      "rider_id": "usr_passenger_1",
+      "rider_name": "Rahul Sharma",
+      "rider_phone": "+91 9876543210",
+      "driver_id": "drv_b29d14ce",
+      "driver_name": "New Rider",
+      "driver_phone": "9653245632",
+      "vehicle_id": "auto_lite",
+      "vehicle_name": "Bykneo Bike",
+      "vehicle_category": "AUTO",
+      "vehicle_model": "TVS King Deluxe Auto",
+      "vehicle_number": "MP 09 XY 3456",
+      "pickup_name": "Gopal Nagar,  Bhopal,  Huzur Tahsil",
+      "pickup_lat": 23.244481,
+      "pickup_lng": 77.505959,
+      "drop_name": "Ratnagiri Tiraha / Bypass, Bhopal",
+      "drop_lat": 23.2514,
+      "drop_lng": 77.4245,
+      "fare": 95,
+      "distance_km": 12.8,
+      "duration_mins": 16,
+      "status": "COMPLETED",
+      "otp": "7235",
+      "payment_mode": "UPI",
+      "payment_status": "PAID",
+      "rider_rating": null,
+      "driver_rating": 5,
+      "created_at": "2026-09-12T14:53:13.465Z",
+      "driver_avatar": null,
+      "accepted_at": "2026-09-12T14:53:16.579Z",
+      "messages": [
+        {
+          "id": "msg_1789224809806_myqf",
+          "rideId": "ride_87447d49",
+          "senderId": "usr_passenger_1",
+          "senderRole": "rider",
+          "senderName": "Rahul Sharma",
+          "text": "📍 I am at pickup location",
+          "time": "08:23 pm",
+          "timestamp": 1789224809807
+        },
+        {
+          "id": "msg_1789224831600_q8un",
+          "rideId": "ride_87447d49",
+          "senderId": "usr_8ce36f55",
+          "senderRole": "driver",
+          "senderName": "New Rider",
+          "text": "📍 I have reached pickup point",
+          "time": "20:23",
+          "timestamp": 1789224831808
+        },
+        {
+          "id": "msg_1789224833779_8yfn",
+          "rideId": "ride_87447d49",
+          "senderId": "usr_passenger_1",
+          "senderRole": "rider",
+          "senderName": "Rahul Sharma",
+          "text": "🚪 Coming out of main gate",
+          "time": "08:23 pm",
+          "timestamp": 1789224833780
+        },
+        {
+          "id": "msg_1789224849475_1rs1",
+          "rideId": "ride_87447d49",
+          "senderId": "usr_passenger_1",
+          "senderRole": "rider",
+          "senderName": "Rahul Sharma",
+          "text": "Call me when you reach",
+          "time": "08:24 pm",
+          "timestamp": 1789224849477
+        },
+        {
+          "id": "msg_1789224864776_2q6h",
+          "rideId": "ride_87447d49",
+          "senderId": "usr_8ce36f55",
+          "senderRole": "driver",
+          "senderName": "New Rider",
+          "text": "ok",
+          "time": "20:24",
+          "timestamp": 1789224864806
+        }
+      ],
+      "started_at": "2026-09-12T14:56:07.936Z",
+      "completed_at": "2026-09-12T14:58:32.394Z"
+    },
     {
       "id": "ride_a2a2ca03",
       "rider_id": "usr_passenger_1",
@@ -2823,6 +3020,30 @@
   ],
   "payments": [
     {
+      "id": "pay_b84dc410",
+      "ride_id": "ride_22b1e085",
+      "user_id": "usr_passenger_1",
+      "driver_id": "drv_b29d14ce",
+      "amount": 95,
+      "commission_amount": 14.25,
+      "driver_amount": 80.75,
+      "method": "UPI",
+      "status": "SUCCESS",
+      "created_at": "2026-09-12T15:47:02.654Z"
+    },
+    {
+      "id": "pay_827c5d45",
+      "ride_id": "ride_87447d49",
+      "user_id": "usr_passenger_1",
+      "driver_id": "drv_b29d14ce",
+      "amount": 95,
+      "commission_amount": 14.25,
+      "driver_amount": 80.75,
+      "method": "UPI",
+      "status": "SUCCESS",
+      "created_at": "2026-09-12T14:58:32.403Z"
+    },
+    {
       "id": "pay_770b2719",
       "ride_id": "ride_43c25a2c",
       "user_id": "usr_8ce36f55",
@@ -3281,5 +3502,20 @@
       "created_at": "2026-09-09T18:46:13.521Z"
     }
   ],
-  "push_subscriptions": []
+  "push_subscriptions": [
+    {
+      "id": "psub_drv_b29d14ce",
+      "driver_id": "drv_b29d14ce",
+      "subscription": {
+        "endpoint": "https://fcm.googleapis.com/fcm/send/d_-3Y8iFhBo:APA91bGiW0A9pgWtFBTCDDsVghsxwnGBs1bMEGXa-NWp3eFy6hPNdqWGEpyFZw1QFG2rfKM2z9Zj7Qj0sFN3wp2J6SeslBrsjEPSyD8FSMoyX23WTXlsnTVp2wJuXzNNTHVjxzkruwKl",
+        "expirationTime": null,
+        "keys": {
+          "p256dh": "BJ-kxNUc1Mt1w2fqh33BzyzdHFERUmX9loSHjERrAsfWA2XYH2gRpVvJc-_iQ5rS4ypNykTJSnU_fnCyt7aNFrM",
+          "auth": "fgU5rsXPGf_vWY45AuiyKQ"
+        }
+      },
+      "created_at": "2026-09-12T15:42:29.413Z",
+      "updated_at": "2026-09-12T15:42:29.413Z"
+    }
+  ]
 }

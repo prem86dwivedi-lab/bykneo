@@ -724,6 +724,28 @@ export function App() {
     socket.emit('driver:complete_ride', { rideId });
   };
 
+  // CAPTAIN: Cancel Ride
+  const handleDriverCancelRide = (rideId, reason = 'Cancelled by Captain') => {
+    fetch(`${BACKEND_URL}/api/rides/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rideId,
+        reason,
+        cancelledBy: 'driver'
+      })
+    }).catch(console.error);
+
+    socket.emit('ride:cancel', {
+      rideId,
+      reason,
+      cancelledBy: 'driver'
+    });
+
+    setActiveRide(null);
+    setAssignedCaptainLocation(null);
+  };
+
   // CAPTAIN: Toggle Online / Offline (Strictly Manual)
   const handleToggleDriverOnline = async () => {
     const newStatus = !isDriverOnline;
@@ -1011,6 +1033,7 @@ export function App() {
               onDriverArrived={handleDriverArrived}
               onStartRide={handleStartRide}
               onCompleteRide={handleCompleteRide}
+              onCancelRide={handleDriverCancelRide}
             />
           )}
         </>

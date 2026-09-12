@@ -577,17 +577,17 @@ export const LoginScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col justify-between p-4 max-w-md mx-auto relative overflow-x-hidden">
+    <div className="h-[100dvh] min-h-[100dvh] max-h-[100dvh] bg-gray-950 text-white flex flex-col justify-between px-4 py-3 max-w-md mx-auto relative overflow-hidden select-none">
       {/* Background Glows */}
       <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-yellow/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header */}
-      <div className="pt-2 relative z-10">
+      <div className="pt-1 relative z-10">
         <div className="flex items-center justify-between">
-          <div className="inline-flex items-center gap-2 bg-gray-900 border border-gray-800 px-3 py-1.5 rounded-full shadow-lg">
-            <Zap className="w-3.5 h-3.5 text-brand-yellow" />
-            <span className="text-xs font-semibold text-gray-300">Fast Rides & Instant Commuting</span>
+          <div className="inline-flex items-center gap-1.5 bg-gray-900 border border-gray-800 px-3 py-1 rounded-full shadow-lg">
+            <Zap className="w-3 h-3 text-brand-yellow" />
+            <span className="text-[11px] font-semibold text-gray-300">Fast Rides & Instant Commuting</span>
           </div>
 
           {step !== 'phone' && step !== 'pending_kyc' && step !== 'rejected_kyc' && (
@@ -597,7 +597,7 @@ export const LoginScreen = () => {
                 if (step === 'details') setStep('otp');
                 else setStep('phone');
               }}
-              className="px-2.5 py-1.5 bg-gray-900 hover:bg-gray-850 border border-gray-800 rounded-xl text-xs text-gray-300 flex items-center gap-1 active:scale-95 transition"
+              className="px-2.5 py-1 bg-gray-900 hover:bg-gray-850 border border-gray-800 rounded-xl text-xs text-gray-300 flex items-center gap-1 active:scale-95 transition"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Back
@@ -605,27 +605,27 @@ export const LoginScreen = () => {
           )}
         </div>
 
-        <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2 mt-3">
+        <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2 mt-2">
           RIDER<span className="text-brand-yellow">XO</span>
         </h1>
-        <p className="text-xs text-gray-400 mt-0.5">
+        <p className="text-[11px] text-gray-400 mt-0.5">
           Fastest bike, auto & cab rides at lowest fares.
         </p>
       </div>
 
       {/* Main Content Area */}
-      <div className="my-auto py-3 relative z-10">
+      <div className="my-auto py-1 relative z-10">
         {/* ======================================================== */}
         {/* STEP 1: MOBILE NUMBER & ROLE SELECTION */}
         {/* ======================================================== */}
         {step === 'phone' && (
           <div className="animate-in fade-in duration-200">
             {/* Role Selector Tabs */}
-            <div className="grid grid-cols-2 gap-2 bg-gray-900 p-1.5 rounded-2xl border border-gray-800 mb-4">
+            <div className="grid grid-cols-2 gap-2 bg-gray-900 p-1 rounded-2xl border border-gray-800 mb-3">
               <button
                 type="button"
                 onClick={() => setSelectedRole('passenger')}
-                className={`py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
                   selectedRole === 'passenger'
                     ? 'bg-brand-yellow text-gray-950 shadow-lg font-black'
                     : 'text-gray-400 hover:text-white'
@@ -638,7 +638,7 @@ export const LoginScreen = () => {
               <button
                 type="button"
                 onClick={() => setSelectedRole('driver')}
-                className={`py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
                   selectedRole === 'driver'
                     ? 'bg-brand-yellow text-gray-950 shadow-lg font-black'
                     : 'text-gray-400 hover:text-white'
@@ -650,9 +650,9 @@ export const LoginScreen = () => {
             </div>
 
             {/* Mobile Form */}
-            <form onSubmit={handleSendOtp} className="space-y-4">
+            <form onSubmit={handleSendOtp} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                <label className="block text-[11px] font-semibold text-gray-300 mb-1">
                   Enter Mobile Number
                 </label>
                 <div className="relative">
@@ -665,13 +665,13 @@ export const LoginScreen = () => {
                     maxLength={14}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="98765 43210"
-                    className="w-full bg-gray-900 border border-gray-800 focus:border-brand-yellow rounded-2xl py-3.5 pl-14 pr-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-brand-yellow font-bold tracking-wide transition"
+                    className="w-full bg-gray-900 border border-gray-800 focus:border-brand-yellow rounded-2xl py-3 pl-14 pr-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-brand-yellow font-bold tracking-wide transition"
                   />
                 </div>
               </div>
 
               {error && (
-                <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl animate-in fade-in duration-200">
+                <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-xl animate-in fade-in duration-200">
                   {error}
                 </div>
               )}
@@ -679,13 +679,56 @@ export const LoginScreen = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-brand-yellow/10 transition active:scale-[0.98] disabled:opacity-50"
+                className="w-full bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-brand-yellow/10 transition active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? 'Sending 6-Digit OTP...' : `Continue as ${selectedRole === 'driver' ? 'Captain' : 'Rider'}`}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
 
+            {/* Quick 1-Click Demo Accounts */}
+            <div className="mt-4 pt-2.5 border-t border-gray-850">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 text-center flex items-center justify-center gap-1.5">
+                <span>🚀</span> QUICK 1-CLICK DEMO ACCOUNTS
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemo('+91 9876543210', 'passenger')}
+                  className="p-2.5 bg-gray-900 hover:bg-gray-850 border border-gray-800 hover:border-gray-700 rounded-xl text-left transition flex flex-col justify-between active:scale-95 shadow-sm"
+                >
+                  <div className="text-xs font-bold text-white">Rahul (Rider)</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Book rides & live track</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemo('+91 9123456780', 'driver')}
+                  className="p-2.5 bg-gray-900 hover:bg-gray-850 border border-gray-800 hover:border-gray-700 rounded-xl text-left transition flex flex-col justify-between active:scale-95 shadow-sm"
+                >
+                  <div className="text-xs font-bold text-brand-yellow">Vikram (Captain)</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Accept rides & earn</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Direct Android APK Download Button */}
+            <div className="mt-2.5 pt-2 border-t border-gray-850 flex justify-center">
+              <a
+                href="/riderxo.apk"
+                download="riderxo.apk"
+                className="group inline-flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-emerald-950/80 via-emerald-900/50 to-emerald-950/80 hover:from-emerald-900/80 hover:to-emerald-850/60 border border-emerald-500/40 hover:border-emerald-400 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+                  Download now
+                </span>
+                <div className="w-4 h-4 rounded-md bg-emerald-500 text-gray-950 flex items-center justify-center font-bold shadow-sm group-hover:bg-emerald-400 transition-colors shrink-0">
+                  <Download className="w-3 h-3" />
+                </div>
+              </a>
+            </div>
           </div>
         )}
 

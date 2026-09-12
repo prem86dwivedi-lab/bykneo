@@ -587,7 +587,7 @@ export const LoginScreen = () => {
         <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-2 bg-gray-900 border border-gray-800 px-3 py-1.5 rounded-full shadow-lg">
             <Zap className="w-3.5 h-3.5 text-brand-yellow" />
-            <span className="text-xs font-semibold text-gray-300">Fast Urban Bike Mobility</span>
+            <span className="text-xs font-semibold text-gray-300">Fast Rides & Instant Commuting</span>
           </div>
 
           {step !== 'phone' && step !== 'pending_kyc' && step !== 'rejected_kyc' && (
@@ -606,10 +606,10 @@ export const LoginScreen = () => {
         </div>
 
         <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2 mt-3">
-          BYK<span className="text-brand-yellow">NEO</span>
+          RIDER<span className="text-brand-yellow">XO</span>
         </h1>
         <p className="text-xs text-gray-400 mt-0.5">
-          Fastest bike rides & instant daily commuting.
+          Fastest bike, auto & cab rides at lowest fares.
         </p>
       </div>
 
@@ -686,52 +686,6 @@ export const LoginScreen = () => {
               </button>
             </form>
 
-            {/* Quick 1-Click Demo Accounts */}
-            <div className="mt-7 pt-4 border-t border-gray-850">
-              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 text-center">
-                🚀 Quick 1-Click Demo Accounts
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('+91 9876543210', 'passenger')}
-                  className="p-3 bg-gray-900/80 hover:bg-gray-850 border border-gray-800 rounded-xl text-left transition flex flex-col justify-between active:scale-95"
-                >
-                  <div className="text-xs font-bold text-white">Rahul (Rider)</div>
-                  <div className="text-[10px] text-gray-400 mt-1">Book rides & live track</div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('+91 9123456780', 'driver')}
-                  className="p-3 bg-gray-900/80 hover:bg-gray-850 border border-gray-800 rounded-xl text-left transition flex flex-col justify-between active:scale-95"
-                >
-                  <div className="text-xs font-bold text-brand-yellow">Vikram (Captain)</div>
-                  <div className="text-[10px] text-gray-400 mt-1">Accept rides & earn</div>
-                </button>
-              </div>
-            </div>
-
-            {/* Direct Android APK Download Button (Compact Card Style) */}
-            {!isNativeApp() && (
-              <div className="mt-3 pt-2.5 border-t border-gray-850 flex justify-center">
-                <a
-                  href="/bykneo.apk"
-                  download="bykneo.apk"
-                  onClick={handleDownloadApk}
-                  className="group inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-950/60 via-emerald-900/40 to-emerald-950/60 hover:from-emerald-900/60 hover:to-emerald-850/50 border border-emerald-500/40 hover:border-emerald-400 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
-                >
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
-                    Download now
-                  </span>
-                  <div className="w-5 h-5 rounded-md bg-emerald-500 text-gray-950 flex items-center justify-center font-bold shadow-sm group-hover:bg-emerald-400 transition-colors shrink-0">
-                    <Download className="w-3 h-3" />
-                  </div>
-                </a>
-              </div>
-            )}
           </div>
         )}
 
@@ -1260,7 +1214,7 @@ export const LoginScreen = () => {
                 </span>
                 <h3 className="text-lg font-black text-white">Documents Under Review</h3>
                 <p className="text-xs text-gray-300 mt-2 leading-relaxed">
-                  Your Captain profile and vehicle documents have been submitted to Bykneo Admin for verification.
+                  Your Captain profile and vehicle documents have been submitted to RiderXO Admin for verification.
                 </p>
               </div>
 
@@ -1271,7 +1225,7 @@ export const LoginScreen = () => {
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span>Captain Name:</span>
-                  <span className="font-bold text-brand-yellow">{formData.name || 'Bykneo Captain'}</span>
+                  <span className="font-bold text-brand-yellow">{formData.name || 'RiderXO Captain'}</span>
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span>Vehicle Model:</span>
@@ -1304,7 +1258,7 @@ export const LoginScreen = () => {
 
       {/* Footer Info */}
       <div className="text-center text-[11px] text-gray-500 pb-2 relative z-10">
-        By continuing, you agree to Bykneo's Terms & Privacy Policy.
+        By continuing, you agree to RiderXO's Terms & Privacy Policy.
       </div>
     </div>
   );

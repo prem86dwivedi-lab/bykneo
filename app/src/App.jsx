@@ -524,7 +524,7 @@ export function App() {
 
       if (status === 'approved') {
         sendPwaNotification(
-          '🎉 Bykneo Captain KYC Approved!',
+          '🎉 RiderXO Captain KYC Approved!',
           'Your documents have been verified by Admin. You are now authorized to Go Online and accept rides.'
         );
         setDriverKycToast({
@@ -564,7 +564,7 @@ export function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white text-sm font-bold">
-        Loading Bykneo...
+        Loading RiderXO...
       </div>
     );
   }
@@ -617,7 +617,7 @@ export function App() {
 
     const chosenVeh = selectedVehicle || estimatedFare.vehicles?.[0] || {
       id: 'bike',
-      name: 'Bykneo Bike',
+      name: 'RiderXO Bike',
       category: 'BIKE',
       fare: estimatedFare.fare
     };

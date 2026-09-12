@@ -53,7 +53,7 @@ export const RideCompleteModal = ({ ride, onClose }) => {
 
         <div>
           <h3 className="text-xl font-black text-white">Ride Completed!</h3>
-          <p className="text-xs text-gray-400 mt-1">Hope you had a fast & safe ride with Bykneo</p>
+          <p className="text-xs text-gray-400 mt-1">Hope you had a fast & safe ride with RiderXO</p>
         </div>
 
         {/* Fare Receipt Card */}

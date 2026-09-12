@@ -700,7 +700,7 @@ export const InteractiveMap = ({
       }
 
       const driverName = activeRide?.driver_name || driverLocation.name || 'Captain Partner';
-      const vehicleInfo = activeRide?.vehicle_model || driverLocation.model || 'Bykneo Vehicle';
+      const vehicleInfo = activeRide?.vehicle_model || driverLocation.model || 'RiderXO Vehicle';
       const plateInfo = activeRide?.vehicle_number || driverLocation.number || '';
 
       const popupContent = `
@@ -865,7 +865,7 @@ export const InteractiveMap = ({
               <b style="font-size: 12.5px; color: #111;">Captain ${d.name || 'Partner'}</b>
               <span style="font-size: 10.5px; font-weight: 800; color: #d97706; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">★ ${d.rating || '4.85'}</span>
             </div>
-            <div style="font-size: 11px; color: #4b5563; margin-bottom: 3px;">${d.vehicle_model || (activeCategory === 'auto' ? 'Auto Rickshaw' : activeCategory === 'cab' ? 'Cab Sedan' : 'Bykneo Bike')}</div>
+            <div style="font-size: 11px; color: #4b5563; margin-bottom: 3px;">${d.vehicle_model || (activeCategory === 'auto' ? 'Auto Rickshaw' : activeCategory === 'cab' ? 'Cab Sedan' : 'RiderXO Bike')}</div>
             <div style="font-size: 10px; color: #059669; font-weight: 700; display: flex; align-items: center; gap: 4px;">
               <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
               Available • ${etaMins} min away

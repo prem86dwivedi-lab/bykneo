@@ -120,8 +120,8 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
 
   if (!isOpen) return null;
 
-  const adminUpi = subData?.admin_upi_id || 'bykneo@okhdfcbank';
-  const merchantName = subData?.admin_merchant_name || 'Bykneo Mobility';
+  const adminUpi = subData?.admin_upi_id || 'riderxo@okhdfcbank';
+  const merchantName = subData?.admin_merchant_name || 'RiderXO Mobility';
   const dailyRate = Number(subData?.pass_price || 25);
   const allowedDurations = Array.isArray(subData?.allowed_pass_durations) && subData.allowed_pass_durations.length > 0
     ? subData.allowed_pass_durations
@@ -133,11 +133,11 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
   const totalAmount = Math.max(1, Math.round(rawTotal * (1 - currentDiscountPct / 100)));
   const savingsAmount = rawTotal - totalAmount;
 
-  const vehicleName = driverProfile?.vehicle_type_name || driverProfile?.vehicle_model || 'Bykneo Vehicle';
+  const vehicleName = driverProfile?.vehicle_type_name || driverProfile?.vehicle_model || 'RiderXO Vehicle';
   const driverPhone = user?.phone || driverProfile?.phone || '9999999999';
-  const driverName = driverProfile?.name || user?.name || 'Bykneo Captain';
+  const driverName = driverProfile?.name || user?.name || 'RiderXO Captain';
 
-  const upiString = `upi://pay?pa=${adminUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount}&cu=INR&tn=Bykneo_${selectedDays}d_Pass`;
+  const upiString = `upi://pay?pa=${adminUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount}&cu=INR&tn=RiderXO_${selectedDays}d_Pass`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(upiString)}`;
 
   // REAL PAYMENT GATEWAY CHECKOUT (Meesho / Swiggy Industry Model)

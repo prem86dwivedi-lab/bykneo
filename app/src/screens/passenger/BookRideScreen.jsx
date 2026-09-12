@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { BACKEND_URL } from '../../context/SocketContext';
+import { getInstantFareEstimate } from '../../utils/instantFareCalculator';
 import {
   MapPin,
   Navigation,
@@ -172,10 +173,16 @@ export const BookRideScreen = ({
     if (drop?.name) setDropQuery(drop.name);
   }, [drop]);
 
-  // Recalculate Fare Estimate
+  // Recalculate Fare Estimate Instantly (0ms local calculation + background sync)
   useEffect(() => {
     if (pickup?.lat && drop?.lat) {
-      setLoadingEstimate(true);
+      // 1. Instantly generate and display all vehicle options (0ms)
+      const instant = getInstantFareEstimate(pickup, drop);
+      if (instant) {
+        setEstimatedFare(instant);
+      }
+
+      // 2. Silently sync with backend in background without blocking UI
       fetch(`${BACKEND_URL}/api/rides/estimate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -188,15 +195,15 @@ export const BookRideScreen = ({
       })
         .then((res) => res.json())
         .then((data) => {
-          setEstimatedFare(data);
-          setLoadingEstimate(false);
+          if (data && data.vehicles && data.vehicles.length > 0) {
+            setEstimatedFare(data);
+          }
         })
         .catch((err) => {
-          console.error(err);
-          setLoadingEstimate(false);
+          console.warn('Backend fare sync fallback to instant local estimate:', err);
         });
     }
-  }, [pickup, drop]);
+  }, [pickup?.lat, pickup?.lng, drop?.lat, drop?.lng]);
 
 // Global POI Category Map for Worldwide Locality & Sub-Area Search
 const POI_CATEGORY_MAP = [

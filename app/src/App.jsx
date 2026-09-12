@@ -580,35 +580,33 @@ export function App() {
       return;
     }
 
-    let finalName = name;
-    
-    if ((!finalName || finalName.startsWith('Custom Location') || finalName.startsWith('Location (')) && lat && lng) {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en,hi' } }
-        );
-        const data = await res.json();
-        if (data && data.display_name) {
-          finalName = data.display_name.split(',').slice(0, 3).join(', ');
-        }
-      } catch (e) {
-        console.warn('Reverse geocode error:', e);
-      }
-    }
+    // 1. Immediately set coordinates and clear selection mode (0ms instant response)
+    const initialName = name || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+    const initialLoc = { name: initialName, lat, lng };
 
-    if (lat && lng) {
-      const loc = {
-        name: finalName || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
-        lat,
-        lng
-      };
-
-      if (type === 'pickup') setPickup(loc);
-      else if (type === 'drop') setDrop(loc);
-    }
-
+    if (type === 'pickup') setPickup(initialLoc);
+    else if (type === 'drop') setDrop(initialLoc);
     setSelectingMode(null);
+
+    // 2. Fetch descriptive address label in background without blocking vehicle display
+    if ((!name || name.startsWith('Custom Location') || name.startsWith('Location (')) && lat && lng) {
+      fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en,hi' } }
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.display_name) {
+            const shortName = data.display_name.split(',').slice(0, 3).join(', ');
+            const updatedLoc = { name: shortName, lat, lng };
+            if (type === 'pickup') setPickup(updatedLoc);
+            else if (type === 'drop') setDrop(updatedLoc);
+          }
+        })
+        .catch((e) => {
+          console.warn('Background reverse geocode warning:', e);
+        });
+    }
   };
 
   // PASSENGER: Request Ride with Selected Vehicle Category

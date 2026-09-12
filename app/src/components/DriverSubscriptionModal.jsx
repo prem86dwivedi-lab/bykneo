@@ -140,12 +140,26 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
   const upiString = `upi://pay?pa=${adminUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount}&cu=INR&tn=RiderXO_${selectedDays}d_Pass`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(upiString)}`;
 
+  // Dynamically load Razorpay SDK only when needed
+  const loadRazorpaySdk = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   // REAL PAYMENT GATEWAY CHECKOUT (Meesho / Swiggy Industry Model)
   const handleOpenRazorpayCheckout = async () => {
     setError('');
     setProcessingPayment(true);
 
     try {
+      await loadRazorpaySdk();
+
       // 1. Create real order on backend with selected days
       const res = await fetch(`${BACKEND_URL}/api/drivers/subscription/create-razorpay-order`, {
         method: 'POST',

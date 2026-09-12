@@ -8,6 +8,12 @@
     "cleartext": true
   },
   "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": true,
+      "backgroundColor": "#030712",
+      "showSpinner": false
+    },
     "Geolocation": {
       "enableHighAccuracy": true
     }

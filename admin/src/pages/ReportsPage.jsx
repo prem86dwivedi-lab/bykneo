@@ -102,6 +102,8 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
     surge_multiplier: settings?.surge_multiplier || 1.0,
     auto_kyc_enabled: settings?.auto_kyc_enabled !== undefined ? settings.auto_kyc_enabled : true,
     subscription_enabled: settings?.subscription_enabled !== undefined ? settings.subscription_enabled : true,
+    gateway_enabled: settings?.gateway_enabled !== undefined ? settings.gateway_enabled : true,
+    direct_upi_qr_enabled: settings?.direct_upi_qr_enabled !== undefined ? settings.direct_upi_qr_enabled : true,
     admin_upi_id: settings?.admin_upi_id || 'bykneo@okhdfcbank',
     admin_merchant_name: settings?.admin_merchant_name || 'Bykneo Mobility',
     razorpay_key_id: settings?.razorpay_key_id || '',
@@ -125,6 +127,8 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
         surge_multiplier: settings.surge_multiplier || 1.0,
         auto_kyc_enabled: settings.auto_kyc_enabled !== undefined ? settings.auto_kyc_enabled : true,
         subscription_enabled: settings.subscription_enabled !== undefined ? settings.subscription_enabled : true,
+        gateway_enabled: settings.gateway_enabled !== undefined ? settings.gateway_enabled : true,
+        direct_upi_qr_enabled: settings.direct_upi_qr_enabled !== undefined ? settings.direct_upi_qr_enabled : true,
         admin_upi_id: settings.admin_upi_id || 'bykneo@okhdfcbank',
         admin_merchant_name: settings.admin_merchant_name || 'Bykneo Mobility',
         razorpay_key_id: settings.razorpay_key_id || '',
@@ -191,6 +195,36 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
         [String(days)]: Math.max(0, Math.min(99, Number(value) || 0))
       }
     }));
+  };
+
+  const handleAutoSaveSetting = async (field, value) => {
+    const updated = { ...formData, [field]: value };
+    setFormData(updated);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const fieldLabels = {
+          gateway_enabled: 'Payment Gateway (Razorpay)',
+          direct_upi_qr_enabled: 'Direct Admin UPI QR',
+          subscription_enabled: 'Daily Subscription Passes',
+          auto_kyc_enabled: 'Driver KYC Mode'
+        };
+        setToast({
+          type: 'success',
+          message: `${fieldLabels[field] || field} set to ${value ? 'ACTIVE (ON)' : 'DISABLED (OFF)'} and synced live!`
+        });
+        if (onUpdateSettings) onUpdateSettings();
+      }
+    } catch (err) {
+      console.error('Settings auto-save error:', err);
+    } finally {
+      setTimeout(() => setToast(null), 3500);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -423,7 +457,7 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
             {/* Compact Toggle Button */}
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, auto_kyc_enabled: !formData.auto_kyc_enabled })}
+              onClick={() => handleAutoSaveSetting('auto_kyc_enabled', !formData.auto_kyc_enabled)}
               className={`px-2 py-1 rounded-lg font-black text-[9px] sm:text-[10.5px] flex items-center gap-1 transition shrink-0 shadow-sm ${
                 formData.auto_kyc_enabled
                   ? 'bg-brand-yellow text-gray-950 shadow-brand-yellow/20'
@@ -464,7 +498,7 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
             {/* Subscription Master Toggle */}
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, subscription_enabled: !formData.subscription_enabled })}
+              onClick={() => handleAutoSaveSetting('subscription_enabled', !formData.subscription_enabled)}
               className={`px-2.5 py-1 rounded-lg font-black text-[9.5px] sm:text-xs flex items-center gap-1 transition shrink-0 shadow-sm ${
                 formData.subscription_enabled
                   ? 'bg-emerald-500 text-gray-950 shadow-emerald-500/20'
@@ -478,14 +512,29 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
 
           {/* Real-time Payment Gateway Setup (Industry Standard Meesho / Swiggy Model) */}
           <div className="bg-gray-950/80 border border-blue-500/30 rounded-xl p-3 sm:p-3.5 space-y-2.5 shadow-inner">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-[10px] sm:text-xs font-bold text-blue-400 flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Payment Gateway Integration (Razorpay / Meesho Model)</span>
               </span>
-              <span className="text-[8.5px] bg-blue-500/20 text-blue-300 font-bold px-2 py-0.5 rounded">
-                Live Auto-Detection
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[8.5px] bg-blue-500/20 text-blue-300 font-bold px-2 py-0.5 rounded">
+                  Live Auto-Detection
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleAutoSaveSetting('gateway_enabled', !formData.gateway_enabled)}
+                  className={`px-2 py-0.5 rounded-lg font-black text-[9px] sm:text-[10px] flex items-center gap-1 transition shrink-0 shadow-sm ${
+                    formData.gateway_enabled
+                      ? 'bg-blue-500 text-gray-950 shadow-blue-500/20'
+                      : 'bg-gray-850 text-gray-400 border border-gray-700 hover:bg-gray-750'
+                  }`}
+                  title="Enable/Disable Gateway Payment Option for Drivers"
+                >
+                  <Zap className="w-2.5 h-2.5 fill-current" />
+                  <span>{formData.gateway_enabled ? 'Gateway (ON)' : 'Disabled (OFF)'}</span>
+                </button>
+              </div>
             </div>
             <p className="text-[9px] sm:text-[10px] text-gray-400">
               Enables real-time dynamic QR codes and GPay/PhonePe intent verification. The app automatically detects real bank credits via Razorpay webhook.
@@ -522,12 +571,27 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
 
           {/* Admin Direct Bank UPI ID & Payee Name Setup */}
           <div className="bg-gray-950/80 border border-gray-800 rounded-xl p-3 sm:p-3.5 space-y-2.5 shadow-inner">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-[10px] sm:text-xs font-bold text-brand-yellow flex items-center gap-1">
                 <CreditCard className="w-3.5 h-3.5" />
                 <span>Admin Bank UPI Direct Settlement</span>
               </span>
-              <span className="text-[8.5px] text-gray-400 font-mono">100% Direct to Bank</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[8.5px] text-gray-400 font-mono">100% Direct to Bank</span>
+                <button
+                  type="button"
+                  onClick={() => handleAutoSaveSetting('direct_upi_qr_enabled', !formData.direct_upi_qr_enabled)}
+                  className={`px-2 py-0.5 rounded-lg font-black text-[9px] sm:text-[10px] flex items-center gap-1 transition shrink-0 shadow-sm ${
+                    formData.direct_upi_qr_enabled
+                      ? 'bg-brand-yellow text-gray-950 shadow-brand-yellow/20'
+                      : 'bg-gray-850 text-gray-400 border border-gray-700 hover:bg-gray-750'
+                  }`}
+                  title="Enable/Disable Direct QR Code for Drivers"
+                >
+                  <QrCode className="w-2.5 h-2.5" />
+                  <span>{formData.direct_upi_qr_enabled ? 'Direct QR (ON)' : 'Disabled (OFF)'}</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">

@@ -108,31 +108,34 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
           )}
 
           {/* ── Captain Details Card ── */}
-          <div className="bg-gray-850 p-2 rounded-xl border border-gray-800 flex items-center justify-between shadow-sm">
+          <div className="bg-gray-850 p-2.5 rounded-xl border border-gray-800 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative shrink-0">
                 <img
                   src={ride.driver_avatar || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150'}
                   alt="Captain"
-                  className="w-9 h-9 rounded-xl object-cover border border-brand-yellow/60 shadow-md"
+                  className="w-10 h-10 rounded-xl object-cover border border-brand-yellow/60 shadow-md"
                 />
                 <div className="absolute -bottom-1 -right-1 bg-gray-950 rounded-full p-0.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 fill-gray-950" />
                 </div>
               </div>
               <div className="min-w-0">
-                <h4 className="font-bold text-xs text-white truncate leading-snug">{ride.driver_name || 'Captain Partner'}</h4>
-                <p className="text-[10.5px] font-semibold text-brand-yellow truncate leading-snug">
-                  {ride.vehicle_model || 'Bykneo Vehicle'} •{' '}
-                  <span className="text-white font-mono font-bold">
-                    {ride.vehicle_number || 'MP 04 AB 4589'}
+                <div className="flex items-center gap-1.5">
+                  <h4 className="font-bold text-xs text-white truncate leading-tight">{ride.driver_name || 'Captain Partner'}</h4>
+                  <span className="text-[9.5px] text-gray-400 font-normal truncate">({ride.vehicle_model || 'Vehicle'})</span>
+                </div>
+                {/* Dedicated prominent vehicle number line right above 5-star rating */}
+                <div className="mt-1">
+                  <span className="px-1.5 py-0.5 bg-black/70 border border-brand-yellow/50 rounded text-brand-yellow font-mono font-black text-[11px] tracking-wider leading-none shadow-inner inline-block">
+                    {ride.vehicle_number || ride.driver_vehicle_number || 'DL 09 PQ 3456'}
                   </span>
-                </p>
-                <div className="flex items-center gap-1 mt-0.5 leading-none">
+                </div>
+                <div className="flex items-center gap-1 mt-1 leading-none">
                   <Star className="w-2.5 h-2.5 text-brand-yellow fill-brand-yellow shrink-0" />
-                  <span className="text-[10px] font-bold text-gray-300">{ride.driver_rating || '4.85'}</span>
+                  <span className="text-[10px] font-bold text-gray-300">{ride.driver_rating || '5.0'}</span>
                   <span className="text-gray-500 text-[10px]">•</span>
-                  <span className="text-[9.5px] text-gray-400">Verified</span>
+                  <span className="text-[9.5px] text-emerald-400 font-medium">Verified Captain</span>
                 </div>
               </div>
             </div>
@@ -265,6 +268,33 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
               </button>
             </div>
 
+            {/* Captain & Vehicle Details Card (Prominent Header) */}
+            <div className="bg-gray-850 p-3 rounded-2xl border border-gray-800 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative shrink-0">
+                  <img
+                    src={ride.driver_avatar || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150'}
+                    alt="Captain"
+                    className="w-10 h-10 rounded-xl object-cover border border-brand-yellow/60 shadow"
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-gray-950 rounded-full p-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 fill-gray-950" />
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider leading-none">Captain & Vehicle</div>
+                  <h4 className="font-black text-xs text-white truncate mt-0.5">{ride.driver_name || 'Captain Partner'}</h4>
+                  <p className="text-[10px] text-gray-300 truncate font-medium">{ride.vehicle_model || 'Bykneo Vehicle'}</p>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-[8.5px] text-gray-400 font-bold uppercase block leading-none">Vehicle Reg. No</span>
+                <span className="px-2 py-1 bg-black/70 border border-brand-yellow/50 rounded-lg text-brand-yellow font-mono font-black text-xs tracking-wider inline-block mt-1 shadow-inner">
+                  {ride.vehicle_number || ride.driver_vehicle_number || 'DL 09 PQ 3456'}
+                </span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-gray-850 p-2.5 rounded-xl border border-gray-800">
                 <span className="text-[9px] font-bold text-gray-400 uppercase block">Distance</span>
@@ -295,28 +325,6 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
                   <span className="text-[9.5px] font-bold text-gray-400 uppercase block">Drop Destination</span>
                   <p className="text-white font-medium leading-tight">{ride.drop_name}</p>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-850 p-3 rounded-2xl border border-gray-800 space-y-1.5 text-xs">
-              <span className="text-[10px] font-black uppercase text-gray-400 block mb-1">Fare Breakdown</span>
-              <div className="flex items-center justify-between text-gray-300">
-                <span>Base Fare (First 1.5 km)</span><span>₹25.00</span>
-              </div>
-              <div className="flex items-center justify-between text-gray-300">
-                <span>Distance Fare ({ride.distance_km || 3.5} km)</span>
-                <span>₹{Math.max(0, (ride.fare || 50) - 25).toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between text-gray-300">
-                <span>Platform Convenience Fee</span>
-                <span className="text-emerald-400 font-bold">FREE</span>
-              </div>
-              <div className="pt-2 border-t border-gray-800 flex items-center justify-between font-black text-sm text-brand-yellow">
-                <span>Total Amount to Pay</span><span>₹{ride.fare}</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1">
-                <span>Payment Mode:</span>
-                <span className="font-bold text-white uppercase">{ride.payment_mode || 'Cash / UPI'}</span>
               </div>
             </div>
 

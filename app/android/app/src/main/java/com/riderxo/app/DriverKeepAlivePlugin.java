@@ -1,12 +1,17 @@
-package com.bykneo.app;
+package com.riderxo.app;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 @CapacitorPlugin(name = "DriverKeepAlive")
 public class DriverKeepAlivePlugin extends Plugin {
@@ -54,7 +59,6 @@ public class DriverKeepAlivePlugin extends Plugin {
             if (service != null) {
                 service.triggerRideAlert(rideId, title, body);
             } else {
-                // If service instance is null, start service first then trigger
                 Intent serviceIntent = new Intent(getContext(), DriverKeepAliveService.class);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     getContext().startForegroundService(serviceIntent);
@@ -83,6 +87,43 @@ public class DriverKeepAlivePlugin extends Plugin {
             call.resolve(ret);
         } catch (Exception e) {
             call.reject("Failed to stop ride alert: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getFcmToken(PluginCall call) {
+        try {
+            FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(new OnCompleteListener<String>() {
+                    @Override
+                    public void onComplete(Task<String> task) {
+                        if (!task.isSuccessful()) {
+                            // Fallback to SharedPreferences
+                            SharedPreferences prefs = getContext().getSharedPreferences(
+                                MyFirebaseMessagingService.PREFS_NAME,
+                                Context.MODE_PRIVATE
+                            );
+                            String cached = prefs.getString(MyFirebaseMessagingService.KEY_FCM_TOKEN, "");
+                            JSObject ret = new JSObject();
+                            ret.put("token", cached);
+                            call.resolve(ret);
+                            return;
+                        }
+
+                        String token = task.getResult();
+                        SharedPreferences prefs = getContext().getSharedPreferences(
+                            MyFirebaseMessagingService.PREFS_NAME,
+                            Context.MODE_PRIVATE
+                        );
+                        prefs.edit().putString(MyFirebaseMessagingService.KEY_FCM_TOKEN, token).apply();
+
+                        JSObject ret = new JSObject();
+                        ret.put("token", token);
+                        call.resolve(ret);
+                    }
+                });
+        } catch (Exception e) {
+            call.reject("Failed to retrieve FCM token: " + e.getMessage());
         }
     }
 }

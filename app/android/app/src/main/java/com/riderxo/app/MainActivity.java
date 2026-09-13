@@ -1,4 +1,4 @@
-package com.bykneo.app;
+package com.riderxo.app;
 
 import android.os.Build;
 import android.os.Bundle;
@@ -62,4 +62,3 @@ public class MainActivity extends BridgeActivity {
         }
     }
 }
-

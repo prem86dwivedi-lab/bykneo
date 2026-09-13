@@ -216,6 +216,8 @@ export const getSubscriptionStatus = (req, res) => {
   return res.json({
     success: true,
     subscription_enabled: settings.subscription_enabled !== false,
+    gateway_enabled: settings.gateway_enabled !== false,
+    direct_upi_qr_enabled: settings.direct_upi_qr_enabled !== false,
     admin_upi_id: settings.admin_upi_id || 'bykneo@okhdfcbank',
     admin_merchant_name: settings.admin_merchant_name || 'Bykneo Mobility',
     pass_price: passPrice,

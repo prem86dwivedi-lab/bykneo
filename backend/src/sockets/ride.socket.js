@@ -1,7 +1,7 @@
 import { db } from '../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateDistance } from '../controllers/ride.controller.js';
-import { sendPushToDriver } from '../services/push.service.js';
+import { sendPushToDriver, sendFcmPushToDriver } from '../services/push.service.js';
 
 export const registerSocketHandlers = (io) => {
   io.on('connection', (socket) => {
@@ -113,7 +113,30 @@ export const registerSocketHandlers = (io) => {
           io.to(`user:${driver.user_id}`).emit('driver:incoming_request', payload);
         }
 
-        // 2. Web Push notification (works when app is backgrounded / phone locked)
+        // 2. High-Priority Firebase Cloud Messaging (FCM) push to wake sleeping mobile APK
+        const fcmEntry = db.find('fcm_tokens', t => t.driver_id === driver.id || t.driver_id === driver.user_id) || { token: driver.fcm_token };
+        if (fcmEntry && fcmEntry.token) {
+          const distLabel = distance_km < 1
+            ? `${Math.round(distance_km * 1000)}m`
+            : `${distance_km.toFixed(1)}km`;
+
+          sendFcmPushToDriver(fcmEntry.token, {
+            title:    `🚨 NEW RIDE — ₹${rideData.fare} (${rideData.vehicle_name || 'Ride'})`,
+            body:     `📍 ${rideData.pickup_name?.split(',')[0] || 'Pickup'} (${distLabel} away)\n⚡ Tap to Accept immediately!`,
+            rideId:   rideData.id,
+            fare:     rideData.fare,
+            distance: distance_km,
+            pickup:   rideData.pickup_name || '',
+            drop:     rideData.drop_name || ''
+          }).then(res => {
+            if (res === 'stale') {
+              if (fcmEntry.id) db.delete('fcm_tokens', fcmEntry.id);
+              db.update('drivers', driver.id, { fcm_token: null });
+            }
+          });
+        }
+
+        // 3. Web Push notification (for browser/PWA users)
         const pushSub = db.find('push_subscriptions', s => s.driver_id === driver.id || s.driver_id === driver.user_id);
         if (pushSub) {
           const distLabel = distance_km < 1
@@ -128,7 +151,6 @@ export const registerSocketHandlers = (io) => {
             distance: distance_km,
             pickup:   rideData.pickup_name || ''
           }).then(result => {
-            // Auto-purge expired/unsubscribed push tokens
             if (result === 'stale') {
               db.delete('push_subscriptions', pushSub.id);
             }

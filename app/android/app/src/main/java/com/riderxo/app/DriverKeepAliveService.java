@@ -1,4 +1,4 @@
-package com.bykneo.app;
+package com.riderxo.app;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -21,8 +21,8 @@ import android.os.Vibrator;
 import androidx.core.app.NotificationCompat;
 
 public class DriverKeepAliveService extends Service {
-    public static final String CHANNEL_SERVICE_ID = "bykneo_driver_service_v1";
-    public static final String CHANNEL_ALERT_ID = "bykneo-ride-urgent-v3";
+    public static final String CHANNEL_SERVICE_ID = "riderxo_driver_service_v1";
+    public static final String CHANNEL_ALERT_ID = "riderxo_ride_urgent_v3";
     private static final int SERVICE_NOTIFICATION_ID = 8801;
     private static final int ALERT_NOTIFICATION_ID = 8802;
 
@@ -76,7 +76,7 @@ public class DriverKeepAliveService extends Service {
             // 1. Silent Ongoing Service Channel
             NotificationChannel serviceChannel = new NotificationChannel(
                 CHANNEL_SERVICE_ID,
-                "Driver Online Background Service",
+                "RiderXO Driver Online Service",
                 NotificationManager.IMPORTANCE_LOW
             );
             serviceChannel.setDescription("Keeps RiderXO driver online and ready for incoming bookings in background");
@@ -86,7 +86,7 @@ public class DriverKeepAliveService extends Service {
             // 2. High Priority Alert Channel with Sound & Vibration
             NotificationChannel alertChannel = new NotificationChannel(
                 CHANNEL_ALERT_ID,
-                "Incoming Ride Booking Alerts",
+                "RiderXO Incoming Ride Alerts",
                 NotificationManager.IMPORTANCE_HIGH
             );
             alertChannel.setDescription("Loud siren and heads-up banner when rider books a ride");
@@ -109,7 +109,7 @@ public class DriverKeepAliveService extends Service {
         );
 
         return new NotificationCompat.Builder(this, CHANNEL_SERVICE_ID)
-            .setContentTitle("🟢 RIDERXO Captain Online")
+            .setContentTitle("🟢 RiderXO Captain Online")
             .setContentText("Active & searching for nearby passenger ride requests...")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
@@ -123,13 +123,13 @@ public class DriverKeepAliveService extends Service {
         try {
             PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
             if (powerManager != null && partialWakeLock == null) {
-                partialWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "RIDERXO::DriverPartialWakeLock");
+                partialWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "RiderXO::DriverPartialWakeLock");
                 partialWakeLock.acquire();
             }
 
             WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             if (wifiManager != null && wifiLock == null) {
-                wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "RIDERXO::DriverWifiLock");
+                wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "RiderXO::DriverWifiLock");
                 wifiLock.acquire();
             }
         } catch (Exception e) {
@@ -162,7 +162,7 @@ public class DriverKeepAliveService extends Service {
                     PowerManager.SCREEN_BRIGHT_WAKE_LOCK |
                     PowerManager.ACQUIRE_CAUSES_WAKEUP |
                     PowerManager.ON_AFTER_RELEASE,
-                    "BYKNEO::IncomingRideScreenWake"
+                    "RiderXO::IncomingRideScreenWake"
                 );
                 screenWakeLock.acquire(30000); // 30 seconds max
             }

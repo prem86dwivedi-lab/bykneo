@@ -1,13 +1,12 @@
 /**
- * Bykneo Web Push Notification Service
- * Uses VAPID (Voluntary Application Server Identification) protocol.
- *
- * VAPID keys are auto-generated once on first run and stored in .env.
- * Drivers subscribe their browser to push; we store those subscriptions
- * and send push payloads whenever a new ride is dispatched to them.
+ * RiderXO Push Notification Service
+ * - Web Push (VAPID) for browsers
+ * - Firebase Cloud Messaging (FCM) for High-Priority Mobile (Android / iOS) Background Wakeups
  */
 
 import webpush from 'web-push';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -15,6 +14,39 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const ENV_FILE   = path.join(__dirname, '../../.env');
+
+let firebaseApp = null;
+
+// ── Firebase Admin SDK Initialization ─────────────────────────────────────
+export function initFirebase() {
+  if (firebaseApp) return firebaseApp;
+
+  try {
+    const backendRoot = path.join(__dirname, '../../');
+    const files = fs.readdirSync(backendRoot);
+    const serviceAccountFile = files.find(f => (f.includes('firebase-adminsdk') || f.includes('serviceAccountKey')) && f.endsWith('.json'));
+
+    if (serviceAccountFile) {
+      const serviceAccountPath = path.join(backendRoot, serviceAccountFile);
+      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
+
+      if (getApps().length === 0) {
+        firebaseApp = initializeApp({
+          credential: cert(serviceAccount)
+        });
+      } else {
+        firebaseApp = getApps()[0];
+      }
+      console.log(`🔥 [Firebase FCM] Initialized successfully with ${serviceAccountFile}`);
+    } else {
+      console.warn('⚠️  [Firebase FCM] No Firebase service account JSON key found in backend directory.');
+    }
+  } catch (e) {
+    console.error('❌ [Firebase FCM] Initialization error:', e.message);
+  }
+
+  return firebaseApp;
+}
 
 // ── Auto-generate VAPID keys on first run ─────────────────────────────────
 function ensureVapidKeys() {
@@ -47,7 +79,7 @@ function ensureVapidKeys() {
   return { publicKey, privateKey };
 }
 
-// Initialise webpush VAPID config — call once at server startup
+// Initialise webpush VAPID config & Firebase — call once at server startup
 export function initPush() {
   const { publicKey, privateKey } = ensureVapidKeys();
   webpush.setVapidDetails(
@@ -56,6 +88,8 @@ export function initPush() {
     privateKey
   );
   console.log('✅ [Push] Web Push service ready.');
+
+  initFirebase();
 }
 
 export function getVapidPublicKey() {
@@ -63,12 +97,65 @@ export function getVapidPublicKey() {
   return publicKey;
 }
 
-// ── Send a push notification to one driver subscription ───────────────────
+// ── Send High-Priority FCM Push Notification to Driver Mobile Device ──────
 /**
- * @param {object} subscription  PushSubscription JSON from driver browser
- * @param {object} payload       { title, body, rideId, fare, distance, pickup }
+ * @param {string} fcmToken  Driver device registration token
+ * @param {object} payload   { title, body, rideId, fare, distance, pickup, drop }
  * @returns {Promise<boolean|'stale'>}
  */
+export async function sendFcmPushToDriver(fcmToken, payload) {
+  if (!firebaseApp || !fcmToken) return false;
+
+  const title = payload.title || `🚨 NEW RIDE — ₹${payload.fare || 50}`;
+  const body  = payload.body  || `📍 ${payload.pickup || 'Nearby'} ➔ 🎯 ${payload.drop || 'Destination'}`;
+
+  const message = {
+    token: fcmToken,
+    // Android specific high-priority payload that bypasses Doze mode
+    android: {
+      priority: 'high',
+      ttl: 60 * 1000, // 60 seconds TTL
+      notification: {
+        title: title,
+        body: body,
+        channelId: 'riderxo_ride_urgent_v3',
+        priority: 'max',
+        sound: 'default',
+        defaultVibrateTimings: true,
+        visibility: 'public'
+      }
+    },
+    // Data payload received by MyFirebaseMessagingService in background
+    data: {
+      action: 'INCOMING_RIDE',
+      rideId: String(payload.rideId || ''),
+      fare: String(payload.fare || '0'),
+      distance: String(payload.distance || '0'),
+      pickup: String(payload.pickup || ''),
+      drop: String(payload.drop || ''),
+      title: String(title),
+      body: String(body)
+    }
+  };
+
+  try {
+    const messaging = getMessaging(firebaseApp);
+    const response = await messaging.send(message);
+    console.log(`🔥 [FCM Push] Sent high-priority wakeup to device: ${response}`);
+    return true;
+  } catch (err) {
+    console.error('❌ [FCM Push] Send failed:', err.message);
+    if (
+      err.code === 'messaging/registration-token-not-registered' ||
+      err.code === 'messaging/invalid-registration-token'
+    ) {
+      return 'stale';
+    }
+    return false;
+  }
+}
+
+// ── Send Web Push notification to one driver browser subscription ─────────
 export async function sendPushToDriver(subscription, payload) {
   if (!subscription || !subscription.endpoint) return false;
 
@@ -81,8 +168,8 @@ export async function sendPushToDriver(subscription, payload) {
     pickup:   payload.pickup   || '',
     icon:     '/favicon.ico',
     badge:    '/favicon.ico',
-    tag:      `ride-${payload.rideId}`,  // collapses duplicate alerts
-    requireInteraction: true,            // stays visible until tapped
+    tag:      `ride-${payload.rideId}`,
+    requireInteraction: true,
     vibrate:  [200, 100, 200, 100, 400],
     actions: [
       { action: 'accept', title: '✅ Accept' },
@@ -92,15 +179,14 @@ export async function sendPushToDriver(subscription, payload) {
 
   try {
     await webpush.sendNotification(subscription, data);
-    console.log(`📲 [Push] Sent to …${subscription.endpoint.slice(-20)}`);
+    console.log(`📲 [Web Push] Sent to …${subscription.endpoint.slice(-20)}`);
     return true;
   } catch (err) {
-    // 410 Gone / 404 = subscription expired — caller should purge it
     if (err.statusCode === 410 || err.statusCode === 404) {
-      console.warn(`🗑️  [Push] Stale subscription (${err.statusCode})`);
+      console.warn(`🗑️  [Web Push] Stale subscription (${err.statusCode})`);
       return 'stale';
     }
-    console.error('❌ [Push] sendNotification error:', err.message);
+    console.error('❌ [Web Push] sendNotification error:', err.message);
     return false;
   }
 }

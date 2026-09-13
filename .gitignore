@@ -29,3 +29,9 @@ Thumbs.db
 */.idea/
 *.iml
 .vscode/
+
+# Secrets & Firebase Private Keys
+*firebase-adminsdk*.json
+serviceAccountKey*.json
+*.jks
+*.keystore

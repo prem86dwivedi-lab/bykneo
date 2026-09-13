@@ -34,7 +34,7 @@ export const initNotificationChannels = async () => {
 
     // High-Priority Ride Request Alert Channel (Loud, vibrating, heads-up banner over all apps)
     await LocalNotifications.createChannel({
-      id: 'bykneo-ride-urgent-v3',
+      id: 'riderxo_ride_urgent_v3',
       name: '🚨 Urgent Ride Requests',
       description: 'Loud high-priority sound & banner alerts for incoming ride requests',
       importance: 5, // IMPORTANCE_HIGH / MAX (pops up over WhatsApp, Facebook, etc.)
@@ -46,7 +46,7 @@ export const initNotificationChannels = async () => {
 
     // General Updates & Ongoing Duty Channel
     await LocalNotifications.createChannel({
-      id: 'bykneo-general',
+      id: 'riderxo_general',
       name: 'RiderXO Status & Notifications',
       description: 'Active shift status, trip updates, and wallet alerts',
       importance: 3,
@@ -74,7 +74,7 @@ export const showDriverOnlineNotification = async () => {
             id: 888888,
             title: '🟢 RiderXO Captain is ONLINE',
             body: 'Active and searching for nearby ride bookings',
-            channelId: 'bykneo-general',
+            channelId: 'riderxo_general',
             ongoing: true,
             autoCancel: false,
             smallIcon: 'ic_launcher'
@@ -208,7 +208,7 @@ export const sendRideAlertNotification = async (ride) => {
             id: notifId,
             title,
             body,
-            channelId: 'bykneo-ride-urgent-v3',
+            channelId: 'riderxo_ride_urgent_v3',
             smallIcon: 'ic_launcher',
             largeIcon: 'ic_launcher',
             actionTypeId: 'OPEN_RIDE_REQUEST',

@@ -334,7 +334,9 @@ export const updateSettings = (req, res) => {
     subscription_pricing,
     vehicle_pricing,
     allowed_pass_durations,
-    pass_pack_discounts
+    pass_pack_discounts,
+    gateway_enabled,
+    direct_upi_qr_enabled
   } = req.body;
 
   db.data.settings = {
@@ -347,6 +349,8 @@ export const updateSettings = (req, res) => {
     geofencing_enabled: geofencing_enabled !== undefined ? Boolean(geofencing_enabled) : db.data.settings.geofencing_enabled,
     auto_kyc_enabled: auto_kyc_enabled !== undefined ? Boolean(auto_kyc_enabled) : (db.data.settings.auto_kyc_enabled ?? true),
     subscription_enabled: subscription_enabled !== undefined ? Boolean(subscription_enabled) : (db.data.settings.subscription_enabled ?? true),
+    gateway_enabled: gateway_enabled !== undefined ? Boolean(gateway_enabled) : (db.data.settings.gateway_enabled ?? true),
+    direct_upi_qr_enabled: direct_upi_qr_enabled !== undefined ? Boolean(direct_upi_qr_enabled) : (db.data.settings.direct_upi_qr_enabled ?? true),
     admin_upi_id: (admin_upi_id || db.data.settings.admin_upi_id || 'bykneo@okhdfcbank').trim(),
     admin_merchant_name: (admin_merchant_name || db.data.settings.admin_merchant_name || 'Bykneo Mobility').trim(),
     razorpay_key_id: (razorpay_key_id !== undefined ? razorpay_key_id : (db.data.settings.razorpay_key_id || '')).trim(),

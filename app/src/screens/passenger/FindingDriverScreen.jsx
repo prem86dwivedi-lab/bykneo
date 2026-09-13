@@ -10,7 +10,7 @@ export const FindingDriverScreen = ({ onCancel, ride }) => {
   }, []);
 
   const vehicleId = ride?.vehicle_id || 'bike';
-  const vehicleName = ride?.vehicle_name || 'Bykneo Captain';
+  const vehicleName = ride?.vehicle_name || 'RiderXO Captain';
 
   const vehicleImageMap = {
     bike_lite: '/vehicles/bike_lite.png',

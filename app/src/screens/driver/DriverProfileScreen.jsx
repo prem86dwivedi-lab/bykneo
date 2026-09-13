@@ -61,7 +61,7 @@ export const DriverProfileScreen = ({ onBack, onOpenKyc }) => {
           <div className="bg-gray-850 p-3 rounded-xl">
             <span className="text-[10px] text-gray-400 uppercase block">Vehicle & Category</span>
             <span className="text-xs font-bold text-white block truncate">
-              {driverProfile?.vehicle_type_name || driverProfile?.vehicle_category || 'Bykneo Bike'}
+              {driverProfile?.vehicle_type_name || driverProfile?.vehicle_category || 'RiderXO Bike'}
             </span>
             <span className="text-[10.5px] text-gray-400 block truncate">
               {driverProfile?.vehicle_model || 'Honda Shine 125'}

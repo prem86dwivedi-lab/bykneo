@@ -60,7 +60,7 @@ export const VEHICLE_TYPES = [
   {
     id: 'auto',
     category: 'AUTO',
-    name: 'Bykneo Auto',
+    name: 'RiderXO Auto',
     tag: 'Standard Auto',
     iconSrc: '/vehicles/auto.png',
     fallbackEmoji: '🛺',
@@ -331,7 +331,7 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
       const payload = {
         driverId: driverProfile?.id || user?.id,
         phone: driverProfile?.phone || user?.phone || '',
-        name: driverProfile?.name || user?.name || 'Bykneo Captain',
+        name: driverProfile?.name || user?.name || 'RiderXO Captain',
         vehicle_id: activeVehicle.id,
         vehicle_category: activeVehicle.category,
         vehicle_type_name: activeVehicle.name,

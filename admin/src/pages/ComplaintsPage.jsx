@@ -22,7 +22,7 @@ export const ComplaintsPage = ({ BACKEND_URL }) => {
       body: JSON.stringify({
         complaintId: id,
         status: 'RESOLVED',
-        resolutionNotes: 'Reviewed by Bykneo Operations and customer compensated.'
+        resolutionNotes: 'Reviewed by RiderXO Operations and customer compensated.'
       })
     });
     fetchComplaints();

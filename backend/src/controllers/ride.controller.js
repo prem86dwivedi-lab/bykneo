@@ -75,7 +75,7 @@ export const estimateFare = async (req, res) => {
       is_road_route: false,
       fare: null,
       vehicles: [],
-      message: 'Bykneo is launching soon in this area! Our fleet is currently offline in this zone.'
+      message: 'RiderXO is launching soon in this area! Our fleet is currently offline in this zone.'
     });
   }
 
@@ -106,7 +106,7 @@ export const estimateFare = async (req, res) => {
   const autoLiteDistCharge = distance > 1.5 ? (distance - 1.5) * autoLiteRateKm : 0;
   const autoLiteFare = Math.max(autoLiteBase, Math.round((autoLiteBase + autoLiteDistCharge) * surge));
 
-  // 4. BYKNEO AUTO (Standard 3-Seater Auto Rickshaw)
+  // 4. RIDERXO AUTO (Standard 3-Seater Auto Rickshaw)
   const autoBase = Number(vp.auto?.base_fare ?? 40);
   const autoRateKm = Number(vp.auto?.rate_per_km ?? 15.5);
   const autoDistCharge = distance > 1.5 ? (distance - 1.5) * autoRateKm : 0;
@@ -147,7 +147,7 @@ export const estimateFare = async (req, res) => {
     {
       id: 'bike',
       category: 'BIKE',
-      name: 'Bykneo Bike',
+      name: 'RiderXO Bike',
       tagline: 'Fastest solo ride through traffic',
       capacity: 1,
       eta_mins: 2,
@@ -172,7 +172,7 @@ export const estimateFare = async (req, res) => {
     {
       id: 'auto',
       category: 'AUTO',
-      name: 'Bykneo Auto',
+      name: 'RiderXO Auto',
       tagline: 'Doorstep 3-seater Auto Rickshaw',
       capacity: 3,
       eta_mins: 3,

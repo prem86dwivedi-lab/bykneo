@@ -38,7 +38,7 @@ export const PaymentsPage = ({ BACKEND_URL, stats }) => {
           </span>
         </div>
 
-        {/* Card 2: Bykneo Commission */}
+        {/* Card 2: RiderXO Commission */}
         <div className="bg-gradient-to-br from-emerald-500/10 via-gray-900 to-gray-900 border border-emerald-500/30 p-2 sm:p-3.5 rounded-xl sm:rounded-2xl space-y-0.5 sm:space-y-1 shadow-md">
           <span className="text-[7.5px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider truncate block">
             Commission (15%)

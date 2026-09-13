@@ -9,11 +9,11 @@ const getSquareIconSvg = (size) => Buffer.from(`
 <svg width="${size}" height="${size}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <rect width="512" height="512" rx="115" fill="#09090b"/>
   <rect x="24" y="24" width="464" height="464" rx="95" fill="none" stroke="#27272a" stroke-width="4"/>
-  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="115" text-anchor="middle" letter-spacing="1">
-    <tspan fill="#FFFFFF">BYK </tspan>
-    <tspan fill="#FFC800">NEO</tspan>
+  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="96" text-anchor="middle" letter-spacing="2">
+    <tspan fill="#FFFFFF">RIDER</tspan>
+    <tspan fill="#FFC800">XO</tspan>
   </text>
-  <circle cx="370" cy="205" r="12" fill="#FFC800"/>
+  <circle cx="390" cy="210" r="10" fill="#FFC800"/>
   <path d="M120 355 L392 355" stroke="#FFC800" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
 </svg>
 `);
@@ -23,11 +23,11 @@ const getRoundIconSvg = (size) => Buffer.from(`
 <svg width="${size}" height="${size}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <circle cx="256" cy="256" r="256" fill="#09090b"/>
   <circle cx="256" cy="256" r="240" fill="none" stroke="#27272a" stroke-width="4"/>
-  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="112" text-anchor="middle" letter-spacing="1">
-    <tspan fill="#FFFFFF">BYK </tspan>
-    <tspan fill="#FFC800">NEO</tspan>
+  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="94" text-anchor="middle" letter-spacing="2">
+    <tspan fill="#FFFFFF">RIDER</tspan>
+    <tspan fill="#FFC800">XO</tspan>
   </text>
-  <circle cx="365" cy="210" r="11" fill="#FFC800"/>
+  <circle cx="385" cy="215" r="10" fill="#FFC800"/>
   <path d="M130 355 L382 355" stroke="#FFC800" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
 </svg>
 `);
@@ -35,11 +35,11 @@ const getRoundIconSvg = (size) => Buffer.from(`
 // SVG for Adaptive Foreground (Centered in safe zone)
 const getForegroundSvg = (size) => Buffer.from(`
 <svg width="${size}" height="${size}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="105" text-anchor="middle" letter-spacing="1">
-    <tspan fill="#FFFFFF">BYK </tspan>
-    <tspan fill="#FFC800">NEO</tspan>
+  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="88" text-anchor="middle" letter-spacing="2">
+    <tspan fill="#FFFFFF">RIDER</tspan>
+    <tspan fill="#FFC800">XO</tspan>
   </text>
-  <circle cx="360" cy="215" r="10" fill="#FFC800"/>
+  <circle cx="380" cy="220" r="9" fill="#FFC800"/>
   <path d="M140 350 L372 350" stroke="#FFC800" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
 </svg>
 `);
@@ -50,9 +50,9 @@ const getSplashSvg = (w, h) => Buffer.from(`
   <rect width="${w}" height="${h}" fill="#09090b"/>
   <g transform="translate(${w/2 - 180}, ${h/2 - 75})">
     <rect width="360" height="150" rx="30" fill="#121622" stroke="#FFC800" stroke-width="2.5" stroke-opacity="0.4"/>
-    <text x="180" y="95" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="68" text-anchor="middle" letter-spacing="1">
-      <tspan fill="#FFFFFF">BYK </tspan>
-      <tspan fill="#FFC800">NEO</tspan>
+    <text x="180" y="95" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="62" text-anchor="middle" letter-spacing="2">
+      <tspan fill="#FFFFFF">RIDER</tspan>
+      <tspan fill="#FFC800">XO</tspan>
     </text>
     <path d="M60 120 L300 120" stroke="#FFC800" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
   </g>
@@ -75,7 +75,7 @@ async function generate() {
     await sharp(getSquareIconSvg(d.size)).resize(d.size, d.size).png().toFile(path.join(dir, 'ic_launcher.png'));
     await sharp(getRoundIconSvg(d.size)).resize(d.size, d.size).png().toFile(path.join(dir, 'ic_launcher_round.png'));
     await sharp(getForegroundSvg(d.fg)).resize(d.fg, d.fg).png().toFile(path.join(dir, 'ic_launcher_foreground.png'));
-    console.log('? Generated icons for mipmap-' + d.name);
+    console.log('✅ Generated icons for mipmap-' + d.name);
   }
 
   // Splash screens
@@ -97,13 +97,17 @@ async function generate() {
     const dir = path.join(resDir, s.dir);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     await sharp(getSplashSvg(s.w, s.h)).resize(s.w, s.h).png().toFile(path.join(dir, 'splash.png'));
-    console.log('? Generated splash for ' + s.dir);
+    console.log('✅ Generated splash for ' + s.dir);
   }
 
   // Also generate for public web
   const publicDir = path.join(__dirname, '../public');
   await sharp(getSquareIconSvg(512)).resize(512, 512).png().toFile(path.join(publicDir, 'logo.png'));
-  console.log('?? ALL BYK NEO ICONS & SPLASH SCREENS GENERATED SUCCESSFULLY!');
+  await sharp(getSquareIconSvg(192)).resize(192, 192).png().toFile(path.join(publicDir, 'pwa-192x192.png'));
+  await sharp(getSquareIconSvg(512)).resize(512, 512).png().toFile(path.join(publicDir, 'pwa-512x512.png'));
+  await sharp(getSquareIconSvg(180)).resize(180, 180).png().toFile(path.join(publicDir, 'apple-touch-icon.png'));
+  await sharp(getSquareIconSvg(64)).resize(64, 64).png().toFile(path.join(publicDir, 'favicon.png'));
+  console.log('✨ ALL RIDERXO ICONS & SPLASH SCREENS GENERATED SUCCESSFULLY!');
 }
 
 generate().catch(console.error);

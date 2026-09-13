@@ -16,7 +16,12 @@ import {
   X,
   QrCode,
   Sparkles,
-  Calendar
+  Calendar,
+  Gift,
+  Plus,
+  Trash2,
+  Award,
+  HelpCircle
 } from 'lucide-react';
 
 const DEFAULT_VEHICLE_PRICING = {
@@ -105,13 +110,43 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
     gateway_enabled: settings?.gateway_enabled !== undefined ? settings.gateway_enabled : true,
     direct_upi_qr_enabled: settings?.direct_upi_qr_enabled !== undefined ? settings.direct_upi_qr_enabled : true,
     admin_upi_id: settings?.admin_upi_id || 'bykneo@okhdfcbank',
-    admin_merchant_name: settings?.admin_merchant_name || 'Bykneo Mobility',
+    admin_merchant_name: settings?.admin_merchant_name || 'RIDERXO',
     razorpay_key_id: settings?.razorpay_key_id || '',
     razorpay_key_secret: settings?.razorpay_key_secret || '',
     subscription_pricing: settings?.subscription_pricing || DEFAULT_SUBSCRIPTION_PRICING,
     allowed_pass_durations: settings?.allowed_pass_durations || DEFAULT_ALLOWED_DURATIONS,
     pass_pack_discounts: settings?.pass_pack_discounts || DEFAULT_PACK_DISCOUNTS,
-    vehicle_pricing: settings?.vehicle_pricing || DEFAULT_VEHICLE_PRICING
+    vehicle_pricing: settings?.vehicle_pricing || DEFAULT_VEHICLE_PRICING,
+    welcome_offer_enabled: settings?.welcome_offer_enabled !== undefined ? settings.welcome_offer_enabled : true,
+    welcome_offer_days: settings?.welcome_offer_days || 60,
+    welcome_offer_title: settings?.welcome_offer_title || '60-Day 100% Free Launch Pass',
+    welcome_offer_subtitle: settings?.welcome_offer_subtitle || 'Keep 100% of your ride fares with 0% platform commission.',
+    promotional_rules: settings?.promotional_rules || [
+      {
+        id: "rule_referral_goldmine",
+        title: "Captain Referral Goldmine (Viral Reward)",
+        badge: "REFERRAL BONUS",
+        badge_color: "bg-amber-500/20 text-brand-yellow border-amber-500/40",
+        description: "• Refer 5 Drivers ➔ Get an extra 30 Days of Free Unlimited Passes.\n• Refer 10 Drivers ➔ Get 3 Months Free Passes + RiderXO Branded Riding Jacket & Helmet.",
+        is_active: true
+      },
+      {
+        id: "rule_zero_commission",
+        title: "0% Commission Launch Guarantee",
+        badge: "WELCOME PASS",
+        badge_color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
+        description: "• Enjoy 100% of your ride fares with 0% platform deductions.\n• Direct cash & UPI payouts directly into your personal account with zero hold.",
+        is_active: true
+      },
+      {
+        id: "rule_daily_fuel",
+        title: "Daily Fuel & Target Bonus",
+        badge: "DAILY BONUS",
+        badge_color: "bg-blue-500/20 text-blue-400 border-blue-500/40",
+        description: "• Complete 5 rides in a day ➔ Get instant fuel cashback.\n• Zero commission deduction even on peak surge & night fares.",
+        is_active: true
+      }
+    ]
   });
 
   const [saving, setSaving] = useState(false);
@@ -130,9 +165,41 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
         gateway_enabled: settings.gateway_enabled !== undefined ? settings.gateway_enabled : true,
         direct_upi_qr_enabled: settings.direct_upi_qr_enabled !== undefined ? settings.direct_upi_qr_enabled : true,
         admin_upi_id: settings.admin_upi_id || 'bykneo@okhdfcbank',
-        admin_merchant_name: settings.admin_merchant_name || 'Bykneo Mobility',
+        admin_merchant_name: settings.admin_merchant_name || 'RIDERXO',
         razorpay_key_id: settings.razorpay_key_id || '',
         razorpay_key_secret: settings.razorpay_key_secret || '',
+        welcome_offer_enabled: settings.welcome_offer_enabled !== undefined ? settings.welcome_offer_enabled : true,
+        welcome_offer_days: settings.welcome_offer_days || 60,
+        welcome_offer_title: settings.welcome_offer_title || '60-Day 100% Free Launch Pass',
+        welcome_offer_subtitle: settings.welcome_offer_subtitle || 'Keep 100% of your ride fares with 0% platform commission.',
+        promotional_rules: Array.isArray(settings.promotional_rules) && settings.promotional_rules.length > 0
+          ? settings.promotional_rules
+          : [
+            {
+              id: "rule_referral_goldmine",
+              title: "Captain Referral Goldmine (Viral Reward)",
+              badge: "REFERRAL BONUS",
+              badge_color: "bg-amber-500/20 text-brand-yellow border-amber-500/40",
+              description: "• Refer 5 Drivers ➔ Get an extra 30 Days of Free Unlimited Passes.\n• Refer 10 Drivers ➔ Get 3 Months Free Passes + RiderXO Branded Riding Jacket & Helmet.",
+              is_active: true
+            },
+            {
+              id: "rule_zero_commission",
+              title: "0% Commission Launch Guarantee",
+              badge: "WELCOME PASS",
+              badge_color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
+              description: "• Enjoy 100% of your ride fares with 0% platform deductions.\n• Direct cash & UPI payouts directly into your personal account with zero hold.",
+              is_active: true
+            },
+            {
+              id: "rule_daily_fuel",
+              title: "Daily Fuel & Target Bonus",
+              badge: "DAILY BONUS",
+              badge_color: "bg-blue-500/20 text-blue-400 border-blue-500/40",
+              description: "• Complete 5 rides in a day ➔ Get instant fuel cashback.\n• Zero commission deduction even on peak surge & night fares.",
+              is_active: true
+            }
+          ],
         subscription_pricing: {
           ...DEFAULT_SUBSCRIPTION_PRICING,
           ...(settings.subscription_pricing || {})
@@ -195,6 +262,48 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
         [String(days)]: Math.max(0, Math.min(99, Number(value) || 0))
       }
     }));
+  };
+
+  const handleAddRule = () => {
+    const newRule = {
+      id: `rule_${Date.now()}`,
+      title: 'New Captain Promotional Perk',
+      badge: 'OFFER',
+      badge_color: 'bg-amber-500/20 text-brand-yellow border-amber-500/40',
+      description: '• Add clear perk instructions for your drivers here.',
+      is_active: true
+    };
+    setFormData((prev) => ({
+      ...prev,
+      promotional_rules: [...(prev.promotional_rules || []), newRule]
+    }));
+  };
+
+  const handleUpdateRule = (index, field, value) => {
+    setFormData((prev) => {
+      const list = [...(prev.promotional_rules || [])];
+      if (list[index]) {
+        list[index] = { ...list[index], [field]: value };
+      }
+      return { ...prev, promotional_rules: list };
+    });
+  };
+
+  const handleDeleteRule = (index) => {
+    setFormData((prev) => {
+      const list = (prev.promotional_rules || []).filter((_, i) => i !== index);
+      return { ...prev, promotional_rules: list };
+    });
+  };
+
+  const handleToggleRule = (index) => {
+    setFormData((prev) => {
+      const list = [...(prev.promotional_rules || [])];
+      if (list[index]) {
+        list[index] = { ...list[index], is_active: !list[index].is_active };
+      }
+      return { ...prev, promotional_rules: list };
+    });
   };
 
   const handleAutoSaveSetting = async (field, value) => {
@@ -265,9 +374,9 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
 
   const vehicleList = [
     { key: 'bike_lite', name: 'Bike Lite', icon: '🛵', badge: '18% OFF', badgeColor: 'bg-emerald-500/20 text-emerald-400' },
-    { key: 'bike', name: 'Bykneo Bike', icon: '🏍️', badge: 'FASTEST', badgeColor: 'bg-amber-500/20 text-brand-yellow' },
+    { key: 'bike', name: 'RiderXO Bike', icon: '🏍️', badge: 'FASTEST', badgeColor: 'bg-amber-500/20 text-brand-yellow' },
     { key: 'auto_lite', name: 'Auto Lite', icon: '🛺', badge: 'POPULAR', badgeColor: 'bg-blue-500/20 text-blue-400' },
-    { key: 'auto', name: 'Bykneo Auto', icon: '🛺', badge: 'STANDARD', badgeColor: 'bg-gray-800 text-gray-300' },
+    { key: 'auto', name: 'RiderXO Auto', icon: '🛺', badge: 'STANDARD', badgeColor: 'bg-gray-800 text-gray-300' },
     { key: 'cab_economy', name: 'Cab Economy', icon: '🚗', badge: 'AC CAB', badgeColor: 'bg-emerald-500/20 text-emerald-400' },
     { key: 'cab_premium', name: 'Cab Premium', icon: '🚘', badge: 'PREMIUM', badgeColor: 'bg-amber-500/20 text-amber-300' }
   ];
@@ -621,7 +730,7 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
                     required
                     value={formData.admin_merchant_name}
                     onChange={(e) => setFormData({ ...formData, admin_merchant_name: e.target.value })}
-                    placeholder="e.g. Bykneo Mobility"
+                    placeholder="e.g. RIDERXO"
                     className="w-full bg-gray-900 border border-gray-750 focus:border-brand-yellow rounded-lg sm:rounded-xl py-1.5 sm:py-2 px-2.5 text-xs text-white placeholder-gray-600 focus:outline-none font-bold"
                   />
                 </div>
@@ -770,6 +879,200 @@ export const ReportsPage = ({ BACKEND_URL, settings, onUpdateSettings }) => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 🎁 NEW DRIVER WELCOME FREE OFFER & DYNAMIC PROMOTIONAL RULES MANAGER */}
+        {/* ========================================================================= */}
+        <div className="bg-gradient-to-br from-amber-500/10 via-gray-900 to-gray-900 border-2 border-amber-500/40 rounded-2xl sm:rounded-3xl p-3 sm:p-5 space-y-4 shadow-xl">
+          {/* Header & Master Toggle */}
+          <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-gray-800">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500/20 text-brand-yellow flex items-center justify-center shrink-0 border border-amber-500/30">
+                <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
+                  <span>New Driver Welcome Free Pass & Promotional Rules</span>
+                  <span className="text-[9px] bg-amber-400/20 text-brand-yellow px-2 py-0.5 rounded-full font-bold uppercase border border-amber-400/30">
+                    Growth Engine
+                  </span>
+                </h3>
+                <p className="text-[9px] sm:text-[10px] text-gray-400 mt-0.5">
+                  Automatically grant 100% Free 0% Commission Launch Passes to new drivers & display live promotional rules on their screens
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleAutoSaveSetting('welcome_offer_enabled', !formData.welcome_offer_enabled)}
+              className={`px-3 py-1.5 rounded-xl font-black text-[10px] sm:text-xs flex items-center gap-1.5 transition shrink-0 shadow-md ${
+                formData.welcome_offer_enabled
+                  ? 'bg-amber-400 hover:bg-amber-300 text-gray-950 shadow-amber-400/20'
+                  : 'bg-gray-850 text-gray-400 border border-gray-700 hover:bg-gray-750'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 fill-current" />
+              <span>{formData.welcome_offer_enabled ? 'Welcome Offer Active (ON)' : 'Offer Disabled (OFF)'}</span>
+            </button>
+          </div>
+
+          {/* Welcome Offer Configuration Fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+            <div>
+              <label className="block text-[9px] sm:text-[10.5px] font-bold text-gray-300 mb-1">
+                Free Trial Duration (Days) *
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  required
+                  value={formData.welcome_offer_days}
+                  onChange={(e) => setFormData({ ...formData, welcome_offer_days: Math.max(1, Number(e.target.value) || 1) })}
+                  className="w-full bg-gray-950 border border-gray-750 focus:border-brand-yellow rounded-xl py-2 px-3 text-sm text-brand-yellow font-black font-mono focus:outline-none"
+                />
+                <div className="flex gap-1">
+                  {[30, 60, 90].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, welcome_offer_days: d })}
+                      className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition ${
+                        formData.welcome_offer_days === d
+                          ? 'bg-amber-500/20 text-brand-yellow border-brand-yellow'
+                          : 'bg-gray-950 text-gray-400 border-gray-800 hover:bg-gray-850'
+                      }`}
+                    >
+                      {d}d
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-[9px] sm:text-[10.5px] font-bold text-gray-300 mb-1">
+                Welcome Offer Headline & Subtitle *
+              </label>
+              <div className="space-y-1.5">
+                <input
+                  type="text"
+                  required
+                  value={formData.welcome_offer_title}
+                  onChange={(e) => setFormData({ ...formData, welcome_offer_title: e.target.value })}
+                  placeholder="e.g. 60-Day 100% Free Launch Pass"
+                  className="w-full bg-gray-950 border border-gray-750 focus:border-brand-yellow rounded-xl py-1.5 px-3 text-xs text-white font-bold focus:outline-none"
+                />
+                <input
+                  type="text"
+                  required
+                  value={formData.welcome_offer_subtitle}
+                  onChange={(e) => setFormData({ ...formData, welcome_offer_subtitle: e.target.value })}
+                  placeholder="e.g. Keep 100% of your ride fares with 0% platform commission."
+                  className="w-full bg-gray-950 border border-gray-750 focus:border-brand-yellow rounded-xl py-1.5 px-3 text-xs text-gray-300 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Promotional Rules & Referral Goldmine Cards */}
+          <div className="space-y-2.5 pt-2 border-t border-gray-800">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <span className="text-[10.5px] sm:text-xs font-bold text-white flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-brand-yellow" />
+                  <span>Captain Perks, Rewards & Referral Goldmine Rules</span>
+                </span>
+                <p className="text-[9px] text-gray-400 mt-0.5">
+                  These promotional cards are displayed directly inside the Captains' Earnings and Recharge screen.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddRule}
+                className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-brand-yellow hover:bg-amber-500/30 text-xs font-black flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Promotional Rule</span>
+              </button>
+            </div>
+
+            {/* Rule Cards Grid */}
+            <div className="space-y-2.5">
+              {(formData.promotional_rules || []).map((rule, idx) => (
+                <div
+                  key={rule.id || idx}
+                  className={`p-3 rounded-2xl border transition space-y-2 ${
+                    rule.is_active !== false
+                      ? 'bg-gray-950/90 border-gray-800 shadow-md'
+                      : 'bg-gray-950/40 border-gray-900 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-[10px] font-mono text-gray-500 font-bold shrink-0">
+                        #{idx + 1}
+                      </span>
+                      <input
+                        type="text"
+                        value={rule.title}
+                        onChange={(e) => handleUpdateRule(idx, 'title', e.target.value)}
+                        placeholder="Rule Title (e.g. Captain Referral Goldmine)"
+                        className="w-full bg-gray-900 border border-gray-800 focus:border-brand-yellow rounded-lg py-1 px-2 text-xs font-bold text-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <input
+                        type="text"
+                        value={rule.badge || 'OFFER'}
+                        onChange={(e) => handleUpdateRule(idx, 'badge', e.target.value)}
+                        placeholder="TAG"
+                        className="w-24 bg-gray-900 border border-gray-800 focus:border-brand-yellow rounded-lg py-1 px-2 text-[10px] font-bold text-brand-yellow uppercase text-center font-mono focus:outline-none"
+                        title="Badge Tag"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleRule(idx)}
+                        className={`px-2 py-1 rounded-lg text-[9.5px] font-bold transition ${
+                          rule.is_active !== false
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                            : 'bg-gray-850 text-gray-500 border border-gray-800'
+                        }`}
+                        title="Toggle Active"
+                      >
+                        {rule.is_active !== false ? 'Active' : 'Disabled'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRule(idx)}
+                        className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                        title="Delete Rule"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <textarea
+                      rows={2}
+                      value={rule.description}
+                      onChange={(e) => handleUpdateRule(idx, 'description', e.target.value)}
+                      placeholder="Enter rule details, terms, or referral perks..."
+                      className="w-full bg-gray-900 border border-gray-800 focus:border-brand-yellow rounded-lg p-2 text-xs text-gray-300 focus:outline-none leading-relaxed resize-none font-sans"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

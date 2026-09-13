@@ -130,6 +130,14 @@ export const AuthProvider = ({ children }) => {
         if (data.driverProfile) {
           localStorage.setItem('bykneo_driver', JSON.stringify(data.driverProfile));
         }
+
+        if (role === 'driver' || data.user.role === 'driver') {
+          triggerWelcomeCelebration({
+            isDemo: false,
+            driverName: data.user?.name || 'Captain',
+            driverId: data.driverProfile?.id
+          });
+        }
       }
 
       return data;
@@ -137,6 +145,26 @@ export const AuthProvider = ({ children }) => {
       console.error("verifyOtp error:", err);
       return { success: false, error: 'Network error during OTP verification' };
     }
+  };
+
+  const [welcomeCelebration, setWelcomeCelebration] = useState({
+    isOpen: false,
+    isDemo: false,
+    driverName: 'Captain',
+    driverId: null
+  });
+
+  const triggerWelcomeCelebration = (opts = {}) => {
+    setWelcomeCelebration({
+      isOpen: true,
+      isDemo: Boolean(opts.isDemo),
+      driverName: opts.driverName || 'Captain',
+      driverId: opts.driverId || null
+    });
+  };
+
+  const closeWelcomeCelebration = () => {
+    setWelcomeCelebration((prev) => ({ ...prev, isOpen: false }));
   };
 
   /**
@@ -160,6 +188,14 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('bykneo_role', data.user.role || profileData.role);
         if (data.driverProfile) {
           localStorage.setItem('bykneo_driver', JSON.stringify(data.driverProfile));
+        }
+
+        if (profileData.role === 'driver' || data.is_new_welcome) {
+          triggerWelcomeCelebration({
+            isDemo: false,
+            driverName: data.user.name || profileData.name || 'Captain',
+            driverId: data.driverProfile?.id
+          });
         }
       }
 
@@ -189,6 +225,14 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('bykneo_role', role);
         if (data.driverProfile) {
           localStorage.setItem('bykneo_driver', JSON.stringify(data.driverProfile));
+        }
+
+        if (role === 'driver') {
+          triggerWelcomeCelebration({
+            isDemo: true,
+            driverName: data.user?.name || 'Vikram Singh (Demo)',
+            driverId: data.driverProfile?.id
+          });
         }
         return { success: true };
       }
@@ -250,6 +294,9 @@ export const AuthProvider = ({ children }) => {
         loginWithPhone,
         switchRole,
         logout,
+        welcomeCelebration,
+        triggerWelcomeCelebration,
+        closeWelcomeCelebration,
         loading
       }}
     >

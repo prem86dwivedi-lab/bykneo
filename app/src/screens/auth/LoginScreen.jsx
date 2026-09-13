@@ -757,7 +757,7 @@ export const LoginScreen = () => {
               <div>
                 <h3 className="text-lg font-bold text-white">Verify 6-Digit OTP</h3>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Enter the 6-digit code sent via MSG91 to{' '}
+                  Enter the 6-digit code sent via SMS to{' '}
                   <span className="text-brand-yellow font-bold">+91 {phone.replace(/\D/g, '')}</span>
                 </p>
               </div>

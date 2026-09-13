@@ -43,8 +43,26 @@ export function AdminLoginGate({ onLoginSuccess, BACKEND_URL }) {
     setIsLoading(true);
     setErrorMessage('');
 
+    const tryFetch = async (endpoint, options) => {
+      const urls = [
+        `${BACKEND_URL}${endpoint}`,
+        `http://localhost:5000${endpoint}`,
+        `http://${window.location.hostname}:5000${endpoint}`
+      ];
+      let lastErr = null;
+      for (const u of urls) {
+        try {
+          const res = await fetch(u, options);
+          return res;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr;
+    };
+
     try {
-      const res = await fetch(`${BACKEND_URL}/api/admin/login`, {
+      const res = await tryFetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: pin.trim() })
@@ -60,12 +78,7 @@ export function AdminLoginGate({ onLoginSuccess, BACKEND_URL }) {
         setPin('');
       }
     } catch (err) {
-      if (pin.trim() === '2026' || pin.trim() === '999999') {
-        sessionStorage.setItem('riderxo_admin_token', 'rx_admin_auth_offline');
-        onLoginSuccess();
-      } else {
-        setErrorMessage('Failed to connect to backend server. Please check connection.');
-      }
+      setErrorMessage('Failed to connect to backend server. Please verify backend is running on port 5000.');
     } finally {
       setIsLoading(false);
     }
@@ -76,8 +89,26 @@ export function AdminLoginGate({ onLoginSuccess, BACKEND_URL }) {
     setOtpError('');
     setOtpMessage('');
 
+    const tryFetch = async (endpoint, options) => {
+      const urls = [
+        `${BACKEND_URL}${endpoint}`,
+        `http://localhost:5000${endpoint}`,
+        `http://${window.location.hostname}:5000${endpoint}`
+      ];
+      let lastErr = null;
+      for (const u of urls) {
+        try {
+          const res = await fetch(u, options);
+          return res;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr;
+    };
+
     try {
-      const res = await fetch(`${BACKEND_URL}/api/admin/send-reset-otp`, {
+      const res = await tryFetch('/api/admin/send-reset-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -118,8 +149,26 @@ export function AdminLoginGate({ onLoginSuccess, BACKEND_URL }) {
     setOtpLoading(true);
     setOtpError('');
 
+    const tryFetch = async (endpoint, options) => {
+      const urls = [
+        `${BACKEND_URL}${endpoint}`,
+        `http://localhost:5000${endpoint}`,
+        `http://${window.location.hostname}:5000${endpoint}`
+      ];
+      let lastErr = null;
+      for (const u of urls) {
+        try {
+          const res = await fetch(u, options);
+          return res;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr;
+    };
+
     try {
-      const res = await fetch(`${BACKEND_URL}/api/admin/verify-reset-otp`, {
+      const res = await tryFetch('/api/admin/verify-reset-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -278,16 +327,6 @@ export function AdminLoginGate({ onLoginSuccess, BACKEND_URL }) {
 
             {otpStep === 'request' ? (
               <div className="space-y-4">
-                <div className="bg-gray-950/60 p-3.5 rounded-2xl border border-gray-800/80 text-xs text-gray-400 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-gray-200 font-semibold">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Instant SMS Verification</span>
-                  </div>
-                  <p className="text-[11px] leading-relaxed">
-                    Clicking the button below will dispatch a 6-digit OTP code to <b className="text-white">7974704918</b> via MSG91 SMS gateway.
-                  </p>
-                </div>
-
                 {otpError && (
                   <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -348,7 +387,7 @@ export function AdminLoginGate({ onLoginSuccess, BACKEND_URL }) {
                       maxLength={6}
                       value={newPin}
                       onChange={(e) => setNewPin(e.target.value)}
-                      placeholder="e.g. 2026"
+                      placeholder="e.g. 1234"
                       className="w-full bg-gray-950 border border-gray-800 focus:border-amber-400 rounded-xl py-2 px-3 text-sm font-mono text-white outline-none"
                     />
                   </div>

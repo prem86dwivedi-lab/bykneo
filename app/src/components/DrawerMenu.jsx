@@ -103,7 +103,7 @@ export const DrawerMenu = ({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-sm text-white truncate">{user?.name || 'Bykneo User'}</h3>
+              <h3 className="font-bold text-sm text-white truncate">{user?.name || 'RiderXO User'}</h3>
               <p className="text-xs text-gray-400 truncate">{user?.phone || '+91 9876543210'}</p>
               <div className="flex items-center gap-1 mt-1">
                 <Star className="w-3 h-3 text-brand-yellow fill-brand-yellow" />

@@ -52,12 +52,12 @@ const DEFAULT_DATA = {
     rate_per_km: 6.80,
     rate_per_min: 0.15,
     surge_multiplier: 1.0,
-    platform_commission_pct: 15.0, // Bykneo takes 15%
+    platform_commission_pct: 15.0, // RiderXO takes 15%
     cancellation_fee: 15.00,
     auto_kyc_enabled: true,
     subscription_enabled: true,
-    admin_upi_id: "bykneo@okhdfcbank",
-    admin_merchant_name: "Bykneo Mobility",
+    admin_upi_id: "riderxo@okhdfcbank",
+    admin_merchant_name: "RIDERXO",
     subscription_pricing: {
       bike_lite: 20,
       bike: 25,
@@ -80,7 +80,37 @@ const DEFAULT_DATA = {
     },
     razorpay_key_id: "rzp_live_TAKnbp18wnY8Mu",
     razorpay_key_secret: "KEXn7SaynyjQ0uQhIlscY1Sc",
-    geofencing_enabled: true // When true, restricts booking to active cities
+    geofencing_enabled: true, // When true, restricts booking to active cities
+    welcome_offer_enabled: true,
+    welcome_offer_days: 60,
+    welcome_offer_title: "60-Day 100% Free Launch Pass",
+    welcome_offer_subtitle: "Keep 100% of your ride fares with 0% platform commission.",
+    promotional_rules: [
+      {
+        id: "rule_referral_goldmine",
+        title: "Captain Referral Goldmine (Viral Reward)",
+        badge: "REFERRAL BONUS",
+        badge_color: "bg-amber-500/20 text-brand-yellow border-amber-500/40",
+        description: "• Refer 5 Drivers ➔ Get an extra 30 Days of Free Unlimited Passes.\n• Refer 10 Drivers ➔ Get 3 Months Free Passes + RiderXO Branded Riding Jacket & Helmet.",
+        is_active: true
+      },
+      {
+        id: "rule_zero_commission",
+        title: "0% Commission Launch Guarantee",
+        badge: "WELCOME PASS",
+        badge_color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
+        description: "• Enjoy 100% of your ride fares with 0% platform deductions.\n• Direct cash & UPI payouts directly into your personal account with zero hold.",
+        is_active: true
+      },
+      {
+        id: "rule_daily_fuel",
+        title: "Daily Fuel & Target Bonus",
+        badge: "DAILY BONUS",
+        badge_color: "bg-blue-500/20 text-blue-400 border-blue-500/40",
+        description: "• Complete 5 rides in a day ➔ Get instant fuel cashback.\n• Zero commission deduction even on peak surge & night fares.",
+        is_active: true
+      }
+    ]
   },
   push_subscriptions: []   // { id, driver_id, subscription, created_at, updated_at }
 };

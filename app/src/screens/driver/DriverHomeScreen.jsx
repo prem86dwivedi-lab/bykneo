@@ -223,7 +223,7 @@ export const DriverHomeScreen = ({
             </div>
 
             <p className="text-[11px] text-gray-300 leading-relaxed">
-              Your device GPS is outside Bykneo's active service zones. Captains can only go online and receive rides inside our operational zones:
+              Your device GPS is outside RiderXO's active service zones. Captains can only go online and receive rides inside our operational zones:
             </p>
 
             <div className="space-y-1.5 max-h-48 overflow-y-auto">

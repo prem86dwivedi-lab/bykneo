@@ -8,6 +8,25 @@ export const getDriverProfile = (req, res) => {
   const { driverId } = req.params;
   const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId);
   if (!driver) return res.status(404).json({ success: false, error: "Driver profile not found" });
+
+  const settings = db.data.settings || {};
+  const welcomeOfferEnabled = settings.welcome_offer_enabled !== false;
+  const welcomeOfferDays = Math.max(1, Number(settings.welcome_offer_days || 60));
+  const now = new Date();
+  const expiresAt = driver.subscription_expires_at ? new Date(driver.subscription_expires_at) : null;
+  const isActive = expiresAt && expiresAt > now;
+
+  if (!isActive && welcomeOfferEnabled) {
+    const finalExpiry = new Date(now.getTime() + welcomeOfferDays * 24 * 60 * 60 * 1000);
+    const updatedDriver = db.update('drivers', driver.id, {
+      is_welcome_pass: true,
+      welcome_pass_days: welcomeOfferDays,
+      subscription_started_at: now.toISOString(),
+      subscription_expires_at: finalExpiry.toISOString()
+    });
+    return res.json({ success: true, driver: updatedDriver });
+  }
+
   return res.json({ success: true, driver });
 };
 
@@ -121,7 +140,7 @@ export const updateKyc = (req, res) => {
   const driverData = {
     vehicle_id: vehicle_id || driver?.vehicle_id || 'bike',
     vehicle_category: vehicle_category || driver?.vehicle_category || 'BIKE',
-    vehicle_type_name: vehicle_type_name || driver?.vehicle_type_name || 'Bykneo Bike',
+    vehicle_type_name: vehicle_type_name || driver?.vehicle_type_name || 'RiderXO Bike',
     vehicle_model: vehicle_model || driver?.vehicle_model || 'Hero Splendor Plus',
     vehicle_number: (vehicle_number || driver?.vehicle_number || '').toUpperCase(),
     license_number: (license_number || driver?.license_number || '').toUpperCase(),
@@ -139,6 +158,20 @@ export const updateKyc = (req, res) => {
     kyc_submitted_at: new Date().toISOString()
   };
 
+  const settings = db.data.settings || {};
+  const welcomeOfferEnabled = settings.welcome_offer_enabled !== false;
+  const welcomeOfferDays = Math.max(1, Number(settings.welcome_offer_days || 60));
+
+  // Automatically grant 100% Free Welcome Pass to newly registered driver if enabled
+  if (welcomeOfferEnabled && !driver?.subscription_expires_at) {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + welcomeOfferDays * 24 * 60 * 60 * 1000);
+    driverData.subscription_started_at = now.toISOString();
+    driverData.subscription_expires_at = expiresAt.toISOString();
+    driverData.is_welcome_pass = true;
+    driverData.welcome_pass_days = welcomeOfferDays;
+  }
+
   let updated;
   if (driver) {
     updated = db.update('drivers', driver.id, driverData);
@@ -146,7 +179,7 @@ export const updateKyc = (req, res) => {
     updated = db.insert('drivers', {
       id: targetId,
       user_id: driverId || `usr_${uuidv4().slice(0, 8)}`,
-      name: name || 'Bykneo Captain',
+      name: name || 'RiderXO Captain',
       phone: phone || '',
       is_online: isAutoKyc,
       is_available: true,
@@ -182,7 +215,7 @@ export const updateKyc = (req, res) => {
         submitted_at: updated.kyc_submitted_at
       });
     } else {
-      console.log(`⚡ Captain ${updated.name} automatically AI verified and activated!`);
+      console.log(`⚡ Captain ${updated.name} automatically AI verified and activated with ${welcomeOfferDays}-Day Free Welcome Pass!`);
     }
   }
 
@@ -205,13 +238,66 @@ export const getSubscriptionStatus = (req, res) => {
   const passPrice = settings.subscription_pricing?.[vKey] || (vKey.includes('auto') ? 35 : vKey.includes('cab') ? 65 : 25);
 
   const now = new Date();
-  const expiresAt = driver?.subscription_expires_at ? new Date(driver.subscription_expires_at) : null;
-  const isActive = expiresAt && expiresAt > now;
+  const welcomeOfferEnabled = settings.welcome_offer_enabled !== false;
+  const welcomeOfferDays = Math.max(1, Number(settings.welcome_offer_days || 60));
+
+  let expiresAt = driver?.subscription_expires_at ? new Date(driver.subscription_expires_at) : null;
+  let isActive = expiresAt && expiresAt > now;
+
+  // If driver has no active pass and welcome offer is enabled, automatically activate their welcome pass
+  if (!isActive && welcomeOfferEnabled && driver) {
+    const finalExpiry = new Date(now.getTime() + welcomeOfferDays * 24 * 60 * 60 * 1000);
+    driver.is_welcome_pass = true;
+    driver.welcome_pass_days = welcomeOfferDays;
+    driver.subscription_started_at = now.toISOString();
+    driver.subscription_expires_at = finalExpiry.toISOString();
+
+    db.update('drivers', driver.id, {
+      is_welcome_pass: true,
+      welcome_pass_days: welcomeOfferDays,
+      subscription_started_at: now.toISOString(),
+      subscription_expires_at: finalExpiry.toISOString()
+    });
+
+    expiresAt = finalExpiry;
+    isActive = true;
+  }
 
   let remainingSeconds = 0;
+  let welcomeDaysRemaining = 0;
   if (isActive && expiresAt) {
     remainingSeconds = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
+    welcomeDaysRemaining = Math.max(1, Math.ceil((expiresAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
   }
+
+  const isWelcomePass = Boolean(driver?.is_welcome_pass && isActive);
+
+  const defaultPromotionalRules = [
+    {
+      id: "rule_referral_goldmine",
+      title: "Captain Referral Goldmine (Viral Reward)",
+      badge: "REFERRAL BONUS",
+      badge_color: "bg-amber-500/20 text-brand-yellow border-amber-500/40",
+      description: "• Refer 5 Drivers ➔ Get an extra 30 Days of Free Unlimited Passes.\n• Refer 10 Drivers ➔ Get 3 Months Free Passes + RiderXO Branded Riding Jacket & Helmet.",
+      is_active: true
+    },
+    {
+      id: "rule_zero_commission",
+      title: "0% Commission Launch Guarantee",
+      badge: "WELCOME PASS",
+      badge_color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
+      description: "• Enjoy 100% of your ride fares with 0% platform deductions.\n• Direct cash & UPI payouts directly into your personal account with zero hold.",
+      is_active: true
+    },
+    {
+      id: "rule_daily_fuel",
+      title: "Daily Fuel & Target Bonus",
+      badge: "DAILY BONUS",
+      badge_color: "bg-blue-500/20 text-blue-400 border-blue-500/40",
+      description: "• Complete 5 rides in a day ➔ Get instant fuel cashback.\n• Zero commission deduction even on peak surge & night fares.",
+      is_active: true
+    }
+  ];
 
   return res.json({
     success: true,
@@ -219,16 +305,25 @@ export const getSubscriptionStatus = (req, res) => {
     gateway_enabled: settings.gateway_enabled !== false,
     direct_upi_qr_enabled: settings.direct_upi_qr_enabled !== false,
     admin_upi_id: settings.admin_upi_id || 'bykneo@okhdfcbank',
-    admin_merchant_name: settings.admin_merchant_name || 'Bykneo Mobility',
+    admin_merchant_name: settings.admin_merchant_name || 'RIDERXO',
     pass_price: passPrice,
     allowed_pass_durations: settings.allowed_pass_durations || [1, 2, 3, 5, 7, 10, 20, 30],
     pass_pack_discounts: settings.pass_pack_discounts || { "7": 5, "15": 10, "30": 15 },
     vehicle_id: vKey,
     is_active: isActive,
+    is_welcome_pass: isWelcomePass,
+    welcome_days_remaining: welcomeDaysRemaining,
+    welcome_offer_enabled: settings.welcome_offer_enabled !== false,
+    welcome_offer_days: settings.welcome_offer_days || 60,
+    welcome_offer_title: settings.welcome_offer_title || '60-Day 100% Free Launch Pass',
+    welcome_offer_subtitle: settings.welcome_offer_subtitle || 'Keep 100% of your ride fares with 0% platform commission.',
+    promotional_rules: Array.isArray(settings.promotional_rules) && settings.promotional_rules.length > 0
+      ? settings.promotional_rules.filter(r => r.is_active !== false)
+      : defaultPromotionalRules,
     expires_at: driver?.subscription_expires_at || null,
     remaining_seconds: remainingSeconds,
     subscribed_at: driver?.subscription_started_at || null,
-    plan_name: "Bykneo Unlimited Pass"
+    plan_name: isWelcomePass ? "RiderXO Free Welcome Pass" : "RiderXO Unlimited Pass"
   });
 };
 
@@ -249,11 +344,11 @@ export const createSubscriptionOrder = (req, res) => {
   const discountPct = Number(settings.pass_pack_discounts?.[numDays] || 0);
   const totalAmount = Math.max(1, Math.round(Number(dailyPrice) * numDays * (1 - (discountPct / 100))));
   const adminUpi = settings.admin_upi_id || 'bykneo@okhdfcbank';
-  const merchantName = settings.admin_merchant_name || 'Bykneo Mobility';
+  const merchantName = settings.admin_merchant_name || 'RIDERXO';
 
-  const orderId = `BYK_ORD_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+  const orderId = `RX_ORD_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
   const driverPhone = driver.phone ? driver.phone.replace(/\D/g, '') : 'Driver';
-  const transactionNote = `Bykneo_Pass_${numDays}d_${driverPhone}_${orderId.slice(-6)}`;
+  const transactionNote = `RiderXO_Pass_${numDays}d_${driverPhone}_${orderId.slice(-6)}`;
 
   // Clean NPCI UPI Intent URIs
   const upiIntent = `upi://pay?pa=${adminUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
@@ -343,7 +438,7 @@ export const createRazorpayOrder = async (req, res) => {
           driver_phone: driver.phone,
           vehicle_type: vKey,
           duration_days: String(numDays),
-          service: `BYKNEO_${numDays}D_SUBSCRIPTION_PASS`
+          service: `RIDERXO_${numDays}D_SUBSCRIPTION_PASS`
         }
       };
 
@@ -360,7 +455,7 @@ export const createRazorpayOrder = async (req, res) => {
         key_id: keyId,
         driver_name: driver.name,
         driver_phone: driver.phone,
-        merchant_name: settings.admin_merchant_name || 'Bykneo Mobility'
+        merchant_name: settings.admin_merchant_name || 'RIDERXO'
       });
     } else {
       // Standard Gateway Order Token
@@ -374,10 +469,10 @@ export const createRazorpayOrder = async (req, res) => {
         amount: totalAmount,
         amount_paise: amountPaise,
         currency: 'INR',
-        key_id: keyId || 'rzp_test_51KDemoBykneo',
+        key_id: keyId || 'rzp_test_51KDemoRiderXO',
         driver_name: driver.name,
         driver_phone: driver.phone,
-        merchant_name: settings.admin_merchant_name || 'Bykneo Mobility'
+        merchant_name: settings.admin_merchant_name || 'RIDERXO'
       });
     }
   } catch (error) {

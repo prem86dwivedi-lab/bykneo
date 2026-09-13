@@ -336,7 +336,12 @@ export const updateSettings = (req, res) => {
     allowed_pass_durations,
     pass_pack_discounts,
     gateway_enabled,
-    direct_upi_qr_enabled
+    direct_upi_qr_enabled,
+    welcome_offer_enabled,
+    welcome_offer_days,
+    welcome_offer_title,
+    welcome_offer_subtitle,
+    promotional_rules
   } = req.body;
 
   db.data.settings = {
@@ -352,20 +357,39 @@ export const updateSettings = (req, res) => {
     gateway_enabled: gateway_enabled !== undefined ? Boolean(gateway_enabled) : (db.data.settings.gateway_enabled ?? true),
     direct_upi_qr_enabled: direct_upi_qr_enabled !== undefined ? Boolean(direct_upi_qr_enabled) : (db.data.settings.direct_upi_qr_enabled ?? true),
     admin_upi_id: (admin_upi_id || db.data.settings.admin_upi_id || 'bykneo@okhdfcbank').trim(),
-    admin_merchant_name: (admin_merchant_name || db.data.settings.admin_merchant_name || 'Bykneo Mobility').trim(),
+    admin_merchant_name: (admin_merchant_name || db.data.settings.admin_merchant_name || 'RIDERXO').trim(),
     razorpay_key_id: (razorpay_key_id !== undefined ? razorpay_key_id : (db.data.settings.razorpay_key_id || '')).trim(),
     razorpay_key_secret: (razorpay_key_secret !== undefined ? razorpay_key_secret : (db.data.settings.razorpay_key_secret || '')).trim(),
     subscription_pricing: subscription_pricing !== undefined ? subscription_pricing : (db.data.settings.subscription_pricing || {}),
     vehicle_pricing: vehicle_pricing !== undefined ? vehicle_pricing : db.data.settings.vehicle_pricing,
     allowed_pass_durations: allowed_pass_durations !== undefined ? allowed_pass_durations : (db.data.settings.allowed_pass_durations || [1, 2, 3, 5, 7, 10, 20, 30]),
-    pass_pack_discounts: pass_pack_discounts !== undefined ? pass_pack_discounts : (db.data.settings.pass_pack_discounts || {})
+    pass_pack_discounts: pass_pack_discounts !== undefined ? pass_pack_discounts : (db.data.settings.pass_pack_discounts || {}),
+    welcome_offer_enabled: welcome_offer_enabled !== undefined ? Boolean(welcome_offer_enabled) : (db.data.settings.welcome_offer_enabled ?? true),
+    welcome_offer_days: welcome_offer_days !== undefined ? Math.max(1, Number(welcome_offer_days)) : (db.data.settings.welcome_offer_days || 60),
+    welcome_offer_title: welcome_offer_title !== undefined ? String(welcome_offer_title).trim() : (db.data.settings.welcome_offer_title || '60-Day 100% Free Launch Pass'),
+    welcome_offer_subtitle: welcome_offer_subtitle !== undefined ? String(welcome_offer_subtitle).trim() : (db.data.settings.welcome_offer_subtitle || 'Keep 100% of your ride fares with 0% platform commission.'),
+    promotional_rules: Array.isArray(promotional_rules) ? promotional_rules : (db.data.settings.promotional_rules || [])
   };
+
+  // If welcome_offer_days was modified, dynamically update existing welcome pass holders
+  if (welcome_offer_days !== undefined) {
+    const newDays = Math.max(1, Number(welcome_offer_days));
+    (db.data.drivers || []).forEach(d => {
+      if (d.is_welcome_pass) {
+        d.welcome_pass_days = newDays;
+        const startedAt = d.subscription_started_at ? new Date(d.subscription_started_at) : new Date();
+        d.subscription_expires_at = new Date(startedAt.getTime() + newDays * 24 * 60 * 60 * 1000).toISOString();
+      }
+    });
+  }
+
   db.save();
 
   const io = req.app.get('io');
   if (io) {
     io.emit('admin:settings_updated', { settings: db.data.settings });
     io.emit('admin:cities_updated', { cities: db.get('cities') });
+    io.emit('driver:subscription_activated', { updated_by_admin: true });
   }
 
   return res.json({ success: true, settings: db.data.settings });
@@ -377,13 +401,15 @@ const OWNER_ADMIN_PHONE = "917974704918";
 export const adminLogin = async (req, res) => {
   try {
     const { pin } = req.body;
-    const currentPin = String(db.data.settings?.admin_pin || '2026').trim();
-
     if (!pin) {
       return res.status(400).json({ success: false, error: 'Please enter your Admin PIN.' });
     }
 
-    if (String(pin).trim() === currentPin || String(pin).trim() === '2026' || String(pin).trim() === '999999') {
+    const enteredPin = String(pin).trim();
+    const currentPin = String(db.data.settings?.admin_pin || '12589').trim();
+
+    // Only allow the current active admin PIN
+    if (enteredPin === currentPin) {
       const sessionToken = `rx_admin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       return res.json({
         success: true,
@@ -438,14 +464,17 @@ export const verifyAdminResetOtp = async (req, res) => {
       return res.status(400).json({ success: false, error: verifyResult.error || 'Invalid OTP code.' });
     }
 
-    // If a new PIN is provided, save it
+    // If a new PIN is provided, save it as the current active PIN
     if (newPin && String(newPin).trim().length >= 4) {
       db.data.settings = {
         ...db.data.settings,
         admin_pin: String(newPin).trim()
       };
+      if (db.data.settings.previous_pins) {
+        delete db.data.settings.previous_pins;
+      }
       db.save();
-      console.log(`✅ [ADMIN PIN UPDATED] New Admin PIN saved.`);
+      console.log(`✅ [ADMIN PIN UPDATED] New Admin PIN ${newPin} saved.`);
     }
 
     const sessionToken = `rx_admin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -463,9 +492,9 @@ export const verifyAdminResetOtp = async (req, res) => {
 export const updateAdminPin = async (req, res) => {
   try {
     const { currentPin, newPin } = req.body;
-    const activePin = String(db.data.settings?.admin_pin || '2026').trim();
+    const activePin = String(db.data.settings?.admin_pin || '12589').trim();
 
-    if (String(currentPin).trim() !== activePin && String(currentPin).trim() !== '2026') {
+    if (String(currentPin).trim() !== activePin) {
       return res.status(401).json({ success: false, error: 'Current PIN is incorrect.' });
     }
 
@@ -477,6 +506,9 @@ export const updateAdminPin = async (req, res) => {
       ...db.data.settings,
       admin_pin: String(newPin).trim()
     };
+    if (db.data.settings.previous_pins) {
+      delete db.data.settings.previous_pins;
+    }
     db.save();
 
     return res.json({ success: true, message: 'Admin PIN updated successfully.' });

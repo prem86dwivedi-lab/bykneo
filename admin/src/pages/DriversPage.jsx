@@ -29,9 +29,9 @@ import {
 
 const VEHICLE_TYPES = [
   { id: 'bike_lite', name: 'Bike Lite', wheels: '2W', icon: '🛵' },
-  { id: 'bike', name: 'Bykneo Bike', wheels: '2W', icon: '🏍️' },
+  { id: 'bike', name: 'RiderXO Bike', wheels: '2W', icon: '🏍️' },
   { id: 'auto_lite', name: 'Auto Lite', wheels: '3W', icon: '🛺' },
-  { id: 'auto', name: 'Bykneo Auto', wheels: '3W', icon: '🛺' },
+  { id: 'auto', name: 'RiderXO Auto', wheels: '3W', icon: '🛺' },
   { id: 'cab_economy', name: 'Cab Eco', wheels: '4W', icon: '🚗' },
   { id: 'cab_premium', name: 'Cab Prem', wheels: '4W', icon: '🚘' }
 ];
@@ -590,7 +590,7 @@ export const DriversPage = ({
                   </span>
                   <div className="text-right min-w-0">
                     <div className="text-white font-bold text-[11px] truncate">
-                      {d.vehicle_type_name?.replace(/\s*\(\d+W\)/i, '') || d.vehicle_model || 'Bykneo Bike'}
+                      {d.vehicle_type_name?.replace(/\s*\(\d+W\)/i, '') || d.vehicle_model || 'RiderXO Bike'}
                     </div>
                     <div className="text-brand-yellow font-mono text-[10px] font-bold">
                       {d.vehicle_number || 'N/A'}
@@ -713,7 +713,7 @@ export const DriversPage = ({
                           {d.vehicle_category === 'CAB' ? '🚗' : d.vehicle_category === 'AUTO' ? '🛺' : '🏍️'}
                         </span>
                         <span className="truncate max-w-[130px]">
-                          {d.vehicle_type_name?.replace(/\s*\(\d+W\)/i, '') || d.vehicle_model || 'Bykneo Bike'}
+                          {d.vehicle_type_name?.replace(/\s*\(\d+W\)/i, '') || d.vehicle_model || 'RiderXO Bike'}
                         </span>
                         <span
                           className={`px-1.5 py-0.2 rounded border font-mono font-bold text-[9px] ${

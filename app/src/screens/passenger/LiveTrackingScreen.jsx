@@ -284,7 +284,7 @@ export const LiveTrackingScreen = ({ ride, onCancelRide }) => {
                 <div className="min-w-0">
                   <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider leading-none">Captain & Vehicle</div>
                   <h4 className="font-black text-xs text-white truncate mt-0.5">{ride.driver_name || 'Captain Partner'}</h4>
-                  <p className="text-[10px] text-gray-300 truncate font-medium">{ride.vehicle_model || 'Bykneo Vehicle'}</p>
+                  <p className="text-[10px] text-gray-300 truncate font-medium">{ride.vehicle_model || 'RiderXO Vehicle'}</p>
                 </div>
               </div>
               <div className="text-right shrink-0">

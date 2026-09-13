@@ -14,6 +14,10 @@ export default {
           surface: '#1F2937',
           accent: '#10B981',
           danger: '#EF4444'
+        },
+        gray: {
+          750: '#232d3d',
+          850: '#141b27',
         }
       },
       fontFamily: {

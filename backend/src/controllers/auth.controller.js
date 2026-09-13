@@ -169,13 +169,32 @@ export const verifyOtp = async (req, res) => {
                             existingDriver.kyc_status;
 
       if (isRealCaptain) {
+        let updatedDriver = existingDriver;
+        const settings = db.data?.settings || {};
+        const welcomeOfferEnabled = settings.welcome_offer_enabled !== false;
+        const welcomeOfferDays = Math.max(1, Number(settings.welcome_offer_days || 60));
+        const now = new Date();
+        const expiresAt = existingDriver.subscription_expires_at ? new Date(existingDriver.subscription_expires_at) : null;
+        const isActive = expiresAt && expiresAt > now;
+
+        if (!isActive && welcomeOfferEnabled) {
+          const finalExpiry = new Date(now.getTime() + welcomeOfferDays * 24 * 60 * 60 * 1000);
+          updatedDriver = db.update('drivers', existingDriver.id, {
+            is_welcome_pass: true,
+            welcome_pass_days: welcomeOfferDays,
+            subscription_started_at: now.toISOString(),
+            subscription_expires_at: finalExpiry.toISOString()
+          });
+        }
+
         return res.json({
           success: true,
           verified: true,
           isNewUser: false,
           user: existingUser,
-          driverProfile: existingDriver,
-          kycStatus: existingDriver.kyc_status,
+          driverProfile: updatedDriver,
+          kycStatus: updatedDriver.kyc_status,
+          is_new_welcome: true,
           token: `bykneo_token_${existingUser.id}`
         });
       } else {
@@ -208,7 +227,7 @@ export const completeProfile = async (req, res) => {
       email,
       vehicle_id = 'bike',
       vehicle_category = 'BIKE',
-      vehicle_type_name = 'Bykneo Bike',
+      vehicle_type_name = 'RiderXO Bike',
       vehicle_model,
       vehicle_number,
       license_number,
@@ -227,8 +246,8 @@ export const completeProfile = async (req, res) => {
 
     const formattedPhone = formatDisplayPhone(phone);
     const cleanDigits = String(phone).replace(/\D/g, '');
-    const finalName = (name || '').trim() || (role === 'driver' ? 'Bykneo Captain' : 'Bykneo Rider');
-    const finalEmail = (email || '').trim() || `${cleanDigits}@bykneo.com`;
+    const finalName = (name || '').trim() || (role === 'driver' ? 'RiderXO Captain' : 'RiderXO Rider');
+    const finalEmail = (email || '').trim() || `${cleanDigits}@riderxo.com`;
 
     let user = findUserByPhone(phone);
 
@@ -269,13 +288,17 @@ export const completeProfile = async (req, res) => {
       const savedAadhaarPhoto = saveBase64Image(aadhaar_photo, 'aadhaar', targetDriverId);
       const savedSelfiePhoto = saveBase64Image(selfie_photo, 'selfie', targetDriverId);
 
+      const settings = db.data?.settings || {};
+      const welcomeOfferEnabled = settings.welcome_offer_enabled !== false;
+      const welcomeOfferDays = Math.max(1, Number(settings.welcome_offer_days || 60));
+
       const driverData = {
         name: finalName,
         phone: formattedPhone,
         avatar: savedSelfiePhoto || user.avatar,
         vehicle_id: vehicle_id || 'bike',
         vehicle_category: vehicle_category || 'BIKE',
-        vehicle_type_name: vehicle_type_name || 'Bykneo Bike',
+        vehicle_type_name: vehicle_type_name || 'RiderXO Bike',
         vehicle_model: vehicle_model || 'Hero Splendor Plus',
         vehicle_number: (vehicle_number || '').toUpperCase(),
         license_number: (license_number || '').toUpperCase(),
@@ -297,6 +320,16 @@ export const completeProfile = async (req, res) => {
         kyc_status: initialStatus,
         kyc_submitted_at: new Date().toISOString()
       };
+
+      // Automatically grant 100% Free Welcome Pass if enabled
+      if (welcomeOfferEnabled) {
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + welcomeOfferDays * 24 * 60 * 60 * 1000);
+        driverData.subscription_started_at = now.toISOString();
+        driverData.subscription_expires_at = expiresAt.toISOString();
+        driverData.is_welcome_pass = true;
+        driverData.welcome_pass_days = welcomeOfferDays;
+      }
 
       if (savedSelfiePhoto && user?.id) {
         db.update('users', user.id, { avatar: savedSelfiePhoto });
@@ -341,6 +374,7 @@ export const completeProfile = async (req, res) => {
       success: true,
       user,
       driverProfile,
+      is_new_welcome: role === 'driver',
       token: `bykneo_token_${user.id}`,
       message: `${role === 'driver' ? 'Captain' : 'Rider'} registration saved successfully!`
     });
@@ -367,7 +401,7 @@ export const quickDemoLogin = (req, res) => {
       id: `usr_${uuidv4().slice(0, 8)}`,
       phone: formatDisplayPhone(phone),
       name: role === 'driver' ? 'Vikram Singh (Demo)' : 'Rahul Sharma (Demo)',
-      email: `${phone.replace(/\D/g, '')}@bykneo.com`,
+      email: `${phone.replace(/\D/g, '')}@riderxo.com`,
       role,
       avatar: role === 'driver' ? 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150' : null,
       wallet_balance: 0.00,
@@ -379,25 +413,43 @@ export const quickDemoLogin = (req, res) => {
   let driverProfile = null;
   if (user.role === 'driver' || role === 'driver') {
     driverProfile = findDriverProfile(user.id, phone);
+    const settings = db.data?.settings || {};
+    const welcomeOfferDays = Math.max(1, Number(settings.welcome_offer_days || 60));
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + welcomeOfferDays * 24 * 60 * 60 * 1000);
+
+    const demoDriverData = {
+      name: user.name,
+      phone: user.phone,
+      vehicle_id: "bike",
+      vehicle_category: "BIKE",
+      vehicle_type_name: "RiderXO Bike",
+      vehicle_model: "Honda Shine (Black)",
+      vehicle_number: "DL 03 AB 4589",
+      license_number: "DL-1420180029341",
+      is_online: true,
+      is_available: true,
+      lat: 28.6139,
+      lng: 77.2090,
+      heading: 0,
+      rating: 4.85,
+      total_rides: 342,
+      today_earnings: 780.00,
+      kyc_status: "approved",
+      is_welcome_pass: true,
+      welcome_pass_days: welcomeOfferDays,
+      subscription_started_at: now.toISOString(),
+      subscription_expires_at: expiresAt.toISOString()
+    };
+
     if (!driverProfile) {
       driverProfile = db.insert('drivers', {
         id: `drv_${uuidv4().slice(0, 8)}`,
         user_id: user.id,
-        name: user.name,
-        phone: user.phone,
-        vehicle_model: "Honda Shine (Black)",
-        vehicle_number: "DL 03 AB 4589",
-        license_number: "DL-1420180029341",
-        is_online: true,
-        is_available: true,
-        lat: 28.6139,
-        lng: 77.2090,
-        heading: 0,
-        rating: 4.85,
-        total_rides: 342,
-        today_earnings: 780.00,
-        kyc_status: "approved"
+        ...demoDriverData
       });
+    } else {
+      driverProfile = db.update('drivers', driverProfile.id, demoDriverData);
     }
   }
 
@@ -405,6 +457,8 @@ export const quickDemoLogin = (req, res) => {
     success: true,
     user,
     driverProfile,
+    is_demo_driver: role === 'driver',
+    is_new_welcome: role === 'driver',
     token: `bykneo_token_${user.id}`
   });
 };

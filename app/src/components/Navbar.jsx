@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket, BACKEND_URL } from '../context/SocketContext';
 import {
   Menu,
-  ArrowRightLeft,
   ShieldCheck,
   MapPin,
   Sparkles,
@@ -142,19 +141,19 @@ export const Navbar = ({
                 </span>
               </div>
 
-              {/* Active Role Mode Badge */}
+              {/* Active Role Mode Badge - Styled matching KYC & Location pills */}
               <span
-                className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg shrink-0 ${
+                className={`border font-bold text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-1 rounded-lg flex items-center gap-1 shrink-0 shadow-sm ${
                   isCaptain
-                    ? 'bg-amber-500/25 text-amber-300 border border-amber-400/40'
-                    : 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/40'
+                    ? 'bg-emerald-950/80 border-emerald-400/50 text-emerald-300'
+                    : 'bg-emerald-950/80 border-emerald-400/50 text-emerald-300'
                 }`}
               >
                 {isCaptain ? '🏍️ Captain' : '🛵 Rider'}
               </span>
             </div>
 
-            {/* Center: KYC Verification Badge (Placed between Captain and Rider Switcher) */}
+            {/* Center: KYC Verification Badge */}
             {isCaptain && (
               <button
                 onClick={onOpenKyc}
@@ -178,36 +177,23 @@ export const Navbar = ({
               </button>
             )}
 
-            {/* Right: Quick Role Switcher */}
-            <button
-              onClick={() => switchRole(isCaptain ? 'passenger' : 'driver')}
-              className="group bg-slate-700/90 hover:bg-slate-650 border border-slate-500/70 px-2.5 py-1 rounded-lg flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-slate-100 hover:text-white shadow-sm hover:border-brand-yellow/70 transition active:scale-95 shrink-0"
-              title="Switch between Rider and Captain mode"
-            >
-              <ArrowRightLeft className="w-3 h-3 text-brand-yellow group-hover:rotate-180 transition-transform duration-300" />
-              <span className="text-[10px] font-bold">
-                {isCaptain ? 'Rider' : 'Captain'}
-              </span>
-            </button>
-          </div>
-
-          {/* Row 2: Status Pill Badges Ribbon */}
-          <div className="w-full flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 scroll-smooth">
-            
-            {/* 1. Location Pill Badge (Mint Green) */}
-            <div className="bg-emerald-950/70 border border-emerald-400/40 text-emerald-300 font-bold px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center gap-1 shrink-0">
+            {/* Right: City Location Pill (Moved to Top-Right replacing Role Switcher) */}
+            <div className="bg-emerald-950/80 border border-emerald-400/50 text-emerald-300 font-bold px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center gap-1 shrink-0 shadow-sm">
               <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
-              <span className="truncate max-w-[120px]">
+              <span className="truncate max-w-[110px] sm:max-w-[140px]">
                 {matchedCity?.name || 'Bhopal, MP'}
               </span>
             </div>
+          </div>
 
+          {/* Row 2: Status Pill Badges Ribbon - Perfectly filled width with center snug pass pill */}
+          <div className="w-full">
             {/* Captain-specific Status Badges */}
-            {isCaptain && (
-              <>
-                {/* 2. Online/Offline Status Pill (Pastel Green) */}
+            {isCaptain ? (
+              <div className="flex items-center gap-1.5 w-full">
+                {/* 1. Online/Offline Status Pill (Expanded to fill left space) */}
                 <div
-                  className={`border font-black px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center gap-1.5 shrink-0 ${
+                  className={`flex-1 border font-black px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center justify-center gap-1 whitespace-nowrap shadow-sm ${
                     isDriverOnline && isServiceable
                       ? 'bg-emerald-950/80 border-emerald-400/60 text-emerald-200'
                       : !isServiceable
@@ -216,13 +202,13 @@ export const Navbar = ({
                   }`}
                 >
                   {isDriverOnline && isServiceable ? (
-                    <div className="relative flex items-center justify-center shrink-0 w-2.5 h-2.5">
+                    <div className="relative flex items-center justify-center shrink-0 w-2 h-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-sm" />
                     </div>
                   ) : (
                     <div
-                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                      className={`w-2 h-2 rounded-full shrink-0 ${
                         !isServiceable ? 'bg-red-400' : 'bg-slate-400'
                       }`}
                     />
@@ -236,50 +222,61 @@ export const Navbar = ({
                   </span>
                 </div>
 
-                {/* 3. Pass Validity Pill (Lavender / Purple) */}
+                {/* 2. Pass Validity Pill - Snug fit in center */}
                 <button
                   onClick={() => setShowSubModal(true)}
-                  className={`border font-bold px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center gap-1 shrink-0 transition active:scale-95 ${
+                  className={`shrink-0 border font-bold px-2.5 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center justify-center gap-1 transition active:scale-95 whitespace-nowrap shadow-sm ${
                     subData?.is_active
-                      ? 'bg-purple-950/70 hover:bg-purple-900/80 border-purple-400/50 text-purple-200'
-                      : 'bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 border-brand-yellow shadow-sm'
+                      ? subData?.is_welcome_pass
+                        ? 'bg-emerald-950/80 hover:bg-emerald-900 border-emerald-400/70 text-emerald-300 ring-1 ring-emerald-400/40'
+                        : 'bg-purple-950/70 hover:bg-purple-900/80 border-purple-400/50 text-purple-200'
+                      : 'bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 border-brand-yellow'
                   }`}
                   title="Click to view Pass details & validity countdown"
                 >
-                  <Sparkles className="w-3 h-3 text-purple-300 fill-current shrink-0" />
+                  <Sparkles
+                    className={`w-3 h-3 ${
+                      subData?.is_active && subData?.is_welcome_pass
+                        ? 'text-emerald-400'
+                        : subData?.is_active
+                        ? 'text-purple-300'
+                        : 'text-gray-950'
+                    } fill-current shrink-0`}
+                  />
                   <span>
                     {subData?.is_active
-                      ? `Pass (${remainingPassTime || 'Active'})`
+                      ? subData?.is_welcome_pass
+                        ? `🎁 Free Pass (${remainingPassTime || 'Active'})`
+                        : `Pass (${remainingPassTime || 'Active'})`
                       : `Buy Pass (₹${subData?.pass_price || 25})`}
                   </span>
                 </button>
 
-                {/* 4. Today's Earnings Pill (Amber / Orange) */}
-                <div className="bg-amber-950/70 border border-amber-400/50 text-amber-200 font-bold px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center gap-1 shrink-0">
+                {/* 3. Today's Earnings Pill (Expanded to fill right space) */}
+                <div className="flex-1 bg-amber-950/70 border border-amber-400/50 text-amber-200 font-bold px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center justify-center gap-1 whitespace-nowrap shadow-sm">
                   <span className="text-[10px]">💰</span>
                   <span>Today ₹{Math.round(Number(todayEarnings || 0))}</span>
                 </div>
-              </>
-            )}
-
-            {/* Rider-specific Live Status Badge */}
-            {!isCaptain && (
+              </div>
+            ) : (
+              /* Rider Status Pill */
               <div
-                className={`border font-black px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center gap-1.5 shrink-0 ${
+                className={`w-full border font-black px-2 py-1 rounded-lg text-[9px] sm:text-[10px] flex items-center justify-center gap-1.5 ${
                   isServiceable
                     ? 'bg-emerald-950/80 border-emerald-400/60 text-emerald-200'
                     : 'bg-red-950/80 border-red-400/60 text-red-200'
                 }`}
               >
-                <div
-                  className={`w-2 h-2 rounded-full shrink-0 ${
-                    isServiceable ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
-                  }`}
-                />
+                {isServiceable ? (
+                  <div className="relative flex items-center justify-center shrink-0 w-2 h-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-sm" />
+                  </div>
+                ) : (
+                  <div className="w-2 h-2 rounded-full shrink-0 bg-red-400" />
+                )}
                 <span>
-                  {isServiceable
-                    ? 'Service Active'
-                    : 'Outside Service Zone'}
+                  {isServiceable ? 'Service Active in your City' : 'Outside Active Service Zone'}
                 </span>
               </div>
             )}

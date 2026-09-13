@@ -127,7 +127,7 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
   if (!isOpen) return null;
 
   const adminUpi = subData?.admin_upi_id || 'riderxo@okhdfcbank';
-  const merchantName = subData?.admin_merchant_name || 'RiderXO Mobility';
+  const merchantName = subData?.admin_merchant_name || 'RIDERXO';
   const dailyRate = Number(subData?.pass_price || 25);
   const allowedDurations = Array.isArray(subData?.allowed_pass_durations) && subData.allowed_pass_durations.length > 0
     ? subData.allowed_pass_durations
@@ -180,14 +180,16 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
         return;
       }
 
+      const appLogoUrl = window.location.origin ? `${window.location.origin}/logo.png` : '/logo.png';
+
       // 2. Configure official Razorpay Checkout
       const options = {
         key: orderData.key_id,
         amount: orderData.amount_paise,
         currency: orderData.currency || 'INR',
-        name: orderData.merchant_name || 'RiderXO Mobility',
+        name: orderData.merchant_name || 'RIDERXO',
         description: `${selectedDays}-Day Unlimited Pass (0% Platform Commission)`,
-        image: 'https://cdn-icons-png.flaticon.com/512/3063/3063822.png',
+        image: appLogoUrl,
         order_id: orderData.order_id?.startsWith('order_') && !orderData.order_id.includes('Mock') ? orderData.order_id : undefined,
         prefill: {
           name: driverName,
@@ -378,10 +380,28 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
                       <span>Valid Till:</span>
                     </div>
                     <div className="font-bold text-white font-mono text-[10.5px]">
-                      {formatExpiryDate(subData?.expires_at)}
+                      {formatDate(subData?.expires_at)}
                     </div>
                   </div>
                 </div>
+
+                {/* Welcome Launch Pass Alert Banner if active */}
+                {subData?.is_welcome_pass && (
+                  <div className="bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-brand-yellow/40 rounded-xl p-2.5 flex items-center gap-2.5 animate-pulse">
+                    <div className="w-8 h-8 rounded-lg bg-brand-yellow text-gray-950 font-black flex items-center justify-center shrink-0">
+                      🎁
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-black text-brand-yellow flex items-center gap-1">
+                        <span>{subData.welcome_offer_title || 'New Captain Welcome Pass'}</span>
+                        <span className="text-[8px] bg-emerald-500 text-gray-950 px-1 py-0.2 rounded font-black">ACTIVE</span>
+                      </div>
+                      <p className="text-[9.5px] text-gray-300 truncate">
+                        {subData.welcome_offer_subtitle || '0% Commission • Keep 100% Ride Fares'}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Benefits List */}
                 <div className="bg-gray-950 border border-gray-800/80 rounded-xl p-2.5 space-y-1.5 text-[11px]">
@@ -399,6 +419,38 @@ export const DriverSubscriptionModal = ({ isOpen, onClose, onSubscriptionActivat
                     <span><b>Unlimited Trips:</b> Accept as many rides as you want today.</span>
                   </div>
                 </div>
+
+                {/* Promotional Rules & Referral Goldmine Perks (Configured by Admin) */}
+                {Array.isArray(subData?.promotional_rules) && subData.promotional_rules.length > 0 && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 space-y-2 text-[11px]">
+                    <div className="flex items-center justify-between text-[10px] font-black text-brand-yellow uppercase tracking-wider">
+                      <span className="flex items-center gap-1">
+                        <span>🌟</span>
+                        <span>Captain Perks & Referral Offers</span>
+                      </span>
+                      <span className="text-[8px] bg-amber-500/20 text-brand-yellow px-1.5 py-0.2 rounded font-bold">
+                        Special
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {subData.promotional_rules.map((rule) => (
+                        <div key={rule.id} className="bg-gray-900/90 border border-gray-800 rounded-lg p-2 flex items-start gap-2">
+                          <span className="text-sm shrink-0">{rule.icon || '🎁'}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-white text-[10.5px] leading-tight">{rule.title}</div>
+                            <div className="text-[9.5px] text-gray-400 mt-0.5 leading-snug">{rule.description}</div>
+                            {rule.reward && (
+                              <div className="text-[9px] font-bold text-emerald-400 mt-1 flex items-center gap-1">
+                                <span>Reward:</span>
+                                <span className="bg-emerald-500/20 px-1 py-0.2 rounded text-emerald-300">{rule.reward}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Extend Pass Button */}
                 <div className="pt-0.5">

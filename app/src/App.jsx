@@ -23,6 +23,7 @@ import { DriverEarningsScreen } from './screens/driver/DriverEarningsScreen';
 import { DriverProfileScreen } from './screens/driver/DriverProfileScreen';
 import { CaptainKycScreen } from './screens/driver/CaptainKycScreen';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
+import { WelcomeCelebrationModal } from './components/WelcomeCelebrationModal';
 import {
   sendPwaNotification,
   requestNotificationPermission,
@@ -38,7 +39,16 @@ import { getPreciseCurrentPosition, watchPreciseLocation, requestLocationPermiss
 import { ShieldCheck, X } from 'lucide-react';
 
 export function App() {
-  const { user, driverProfile, setDriverProfile, updateDriverProfile, activeRole, loading } = useAuth();
+  const {
+    user,
+    driverProfile,
+    setDriverProfile,
+    updateDriverProfile,
+    activeRole,
+    loading,
+    welcomeCelebration,
+    closeWelcomeCelebration
+  } = useAuth();
   const { socket, connected } = useSocket();
 
   // Navigation State
@@ -1038,6 +1048,15 @@ export function App() {
           )}
         </>
       )}
+
+      {/* 6. Captain Launch Welcome Celebration Modal */}
+      <WelcomeCelebrationModal
+        isOpen={welcomeCelebration?.isOpen}
+        onClose={closeWelcomeCelebration}
+        isDemo={welcomeCelebration?.isDemo}
+        driverName={welcomeCelebration?.driverName}
+        driverId={welcomeCelebration?.driverId}
+      />
     </div>
   );
 }

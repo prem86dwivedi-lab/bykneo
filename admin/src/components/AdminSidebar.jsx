@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Radio,
   Navigation,
@@ -83,17 +83,21 @@ export const AdminSidebar = ({
   onClose,
   onLogout
 }) => {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const activeCity = cities.find(c => c.id === selectedCityId);
 
   const handleLogoutClick = () => {
-    if (window.confirm('Are you sure you want to log out of RiderXO Admin Panel?')) {
-      if (onLogout) {
-        onLogout();
-      } else {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = '/';
-      }
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
+    if (onLogout) {
+      onLogout();
+    } else {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/';
     }
   };
 
@@ -236,6 +240,37 @@ export const AdminSidebar = ({
           <span>Logout Admin</span>
         </button>
       </div>
+
+      {/* ── Custom In-App Logout Confirmation Modal ── */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 max-w-xs w-full text-center space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mx-auto shadow-inner">
+              <LogOut className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Log Out Admin?</h3>
+              <p className="text-xs text-gray-400 mt-1">Are you sure you want to end your RiderXO admin session?</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="py-2.5 bg-gray-800 hover:bg-gray-750 text-gray-300 font-bold text-xs rounded-xl transition active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmLogout}
+                className="py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-600/30 transition active:scale-95"
+              >
+                Yes, Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };

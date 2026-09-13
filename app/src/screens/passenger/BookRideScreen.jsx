@@ -716,7 +716,7 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
     {
       id: 'bike',
       category: 'BIKE',
-      name: 'Bykneo Bike',
+      name: 'RiderXO Bike',
       tagline: 'Fastest solo ride through traffic',
       capacity: 1,
       eta_mins: 2,
@@ -731,10 +731,10 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20 px-2 sm:px-3 pb-2 sm:pb-3 pb-[env(safe-area-inset-bottom,12px)] pointer-events-none">
-      <div className="max-w-md mx-auto bg-gray-900/98 backdrop-blur-2xl border border-gray-800 rounded-2xl p-3 shadow-2xl pointer-events-auto space-y-2 max-h-[50vh] sm:max-h-[52vh] flex flex-col justify-between overflow-hidden">
+      <div className="max-w-md mx-auto bg-gradient-to-b from-[#FFFDF7] via-[#FFFBEB] to-[#FEF9E7] border-2 border-amber-400 rounded-2xl p-3 shadow-[0_-4px_25px_rgba(245,158,11,0.22),0_4px_15px_rgba(0,0,0,0.08)] pointer-events-auto space-y-2.5 max-h-[52vh] flex flex-col justify-between overflow-hidden">
         {/* Mobile Top Header with Drag Handle & Close/Cancel Button */}
         <div className="relative flex items-center justify-center shrink-0 min-h-[18px]">
-          <div className="w-8 h-1 bg-gray-700 rounded-full opacity-70"></div>
+          <div className="w-10 h-1.5 bg-amber-400 rounded-full"></div>
           {(drop || dropQuery || estimatedFare || isEditingAddress || activeInput) && (
             <button
               type="button"
@@ -746,47 +746,47 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 setActiveInput(null);
                 setSuggestions([]);
               }}
-              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 px-1.5 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white border border-gray-700 transition active:scale-90 flex items-center gap-1 shadow cursor-pointer"
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 px-2.5 rounded-full bg-amber-200 hover:bg-amber-300 text-gray-950 border border-amber-400 transition active:scale-90 flex items-center gap-1 shadow-sm cursor-pointer"
               title="Close & Go to Main Screen"
             >
-              <span className="text-[9px] font-bold text-gray-300">Close</span>
-              <X className="w-3 h-3 text-red-400" />
+              <span className="text-[10px] font-black text-gray-950">Close</span>
+              <X className="w-3.5 h-3.5 text-red-600 font-bold" />
             </button>
           )}
         </div>
 
         {/* 1. ROUTE SUMMARY (When Destination is Chosen & Fare Estimated) */}
         {estimatedFare && pickup?.name && drop?.name && !isEditingAddress && !activeInput ? (
-          <div className="bg-gray-850/90 px-2.5 py-1.5 rounded-xl border border-gray-800 flex items-center justify-between gap-2 shrink-0 shadow-lg">
-            <div className="flex-1 min-w-0 space-y-0.5">
-              <div className="flex items-center gap-1.5 text-[10px] truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-                <span className="text-gray-300 font-medium truncate">{pickup.name}</span>
+          <div className="bg-white px-3 py-2 rounded-xl border-2 border-amber-400 flex items-center justify-between gap-2 shrink-0 shadow-sm">
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center gap-2 text-[11px] truncate">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0 shadow-sm shadow-emerald-500/50"></span>
+                <span className="text-gray-800 font-bold truncate">{pickup.name}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>
-                <span className="text-white font-bold truncate">{drop.name}</span>
+              <div className="flex items-center gap-2 text-[11.5px] truncate">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0 shadow-sm shadow-red-500/50"></span>
+                <span className="text-black font-black truncate">{drop.name}</span>
               </div>
             </div>
             <button
               onClick={() => setIsEditingAddress(true)}
-              className="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-750 text-brand-yellow shrink-0 flex items-center gap-1 text-[10px] font-bold transition active:scale-95 border border-gray-700 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-gray-950 shrink-0 flex items-center gap-1 text-[11px] font-black transition active:scale-95 border border-amber-500 cursor-pointer shadow-sm"
               title="Change Route"
             >
-              <Edit2 className="w-2.5 h-2.5" />
+              <Edit2 className="w-3.5 h-3.5 text-gray-950" />
               <span>Edit</span>
             </button>
           </div>
         ) : (
           /* 2. RAPIDO-STYLE EDITABLE PICKUP + DROP CARD WITH SWAP/REVERSE BUTTON */
-          <div className="bg-gray-850 p-2.5 rounded-2xl border border-gray-800 space-y-2 relative shrink-0 shadow-xl">
+          <div className="bg-amber-100/60 p-2.5 rounded-2xl border border-amber-300 space-y-2 relative shrink-0 shadow-sm">
             {/* Pickup Point Input */}
-            <div className="flex items-center gap-2 bg-gray-900/90 px-2.5 py-1.5 rounded-xl border border-gray-800 focus-within:border-emerald-500/80 transition">
-              <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center shrink-0">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+            <div className="flex items-center gap-2 bg-white px-2.5 py-2 rounded-xl border-2 border-emerald-600 focus-within:border-emerald-700 shadow-sm transition">
+              <div className="w-6 h-6 rounded-full bg-emerald-600 border border-emerald-700 flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-[9px] uppercase font-bold text-emerald-400 block leading-none mb-0.5">
+                <span className="text-[9.5px] uppercase font-black text-emerald-900 block leading-none mb-0.5 tracking-wider">
                   Pickup Location
                 </span>
                 <input
@@ -795,7 +795,7 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   onChange={(e) => handleSearchAddress(e.target.value, 'pickup')}
                   onFocus={() => handleSearchAddress(pickupQuery, 'pickup')}
                   placeholder="Enter pickup location (default: GPS)"
-                  className="w-full bg-transparent text-[11px] font-semibold text-white placeholder-gray-500 focus:outline-none focus:text-emerald-300 transition"
+                  className="w-full bg-transparent text-[12px] font-black text-black placeholder-gray-500 focus:outline-none focus:text-black transition"
                 />
                 {/* Pick from Map Option for Pickup */}
                 <div className="flex items-center pt-0.5">
@@ -806,9 +806,9 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                       setActiveInput(null);
                       setSuggestions([]);
                     }}
-                    className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400/90 hover:text-emerald-300 transition active:scale-95 py-0.5 px-1 rounded hover:bg-emerald-950/40 cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[9.5px] font-black text-emerald-900 hover:text-emerald-950 transition active:scale-95 py-0.5 px-1.5 rounded bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 cursor-pointer"
                   >
-                    <MapPin className="w-2.5 h-2.5 text-emerald-400" />
+                    <MapPin className="w-2.5 h-2.5 text-emerald-700" />
                     <span>Pick from map</span>
                   </button>
                 </div>
@@ -821,10 +821,10 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                     setPickupQuery('');
                     setPickup(null);
                   }}
-                  className="p-1 text-gray-500 hover:text-white rounded-md shrink-0"
+                  className="p-1 text-gray-500 hover:text-black rounded-md shrink-0"
                   title="Clear Pickup"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
 
@@ -832,35 +832,35 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
               <button
                 type="button"
                 onClick={handleUseCurrentLocation}
-                className="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-750 text-emerald-400 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 shrink-0 border border-gray-700"
+                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black flex items-center gap-1 transition active:scale-95 shrink-0 border border-emerald-700 shadow-sm"
                 title="Use Current Device GPS"
               >
-                <Crosshair className="w-3 h-3" />
-                <span className="text-[9px]">GPS</span>
+                <Crosshair className="w-3.5 h-3.5 text-white" />
+                <span className="text-[10px] font-black">GPS</span>
               </button>
             </div>
 
             {/* Divider with Reverse / Swap Button */}
             <div className="relative flex items-center justify-center py-0.5">
-              <div className="h-[1px] bg-gray-800 w-full ml-8 mr-12"></div>
+              <div className="h-[1.5px] bg-amber-300 w-full ml-8 mr-14"></div>
               <button
                 type="button"
                 onClick={handleSwap}
-                className="absolute right-2 p-1.5 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-brand-yellow transition active:scale-90 border border-gray-700 flex items-center gap-1 shadow-md"
+                className="absolute right-2 p-1.5 px-2 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-950 transition active:scale-90 border-2 border-amber-500 flex items-center gap-1 shadow-md cursor-pointer"
                 title="Swap / Reverse Pickup & Drop"
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-brand-yellow" />
-                <span className="text-[8.5px] font-bold text-gray-300 pr-0.5">Swap</span>
+                <ArrowUpDown className="w-3.5 h-3.5 text-gray-950 font-black" />
+                <span className="text-[9px] font-black text-gray-950">Swap</span>
               </button>
             </div>
 
             {/* Destination Search Input: Rapido-style 'Enter drop destination' */}
-            <div className="flex items-center gap-2 bg-gray-900/90 px-2.5 py-1.5 rounded-xl border border-brand-yellow/60 focus-within:border-brand-yellow transition">
-              <div className="w-6 h-6 rounded-full bg-red-500/20 border border-red-500 flex items-center justify-center shrink-0">
-                <MapPin className="w-3.5 h-3.5 text-red-400" />
+            <div className="flex items-center gap-2 bg-white px-2.5 py-2 rounded-xl border-2 border-amber-500 focus-within:border-amber-600 shadow-sm transition">
+              <div className="w-6 h-6 rounded-full bg-red-600 border border-red-700 flex items-center justify-center shrink-0 shadow-sm">
+                <MapPin className="w-3.5 h-3.5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-[9px] uppercase font-bold text-red-400 block leading-none mb-0.5">
+                <span className="text-[9.5px] uppercase font-black text-amber-950 block leading-none mb-0.5 tracking-wider">
                   Drop Destination
                 </span>
                 <input
@@ -869,7 +869,7 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   onChange={(e) => handleSearchAddress(e.target.value, 'drop')}
                   onFocus={() => handleSearchAddress(dropQuery, 'drop')}
                   placeholder="Enter drop destination"
-                  className="w-full bg-transparent text-[11.5px] font-bold text-white placeholder-gray-400 focus:outline-none focus:text-white transition"
+                  className="w-full bg-transparent text-[12px] font-black text-black placeholder-gray-500 focus:outline-none focus:text-black transition"
                 />
                 {/* Pick from Map Option for Drop */}
                 <div className="flex items-center pt-0.5">
@@ -880,9 +880,9 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                       setActiveInput(null);
                       setSuggestions([]);
                     }}
-                    className="inline-flex items-center gap-1 text-[9px] font-bold text-brand-yellow/90 hover:text-yellow-300 transition active:scale-95 py-0.5 px-1 rounded hover:bg-yellow-950/40 cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[9.5px] font-black text-amber-950 hover:text-black transition active:scale-95 py-0.5 px-1.5 rounded bg-amber-200 hover:bg-amber-300 border border-amber-400 cursor-pointer"
                   >
-                    <MapPin className="w-2.5 h-2.5 text-brand-yellow" />
+                    <MapPin className="w-2.5 h-2.5 text-amber-800" />
                     <span>Pick from map</span>
                   </button>
                 </div>
@@ -896,7 +896,7 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                     setDrop(null);
                     setEstimatedFare(null);
                   }}
-                  className="p-1 text-gray-400 hover:text-white rounded-md shrink-0"
+                  className="p-1 text-gray-500 hover:text-black rounded-md shrink-0"
                   title="Clear Destination"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -906,11 +906,11 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
             {/* If user is editing addresses in detailed mode */}
             {isEditingAddress && (
-              <div className="flex items-center justify-between pt-1 border-t border-gray-800 text-[10px]">
-                <span className="text-gray-400">Search and pick any landmark or locality</span>
+              <div className="flex items-center justify-between pt-1 border-t border-amber-300 text-[10.5px]">
+                <span className="text-gray-800 font-bold">Search and pick any landmark or locality</span>
                 <button
                   onClick={() => setIsEditingAddress(false)}
-                  className="px-2.5 py-0.5 rounded bg-gray-800 text-brand-yellow font-bold"
+                  className="px-3 py-1 rounded bg-amber-400 hover:bg-amber-500 text-gray-950 font-black border border-amber-500"
                 >
                   Done
                 </button>
@@ -921,10 +921,10 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
         {/* Live Address Search Autocomplete Dropdown */}
         {activeInput && (
-          <div className="bg-gray-850 border border-brand-yellow/40 rounded-2xl p-2 max-h-56 overflow-y-auto space-y-1 shadow-2xl animate-in fade-in-50 duration-150">
-            <div className="flex items-center justify-between px-2 py-1 text-[9.5px] font-bold text-brand-yellow uppercase tracking-wider border-b border-gray-800 pb-1">
+          <div className="bg-white border-2 border-amber-400 rounded-2xl p-2 max-h-56 overflow-y-auto space-y-1 shadow-xl animate-in fade-in-50 duration-150">
+            <div className="flex items-center justify-between px-2 py-1 text-[10px] font-black text-amber-950 uppercase tracking-wider border-b border-amber-200 pb-1">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
                 <span>
                   {suggestions.length > 0 && suggestions[0]?.type === 'popular'
                     ? `⭐ Popular in ${currentCityName}`
@@ -936,21 +936,21 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   setSuggestions([]);
                   setActiveInput(null);
                 }}
-                className="text-gray-400 hover:text-white p-0.5"
+                className="text-gray-600 hover:text-black p-0.5"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {searchingAddress && (
-              <div className="flex items-center justify-center gap-2 py-3 text-xs text-gray-400">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-yellow" />
-                <span className="text-[10px]">Searching {currentCityName}...</span>
+              <div className="flex items-center justify-center gap-2 py-3 text-xs text-amber-900 font-bold">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                <span className="text-[10.5px]">Searching {currentCityName}...</span>
               </div>
             )}
 
             {!searchingAddress && suggestions.length === 0 && (
-              <div className="py-2.5 text-center text-[10px] text-gray-400 px-2 leading-relaxed">
+              <div className="py-2.5 text-center text-[10.5px] font-bold text-gray-700 px-2 leading-relaxed">
                 No places found in {currentCityName}. Please check spelling or enter a nearby landmark.
               </div>
             )}
@@ -963,20 +963,20 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                     handleSelectSuggestion(item, activeInput);
                     setIsEditingAddress(false);
                   }}
-                  className="w-full text-left p-2 rounded-xl hover:bg-gray-800 text-[11px] text-gray-200 hover:text-white flex items-start gap-2 transition group border border-transparent hover:border-brand-yellow/30"
+                  className="w-full text-left p-2 rounded-xl hover:bg-amber-100 text-[11px] text-gray-900 hover:text-black flex items-start gap-2 transition group border border-transparent hover:border-amber-300"
                 >
-                  <div className="p-1 rounded-lg bg-gray-800 group-hover:bg-brand-yellow/20 text-brand-yellow shrink-0 mt-0.5 transition">
+                  <div className="p-1 rounded-lg bg-amber-200 group-hover:bg-amber-300 text-amber-950 shrink-0 mt-0.5 transition">
                     {renderPlaceIcon(item.type)}
                   </div>
                   <div className="truncate flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="font-bold text-white truncate text-[11px]">{item.title}</span>
-                      <span className="text-[9px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-1 py-0.2 rounded font-bold shrink-0">
+                      <span className="font-black text-black truncate text-[11.5px]">{item.title}</span>
+                      <span className="text-[9.5px] bg-emerald-100 text-emerald-900 border border-emerald-300 px-1 py-0.2 rounded font-black shrink-0">
                         {item.distanceKm ? `${item.distanceKm} km` : 'Local'}
                       </span>
                     </div>
                     {item.subtitle && (
-                      <div className="text-[9px] text-gray-400 truncate mt-0.5">
+                      <div className="text-[9.5px] font-semibold text-gray-600 truncate mt-0.5">
                         {item.subtitle}
                       </div>
                     )}
@@ -996,10 +996,10 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   if (!pickup) setPickup(loc);
                   else setDrop(loc);
                 }}
-                className="shrink-0 bg-gray-850 hover:bg-gray-800 border border-gray-700/60 px-2.5 py-1 rounded-xl text-[10px] font-medium text-gray-300 hover:text-white transition flex items-center gap-1"
+                className="shrink-0 bg-white hover:bg-amber-100 border-2 border-amber-300 hover:border-amber-400 px-3 py-1.5 rounded-xl text-[10.5px] font-black text-gray-950 transition flex items-center gap-1.5 shadow-sm active:scale-95"
               >
-                <Zap className="w-2.5 h-2.5 text-brand-yellow" />
-                {loc.name.split(',')[0]}
+                <Zap className="w-3 h-3 text-amber-600 fill-amber-500 shrink-0" />
+                <span>{loc.name.split(',')[0]}</span>
               </button>
             ))}
           </div>
@@ -1007,19 +1007,19 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
         {/* Geofence Out-of-Service Alert */}
         {((estimatedFare && estimatedFare.is_serviceable === false) || (zoneStatus && zoneStatus.isServiceable === false) || !activeCities?.length) && (
-          <div className="bg-red-500/15 border border-red-500/30 p-2.5 rounded-xl space-y-1 animate-in fade-in-50 shrink-0">
-            <div className="flex items-center gap-1.5 text-red-400 font-bold text-[11px]">
+          <div className="bg-red-100 border-2 border-red-300 p-2.5 rounded-xl space-y-1 animate-in fade-in-50 shrink-0">
+            <div className="flex items-center gap-1.5 text-red-700 font-black text-[11.5px]">
               <MapPin className="w-3.5 h-3.5 shrink-0" />
               <span>RiderXO is launching soon in this area!</span>
             </div>
-            <p className="text-[10px] text-gray-300">
+            <p className="text-[10.5px] font-bold text-gray-800">
               Our fleet is currently offline or not operating in this zone. Driver availability is turned OFF.
             </p>
             {activeCities && activeCities.length > 0 && (
               <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                <span className="text-[9px] text-gray-400 font-medium">Active Zones:</span>
+                <span className="text-[9.5px] text-gray-700 font-bold">Active Zones:</span>
                 {activeCities.map((c, i) => (
-                  <span key={i} className="text-[9px] bg-gray-800 text-brand-yellow px-1.5 py-0.2 rounded font-bold">
+                  <span key={i} className="text-[9.5px] bg-amber-200 text-amber-950 border border-amber-400 px-1.5 py-0.2 rounded font-black">
                     📍 {c.name}
                   </span>
                 ))}
@@ -1030,30 +1030,30 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
         {/* Rapido-Style Multi-Vehicle Selector (All Vehicles in Single Compact View) */}
         {zoneStatus?.isServiceable !== false && activeCities?.length > 0 && estimatedFare && estimatedFare.is_serviceable !== false && Array.isArray(estimatedFare.vehicles) && estimatedFare.vehicles.length > 0 && (
-          <div className="space-y-1 flex-1 min-h-0 overflow-hidden flex flex-col justify-between">
+          <div className="space-y-1.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between">
             {/* Serving Zone Tag & Stats */}
-            <div className="flex items-center justify-between px-1 text-[9px] shrink-0">
-              <span className="font-bold text-emerald-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div className="flex items-center justify-between px-1 text-[10px] shrink-0 font-black">
+              <span className="text-emerald-950 flex items-center gap-1.5 bg-emerald-200 px-2 py-0.5 rounded-md border border-emerald-400 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
                 {estimatedFare.matched_city ? `Serving ${estimatedFare.matched_city}` : 'Available Rides'}
               </span>
-              <span className="text-gray-400 font-semibold">
+              <span className="text-amber-950 font-black bg-white px-2 py-0.5 rounded-md border-2 border-amber-300 shadow-sm">
                 {estimatedFare.distance_km} km • ~{estimatedFare.duration_mins} mins
               </span>
             </div>
 
             {/* Vehicle Cards Compact List (All vehicles directly displayed) */}
-            <div className="space-y-1 overflow-y-auto pr-0.5 max-h-[175px] sm:max-h-[195px] scrollbar-thin">
+            <div className="space-y-1.5 overflow-y-auto pr-0.5 max-h-[185px] sm:max-h-[205px] scrollbar-thin">
               {allVehiclesList.map((v) => {
                 const isSelected = selectedVehicleId === v.id;
                 return (
                   <div
                     key={v.id}
                     onClick={() => setSelectedVehicleId(v.id)}
-                    className={`w-full text-left py-1.5 px-2 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2 ${
+                    className={`w-full text-left py-2 px-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2.5 ${
                       isSelected
-                        ? 'bg-brand-yellow/15 border-brand-yellow shadow-sm shadow-brand-yellow/10'
-                        : 'bg-gray-850/70 border-gray-800/80 hover:border-gray-700 hover:bg-gray-800/80'
+                        ? 'bg-amber-100 border-2 border-amber-500 ring-2 ring-amber-400/50 shadow-md'
+                        : 'bg-white hover:bg-amber-50/80 border-2 border-amber-200/90 text-gray-900 shadow-sm'
                     }`}
                   >
                     {/* Left: Compact Vehicle Icon */}
@@ -1061,38 +1061,38 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
                     {/* Middle: Name, Badges & ETA */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 leading-none">
-                        <span className="text-[10px] font-bold text-white truncate">{v.name}</span>
+                      <div className="flex items-center gap-1.5 leading-none">
+                        <span className="text-[11.5px] font-black text-black truncate">{v.name}</span>
                         {v.badge && (
                           <span
-                            className={`text-[6.5px] font-black px-1 py-0.2 rounded ${
+                            className={`text-[7.5px] font-black px-1.5 py-0.5 rounded shadow-sm ${
                               v.badge === 'FASTEST'
-                                ? 'bg-brand-yellow text-gray-950'
+                                ? 'bg-amber-400 text-gray-950 border border-amber-500'
                                 : v.badge === 'POPULAR'
-                                ? 'bg-purple-500 text-white'
+                                ? 'bg-purple-600 text-white'
                                 : v.badge === 'AC CAB'
-                                ? 'bg-blue-500 text-white'
+                                ? 'bg-blue-600 text-white'
                                 : v.badge === 'PREMIUM'
-                                ? 'bg-amber-400 text-gray-950'
-                                : 'bg-emerald-500 text-gray-950'
+                                ? 'bg-amber-600 text-white'
+                                : 'bg-emerald-600 text-white'
                             }`}
                           >
                             {v.badge}
                           </span>
                         )}
                         {v.discount_percent && (
-                          <span className="text-[6.5px] font-bold bg-emerald-500/20 text-emerald-400 px-1 py-0.2 rounded">
+                          <span className="text-[7.5px] font-black bg-emerald-100 text-emerald-900 border border-emerald-400 px-1 py-0.2 rounded">
                             {v.discount_percent}
                           </span>
                         )}
                       </div>
-                      <div className="text-[8px] text-gray-300 flex items-center gap-1 mt-0.5 leading-none">
-                        <span className="font-bold text-brand-yellow">{v.eta_mins}m</span>
-                        <span className="text-gray-600">•</span>
-                        <span className="truncate">{v.drop_time}</span>
-                        <span className="text-gray-600">•</span>
-                        <span className="flex items-center gap-0.5 text-gray-400">
-                          <User className="w-2 h-2" />
+                      <div className="text-[9.5px] text-gray-700 flex items-center gap-1.5 mt-1 leading-none font-bold">
+                        <span className="font-black text-amber-950">{v.eta_mins}m</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="truncate text-gray-800">{v.drop_time}</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="flex items-center gap-0.5 text-gray-800">
+                          <User className="w-2.5 h-2.5 text-gray-700" />
                           {v.capacity}
                         </span>
                       </div>
@@ -1100,11 +1100,11 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
 
                     {/* Right: Price */}
                     <div className="text-right shrink-0">
-                      <div className="text-[12px] font-black text-brand-yellow leading-tight">
+                      <div className="text-[14px] font-black text-amber-950 leading-tight">
                         ₹{v.fare}
                       </div>
                       {v.original_fare && (
-                        <div className="text-[8px] text-gray-400 line-through leading-none">
+                        <div className="text-[9.5px] text-gray-500 line-through leading-none mt-0.5 font-bold">
                           ₹{v.original_fare}
                         </div>
                       )}
@@ -1115,18 +1115,18 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
             </div>
 
             {/* Bottom Payment & Offers Bar */}
-            <div className="bg-gray-850/80 px-2 py-1 rounded-xl border border-gray-800 flex items-center justify-between text-xs shrink-0">
-              <div className="flex items-center gap-1">
-                <span className="text-gray-400 text-[9px] font-medium">Payment:</span>
+            <div className="bg-white px-2.5 py-1.5 rounded-xl border-2 border-amber-300 flex items-center justify-between text-xs shrink-0 shadow-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="text-gray-950 text-[10px] font-black">Payment:</span>
                 <div className="flex items-center gap-1">
                   {['UPI', 'CASH', 'WALLET'].map((m) => (
                     <button
                       key={m}
                       onClick={() => setPaymentMode(m)}
-                      className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold transition cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-md text-[9.5px] font-black transition cursor-pointer ${
                         paymentMode === m
-                          ? 'bg-brand-yellow text-gray-950'
-                          : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+                          ? 'bg-amber-400 text-gray-950 border border-amber-500 shadow-sm'
+                          : 'bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300'
                       }`}
                     >
                       {m}
@@ -1135,8 +1135,8 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-[8.5px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
-                <Percent className="w-2 h-2" />
+              <div className="flex items-center gap-1 text-[9.5px] font-black text-white bg-emerald-600 border border-emerald-700 px-2 py-0.5 rounded-md shadow-sm">
+                <Percent className="w-2.5 h-2.5 text-white" />
                 <span>Offer Applied</span>
               </div>
             </div>
@@ -1150,23 +1150,23 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
               const chosen = (estimatedFare?.vehicles || []).find((v) => v.id === selectedVehicleId) ||
                 estimatedFare?.vehicles?.[0] || {
                   id: 'bike',
-                  name: 'Bykneo Bike',
+                  name: 'RiderXO Bike',
                   category: 'BIKE',
                   fare: estimatedFare?.fare
                 };
               onRequestRide(paymentMode, chosen);
             }}
             disabled={loadingEstimate || zoneStatus?.isServiceable === false || estimatedFare?.is_serviceable === false || !activeCities?.length || !estimatedFare?.vehicles?.length}
-            className="w-full bg-brand-yellow hover:bg-brand-yellowHover text-gray-950 py-2 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-brand-yellow/15 transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+            className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-gray-950 py-2.5 rounded-xl font-black text-[13.5px] flex items-center justify-center gap-1.5 shadow-md shadow-amber-400/30 transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer border-2 border-amber-500"
           >
-            <Zap className="w-3.5 h-3.5 fill-current" />
+            <Zap className="w-4 h-4 fill-current text-gray-950" />
             {loadingEstimate
               ? 'Calculating Route & Fares...'
               : (zoneStatus?.isServiceable === false || estimatedFare?.is_serviceable === false || !activeCities?.length)
               ? 'Service Unavailable in this Area (No Drivers)'
               : `Book ${
                   (estimatedFare?.vehicles || []).find((v) => v.id === selectedVehicleId)?.name ||
-                  'Bykneo Ride'
+                  'RiderXO Ride'
                 } (₹${
                   (estimatedFare?.vehicles || []).find((v) => v.id === selectedVehicleId)?.fare ||
                   estimatedFare?.fare ||

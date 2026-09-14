@@ -35,3 +35,5 @@ Thumbs.db
 serviceAccountKey*.json
 *.jks
 *.keystore
+*.key
+*.key.pub

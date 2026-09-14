@@ -18,7 +18,7 @@ const getBackendUrl = () => {
   if (import.meta.env.VITE_BACKEND_URL) return import.meta.env.VITE_BACKEND_URL;
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    // Cloudflare Pages, Render, or any live production domain
+    // Production Oracle Cloud VM with SSL (HTTPS)
     if (
       hostname.includes('pages.dev') ||
       hostname.includes('onrender.com') ||
@@ -27,14 +27,14 @@ const getBackendUrl = () => {
         !hostname.startsWith('192.168.') &&
         !hostname.startsWith('10.'))
     ) {
-      return 'https://bykneo-backend.onrender.com';
+      return 'https://150-230-132-229.sslip.io';
     }
     // Local network Wi-Fi IP
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `http://${hostname}:5000`;
     }
   }
-  return 'http://localhost:5000';
+  return 'https://150-230-132-229.sslip.io';
 };
 
 const BACKEND_URL = getBackendUrl();

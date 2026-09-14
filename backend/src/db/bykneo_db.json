@@ -103,8 +103,8 @@
       "license_number": "DL-1420180029341",
       "is_online": true,
       "is_available": true,
-      "lat": 23.245005,
-      "lng": 77.505691,
+      "lat": 28.6139,
+      "lng": 77.209,
       "heading": 0,
       "rating": 4.85,
       "total_rides": 342,
@@ -116,8 +116,8 @@
       "vehicle_type_name": "RiderXO Bike",
       "is_welcome_pass": true,
       "welcome_pass_days": 30,
-      "subscription_started_at": "2026-09-13T20:16:46.554Z",
-      "subscription_expires_at": "2026-10-13T20:16:46.554Z"
+      "subscription_started_at": "2026-09-14T05:06:20.453Z",
+      "subscription_expires_at": "2026-10-14T05:06:20.453Z"
     },
     {
       "id": "drv_2b758b81",

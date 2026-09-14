@@ -18,7 +18,7 @@ import { useDeviceCompass } from '../utils/useDeviceCompass';
 // Fix default Leaflet icon paths
 delete L.Icon.Default.prototype._getIconUrl;
 
-// High-Visibility 3D Top-Down Road Vehicle SVG Generator (Rapido / Uber Parity)
+// High-Visibility 3D Top-Down Road Vehicle SVG Generator (Matching User Provided Vehicle References)
 const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
   const isAuto = vehicleId.includes('auto');
   const isCab = vehicleId.includes('cab');
@@ -26,152 +26,139 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
   const isLite = vehicleId.includes('lite');
 
   if (isAuto) {
-    // 🛺 High-Visibility Indian Auto-Rickshaw Top View (Breadth reduced to 18px)
+    // 🛺 Auto-Rickshaw (Screenshot 2: Green/Yellow Auto & Screenshot 3: White/Blue Auto)
+    const isWhiteBlue = isLite;
+    const canopyColor = isWhiteBlue ? '#1e293b' : '#FACC15';
+    const bodyColor = isWhiteBlue ? '#f8fafc' : '#15803d';
+    const accentColor = isWhiteBlue ? '#2563eb' : '#ca8a04';
+
     return `
-      <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 18px; height: 26px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
-        <svg width="18" height="26" viewBox="0 0 18 26" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.85));">
+      <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 20px; height: 28px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+        <svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.85));">
           <!-- Directional Road Shadow -->
-          <ellipse cx="9" cy="14" rx="7" ry="10" fill="rgba(0,0,0,0.4)" />
+          <ellipse cx="10" cy="15" rx="8" ry="11" fill="rgba(0,0,0,0.4)" />
 
-          <!-- Front Wheel Mudguard & Nose -->
-          <path d="M7.8 0.8h2.4l1 2.8h-4.4l1-2.8z" fill="#09090b" />
-          <circle cx="9" cy="2.2" r="1" fill="#71717a" />
-          <circle cx="9" cy="1" r="0.8" fill="#fef08a" />
+          <!-- Front Single Wheel Mudguard & Nose -->
+          <path d="M8.8 0.8h2.4l1 2.8h-4.4l1-2.8z" fill="#09090b" />
+          <circle cx="10" cy="2.2" r="1" fill="#71717a" />
+          <circle cx="10" cy="1" r="0.8" fill="#fef08a" />
 
-          <!-- Wide Curved Windshield Frame -->
-          <path d="M3.8 4.5h10.4l-1 3.2H4.8L3.8 4.5z" fill="#38bdf8" fill-opacity="0.9" stroke="#09090b" stroke-width="0.6" />
-          <line x1="9" y1="4.5" x2="9" y2="7.7" stroke="#0284c7" stroke-width="0.5" />
+          <!-- Front Windshield & Visor -->
+          <path d="M4 4.5h12l-1 3.2H5L4 4.5z" fill="${isWhiteBlue ? '#38bdf8' : '#38bdf8'}" fill-opacity="0.9" stroke="${accentColor}" stroke-width="0.8" />
+          <line x1="10" y1="4.5" x2="10" y2="7.7" stroke="${accentColor}" stroke-width="0.6" />
 
-          <!-- Auto Driver (Helmet) -->
-          <circle cx="9" cy="8.8" r="1.8" fill="#18181b" stroke="#3f3f46" stroke-width="0.4" />
+          <!-- Auto Driver (Helmet / Cap) -->
+          <circle cx="10" cy="9" r="1.8" fill="#18181b" stroke="#3f3f46" stroke-width="0.4" />
 
-          <!-- Iconic Indian Yellow Canopy Roof -->
-          <rect x="2.5" y="7" width="13" height="15.5" rx="2.5" fill="#FACC15" stroke="#854d0e" stroke-width="0.8" />
+          <!-- Canopy Roof -->
+          <rect x="2.5" y="7.5" width="15" height="15" rx="3" fill="${canopyColor}" stroke="${accentColor}" stroke-width="0.8" />
 
-          <!-- Vibrant Green Lower Body & Doors -->
-          <rect x="2.5" y="18" width="13" height="4.5" rx="1.2" fill="#15803d" stroke="#14532d" stroke-width="0.6" />
-          <line x1="2.5" y1="19.2" x2="15.5" y2="19.2" stroke="#facc15" stroke-width="0.5" />
+          <!-- Lower Body / Passenger Bay -->
+          <rect x="2.5" y="18.5" width="15" height="5" rx="1.5" fill="${bodyColor}" stroke="#09090b" stroke-width="0.6" />
 
-          <!-- Roof Aerodynamic Ribs & Creases -->
-          <line x1="5" y1="10" x2="13" y2="10" stroke="#eab308" stroke-width="1.1" stroke-linecap="round" />
-          <line x1="5" y1="13.5" x2="13" y2="13.5" stroke="#eab308" stroke-width="1.1" stroke-linecap="round" />
-          <line x1="5" y1="17" x2="13" y2="17" stroke="#eab308" stroke-width="1.1" stroke-linecap="round" />
+          <!-- Roof Ribs -->
+          <line x1="5.5" y1="11" x2="14.5" y2="11" stroke="${isWhiteBlue ? '#475569' : '#eab308'}" stroke-width="1.1" stroke-linecap="round" />
+          <line x1="5.5" y1="14.5" x2="14.5" y2="14.5" stroke="${isWhiteBlue ? '#475569' : '#eab308'}" stroke-width="1.1" stroke-linecap="round" />
+          <line x1="5.5" y1="18" x2="14.5" y2="18" stroke="${isWhiteBlue ? '#475569' : '#eab308'}" stroke-width="1.1" stroke-linecap="round" />
 
           <!-- Side Mirrors -->
-          <rect x="1" y="5.2" width="1.6" height="1.2" rx="0.4" fill="#09090b" />
-          <rect x="15.4" y="5.2" width="1.6" height="1.2" rx="0.4" fill="#09090b" />
+          <rect x="1" y="5.5" width="1.6" height="1.2" rx="0.4" fill="#09090b" />
+          <rect x="17.4" y="5.5" width="1.6" height="1.2" rx="0.4" fill="#09090b" />
 
           <!-- Rear Hazard & Brake Lamps -->
-          <circle cx="4.2" cy="21.5" r="0.9" fill="#ef4444" stroke="#7f1d1d" stroke-width="0.3" />
-          <circle cx="13.8" cy="21.5" r="0.9" fill="#ef4444" stroke="#7f1d1d" stroke-width="0.3" />
+          <circle cx="4.5" cy="22.5" r="0.9" fill="#ef4444" stroke="#7f1d1d" stroke-width="0.3" />
+          <circle cx="15.5" cy="22.5" r="0.9" fill="#ef4444" stroke="#7f1d1d" stroke-width="0.3" />
         </svg>
       </div>
     `;
   }
 
   if (isCab) {
-    // 🚗 Sleek High-Visibility Cab / Sedan Top View (Breadth reduced to 20px)
-    const bodyColor = isPremium ? '#F59E0B' : '#FBBF24';
-    const roofColor = isPremium ? '#09090b' : '#18181b';
+    // 🚗 4-Wheeler Car (Screenshot 1: Left Orange Car & Right Lime Green Car)
+    const carColor = isPremium ? '#84CC16' : '#F97316'; // Green for premium, Orange for economy
+    const hoodColor = isPremium ? '#65A30D' : '#EA580C';
+
     return `
-      <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 20px; height: 34px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
-        <svg width="20" height="34" viewBox="0 0 20 34" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));">
+      <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 22px; height: 36px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+        <svg width="22" height="36" viewBox="0 0 22 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.85));">
           <!-- Directional Road Shadow -->
-          <ellipse cx="10" cy="18" rx="8" ry="13" fill="rgba(0,0,0,0.45)" />
+          <ellipse cx="11" cy="19" rx="9" ry="14" fill="rgba(0,0,0,0.4)" />
 
-          <!-- 4 Wide Road Wheels -->
-          <rect x="0.2" y="5" width="2" height="5" rx="1" fill="#09090b" />
-          <rect x="17.8" y="5" width="2" height="5" rx="1" fill="#09090b" />
-          <rect x="0.2" y="22" width="2" height="5" rx="1" fill="#09090b" />
-          <rect x="17.8" y="22" width="2" height="5" rx="1" fill="#09090b" />
+          <!-- 4 Road Wheels -->
+          <rect x="0.2" y="6" width="2" height="5.5" rx="1" fill="#09090b" />
+          <rect x="19.8" y="6" width="2" height="5.5" rx="1" fill="#09090b" />
+          <rect x="0.2" y="24" width="2" height="5.5" rx="1" fill="#09090b" />
+          <rect x="19.8" y="24" width="2" height="5.5" rx="1" fill="#09090b" />
 
-          <!-- Car Body Silhouette -->
-          <rect x="1.8" y="1" width="16.4" height="31" rx="4" fill="${bodyColor}" stroke="#09090b" stroke-width="1" />
+          <!-- Streamlined Car Body Silhouette (Screenshot 1) -->
+          <path d="M2.5 12C2.5 4 4.5 1.5 11 1.5S19.5 4 19.5 12V25C19.5 32 17.5 34.5 11 34.5S2.5 32 2.5 25V12Z" fill="${carColor}" stroke="#18181b" stroke-width="0.6" />
 
-          <!-- Front Hood Sculpting -->
-          <path d="M3 5c0-2.2 2-3.4 7-3.4s7 1.2 7 3.4v2H3V5z" fill="${isPremium ? '#D97706' : '#F59E0B'}" />
+          <!-- Front Hood Sculpting Curve -->
+          <path d="M4.5 6C4.5 3.5 6.5 2.5 11 2.5S17.5 3.5 17.5 6" stroke="${hoodColor}" stroke-width="0.8" fill="none" />
 
-          <!-- Front Windshield (Dark Glossy Glass) -->
-          <path d="M3.8 7.2h12.4l-1.3 4H5.1L3.8 7.2z" fill="#09090b" stroke="#38bdf8" stroke-width="0.4" />
+          <!-- Front White Teardrop Headlights (Screenshot 1) -->
+          <ellipse cx="5" cy="3.8" rx="1.6" ry="1" fill="#ffffff" transform="rotate(-15 5 3.8)" />
+          <ellipse cx="17" cy="3.8" rx="1.6" ry="1" fill="#ffffff" transform="rotate(15 17 3.8)" />
 
-          <!-- Roof Panel -->
-          <rect x="4.4" y="11.5" width="11.2" height="10.5" rx="1.8" fill="${roofColor}" stroke="#27272a" stroke-width="0.6" />
+          <!-- Curved Dark Front Windshield -->
+          <path d="M4.2 8.5C5.8 7.5 8.2 7 11 7S16.2 7.5 17.8 8.5L17 13.5C15.5 12.8 13.5 12.5 11 12.5S6.5 12.8 5 13.5L4.2 8.5Z" fill="#18181b" />
 
-          <!-- Illuminated Roof Taxi Badge or Sunroof -->
-          ${
-            !isPremium
-              ? `<rect x="6.8" y="15" width="6.4" height="3.2" rx="0.8" fill="#FACC15" stroke="#78350f" stroke-width="0.4" />
-                 <text x="10" y="17.4" font-size="2" font-weight="900" text-anchor="middle" fill="#000" font-family="sans-serif">TAXI</text>`
-              : `<rect x="6.5" y="13.5" width="7" height="5.5" rx="1" fill="#1e293b" stroke="#38bdf8" stroke-width="0.4" />
-                 <circle cx="10" cy="16.2" r="1.3" fill="#facc15" />`
-          }
+          <!-- Side Windows Left & Right -->
+          <path d="M3.8 14.5H4.8V22H3.8V14.5Z" fill="#18181b" rx="0.5" />
+          <path d="M17.2 14.5H18.2V22H17.2V14.5Z" fill="#18181b" rx="0.5" />
 
-          <!-- Rear Windshield -->
-          <path d="M4.8 22.3h10.4l1.1 3.7H3.7l1.1-3.7z" fill="#09090b" stroke="#38bdf8" stroke-width="0.4" />
+          <!-- Curved Dark Rear Windshield -->
+          <path d="M5 23C6.5 23.8 8.5 24.2 11 24.2S15.5 23.8 17 23L17.8 28C16.2 29 13.8 29.5 11 29.5S5.8 29 4.2 28L5 23Z" fill="#18181b" />
 
-          <!-- Side Mirrors -->
-          <rect x="0.4" y="8" width="1.6" height="2" rx="0.6" fill="#09090b" />
-          <rect x="18" y="8" width="1.6" height="2" rx="0.6" fill="#09090b" />
+          <!-- Side Mirrors (Screenshot 1) -->
+          <path d="M1 11.5C0.5 11.5 0 12 0 12.5C0 13.2 1.5 14 2.5 13.5V11.5H1Z" fill="${carColor}" />
+          <path d="M21 11.5C21.5 11.5 22 12 22 12.5C22 13.2 20.5 14 19.5 13.5V11.5H21Z" fill="${carColor}" />
 
-          <!-- Headlights -->
-          <circle cx="4.5" cy="2.2" r="1.2" fill="#fef08a" stroke="#ca8a04" stroke-width="0.3" />
-          <circle cx="15.5" cy="2.2" r="1.2" fill="#fef08a" stroke="#ca8a04" stroke-width="0.3" />
-
-          <!-- Red Tail Lamps -->
-          <rect x="3.8" y="30.5" width="2.8" height="1.2" rx="0.6" fill="#ef4444" />
-          <rect x="13.4" y="30.5" width="2.8" height="1.2" rx="0.6" fill="#ef4444" />
+          <!-- Rear Red Tail Lamps (Screenshot 1) -->
+          <ellipse cx="4.5" cy="33" rx="1.8" ry="0.9" fill="#dc2626" />
+          <ellipse cx="17.5" cy="33" rx="1.8" ry="0.9" fill="#dc2626" />
         </svg>
       </div>
     `;
   }
 
-  // 🏍️ High-Visibility Sports Motorcycle Top View
-  const mainColor = isLite ? '#10B981' : '#FACC15';
-  const accentColor = isLite ? '#059669' : '#EAB308';
+  // 🏍️ Two-Wheeler Motorcycle (Screenshot 4: Classic Cruiser & Screenshot 5: Yellow Sports Bike)
+  const isClassic = !isLite;
+  const tankColor = isClassic ? '#D4A373' : '#FACC15'; // Tan/Beige for classic, Yellow for sports bike
+  const accentColor = isClassic ? '#582F0E' : '#09090b';
+
   return `
-    <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 30px; height: 42px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
-      <svg width="30" height="42" viewBox="0 0 30 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 7px rgba(0,0,0,0.85));">
+    <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 28px; height: 40px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+      <svg width="28" height="40" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 7px rgba(0,0,0,0.85));">
         <!-- Directional Road Shadow -->
-        <ellipse cx="15" cy="22" rx="7" ry="16" fill="rgba(0,0,0,0.35)" />
+        <ellipse cx="14" cy="21" rx="7" ry="15" fill="rgba(0,0,0,0.35)" />
         
         <!-- Front Tire & Rim -->
-        <rect x="13.2" y="1" width="3.6" height="8.5" rx="1.8" fill="#09090b" stroke="#27272a" stroke-width="0.6" />
-        <line x1="15" y1="3" x2="15" y2="7" stroke="#71717a" stroke-width="1.2" />
+        <rect x="12.2" y="1" width="3.6" height="8" rx="1.8" fill="#09090b" stroke="#27272a" stroke-width="0.6" />
+        <line x1="14" y1="3" x2="14" y2="7" stroke="#71717a" stroke-width="1.2" />
 
-        <!-- Front Fork & Chrome Handlebars -->
-        <line x1="6.5" y1="8" x2="23.5" y2="8" stroke="#e4e4e7" stroke-width="2.6" stroke-linecap="round" />
-        <rect x="5.5" y="6.8" width="3" height="2.4" rx="1.2" fill="#18181b" />
-        <rect x="21.5" y="6.8" width="3" height="2.4" rx="1.2" fill="#18181b" />
-        <!-- Rearview Mirrors -->
+        <!-- Chrome/Black Handlebars -->
+        <line x1="6" y1="8" x2="22" y2="8" stroke="${isClassic ? '#e4e4e7' : '#18181b'}" stroke-width="2.5" stroke-linecap="round" />
         <circle cx="5" cy="6" r="1.5" fill="#38bdf8" stroke="#18181b" stroke-width="0.8" />
-        <circle cx="25" cy="6" r="1.5" fill="#38bdf8" stroke="#18181b" stroke-width="0.8" />
+        <circle cx="23" cy="6" r="1.5" fill="#38bdf8" stroke="#18181b" stroke-width="0.8" />
 
-        <!-- Aerodynamic Front Fairing / Headlight -->
-        <path d="M11 9.5h8l1.5 4h-11L11 9.5z" fill="${mainColor}" stroke="#0f172a" stroke-width="0.8" />
-        <circle cx="15" cy="9.5" r="1.8" fill="#fef08a" />
+        <!-- Headlight / Fairing -->
+        <circle cx="14" cy="8.5" r="${isClassic ? 2.2 : 3}" fill="${isClassic ? '#fef08a' : tankColor}" stroke="#18181b" stroke-width="0.6" />
 
-        <!-- Fuel Tank (Bold Bright Shape) -->
-        <path d="M10 13.5h10l2 7h-14l2-7z" fill="${mainColor}" stroke="${accentColor}" stroke-width="1" />
-        <rect x="13.8" y="15" width="2.4" height="4" rx="1.2" fill="#18181b" />
+        <!-- Fuel Tank -->
+        <path d="M9.5 12h9l1.8 7.5h-12.6l1.8-7.5z" fill="${tankColor}" stroke="${accentColor}" stroke-width="1" />
 
-        <!-- Rider Helmet (Top View with Tinted Visor) -->
-        <circle cx="15" cy="20.5" r="4.5" fill="#09090b" stroke="#3f3f46" stroke-width="0.8" />
-        <circle cx="15" cy="20.5" r="3.2" fill="${mainColor}" />
-        <path d="M12 18.5h6l-0.5 2.2h-5L12 18.5z" fill="#38bdf8" stroke="#0284c7" stroke-width="0.4" />
+        <!-- Rider Helmet -->
+        <circle cx="14" cy="19.5" r="4.2" fill="#09090b" stroke="#3f3f46" stroke-width="0.8" />
+        <circle cx="14" cy="19.5" r="3" fill="${tankColor}" />
+        <path d="M11 17.5h6l-0.5 2.2h-5L11 17.5z" fill="#38bdf8" stroke="#0284c7" stroke-width="0.4" />
 
-        <!-- Rider Shoulders / Jacket -->
-        <path d="M8 25c0-2.5 3-4 7-4s7 1.5 7 4v3.5H8V25z" fill="#18181b" stroke="#27272a" stroke-width="0.6" />
-        <rect x="11.5" y="24" width="7" height="4" rx="1.5" fill="#3f3f46" />
+        <!-- Seat (Brown Leather for Classic / Black for Sports) -->
+        <rect x="10.5" y="24.5" width="7" height="8.5" rx="2" fill="${isClassic ? '#4A2810' : '#18181b'}" stroke="#27272a" stroke-width="0.6" />
 
-        <!-- Long Pillion Seat -->
-        <rect x="11.5" y="28.5" width="7" height="7.5" rx="2" fill="#09090b" stroke="#27272a" stroke-width="0.8" />
-
-        <!-- Rear Tire & Exhaust -->
-        <rect x="13.2" y="34.5" width="3.6" height="6.5" rx="1.8" fill="#09090b" />
-        <rect x="19" y="30" width="1.8" height="7" rx="0.9" fill="#a1a1aa" />
-
-        <!-- Bright Red Tail Brake LED -->
-        <rect x="13" y="35.5" width="4" height="1.8" rx="0.9" fill="#ef4444" stroke="#991b1b" stroke-width="0.4" />
+        <!-- Rear Tire & Red LED Brake Light -->
+        <rect x="12.2" y="33.5" width="3.6" height="6" rx="1.8" fill="#09090b" />
+        <rect x="12" y="34.5" width="4" height="1.8" rx="0.9" fill="#ef4444" stroke="#991b1b" stroke-width="0.4" />
       </svg>
     </div>
   `;

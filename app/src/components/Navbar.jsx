@@ -36,7 +36,7 @@ export const Navbar = ({
 
   const fetchSubscription = () => {
     if (!driverId) return;
-    fetch(`${BACKEND_URL}/api/drivers/subscription/${driverId}`)
+    fetch(`${BACKEND_URL}/api/drivers/subscription/${driverId}?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data && data.success) setSubData(data);
@@ -46,7 +46,7 @@ export const Navbar = ({
 
   const fetchEarnings = () => {
     if (!driverId) return;
-    fetch(`${BACKEND_URL}/api/drivers/earnings/${driverId}`)
+    fetch(`${BACKEND_URL}/api/drivers/earnings/${driverId}?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data && data.today_earnings !== undefined) {

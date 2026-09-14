@@ -7,6 +7,7 @@ import {
   getUserRides,
   rateRide,
   cancelRide,
+  acceptRide,
   getRideById,
   getRideMessages,
   sendRideMessage
@@ -16,6 +17,7 @@ const router = express.Router();
 
 router.post('/estimate', estimateFare);
 router.post('/request', requestRide);
+router.post('/accept', acceptRide);
 router.get('/active', getActiveRideForUser);
 router.get('/pending-request', getPendingRequestsForDriver);
 router.get('/history', getUserRides);

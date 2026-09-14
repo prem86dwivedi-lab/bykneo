@@ -1,4 +1,4 @@
-﻿/**
+/**
  * RiderXO Instant Local Fare & Vehicle Calculation Engine (0ms Execution)
  * Immediately generates accurate distance, duration, and vehicle fares on-device
  * without waiting for remote backend network round-trips.
@@ -19,8 +19,17 @@ export const calculateAerialDistance = (lat1, lon1, lat2, lon2) => {
   return Math.max(0.8, Number((R * c).toFixed(1)));
 };
 
-export const getInstantFareEstimate = (pickup, drop) => {
+export const getInstantFareEstimate = (pickup, drop, isServiceable = true) => {
   if (!pickup?.lat || !drop?.lat) return null;
+  if (!isServiceable) {
+    return {
+      is_serviceable: false,
+      distance_km: 0,
+      duration_mins: 0,
+      fare: null,
+      vehicles: []
+    };
+  }
 
   const aerial = calculateAerialDistance(pickup.lat, pickup.lng, drop.lat, drop.lng);
   const distance = Math.max(0.8, Number((aerial * 1.3).toFixed(1)));

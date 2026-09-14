@@ -34,6 +34,7 @@ import {
   clearDriverOnlineNotification
 } from './utils/notification';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { App as CapApp } from '@capacitor/app';
 import { subscribeToPush, unsubscribeFromPush } from './utils/pushNotification.js';
 import { getPreciseCurrentPosition, watchPreciseLocation, requestLocationPermissions } from './utils/nativeLocation.js';
 import { ShieldCheck, X } from 'lucide-react';
@@ -134,16 +135,24 @@ export function App() {
     };
   };
 
-  // Fetch active serviceable cities from backend
+  // Fetch active serviceable cities from backend (Zero-cache guaranteed)
   const fetchActiveCities = () => {
-    fetch(`${BACKEND_URL}/api/cities/active`)
+    fetch(`${BACKEND_URL}/api/cities/active?_t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
       .then((res) => res.json())
       .then((data) => {
-        if (data.cities) {
-          setActiveCities(data.cities);
+        if (data && data.cities) {
+          const active = data.cities.filter(c => c.is_active !== false);
+          setActiveCities(active);
         }
       })
-      .catch(console.error);
+      .catch((err) => console.warn('Active cities fetch notice:', err.message));
   };
 
   // Fast non-blocking reverse geocoding with timeout
@@ -254,6 +263,34 @@ export function App() {
     initNotificationChannels();
     requestNotificationPermission();
 
+    // 1. Instant App Resume Listener (Native APK + Web foreground resume)
+    let appStateListener = null;
+    try {
+      CapApp.addListener('appStateChange', (state) => {
+        if (state?.isActive) {
+          console.log('📱 App resumed into foreground: Triggering instant data sync...');
+          fetchActiveCities();
+        }
+      }).then((handle) => {
+        appStateListener = handle;
+      });
+    } catch (e) {
+      console.warn('Capacitor App listener fallback:', e.message);
+    }
+
+    const handleWindowFocus = () => {
+      fetchActiveCities();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchActiveCities();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     let notifListener = null;
     try {
       LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
@@ -273,6 +310,11 @@ export function App() {
     } catch (e) {}
 
     return () => {
+      if (appStateListener && appStateListener.remove) {
+        appStateListener.remove();
+      }
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (notifListener && notifListener.remove) {
         notifListener.remove();
       }
@@ -410,13 +452,36 @@ export function App() {
   useEffect(() => {
     if (!socket) return;
 
-    // 0. Live Admin Geofenced Cities Update
-    socket.on('admin:cities_updated', ({ cities }) => {
-      console.log('🔄 Admin updated serviceable cities via Socket:', cities);
-      if (Array.isArray(cities)) {
-        setActiveCities(cities.filter(c => c.is_active !== false));
+    // 0. Live Admin Geofenced Cities & System Settings Sync (Instant Push)
+    const handleCitiesUpdate = (data) => {
+      console.log('🔄 Instant Admin Geofenced Cities Update:', data);
+      const citiesList =
+        data?.active_cities ||
+        (Array.isArray(data?.cities)
+          ? data.cities.filter((c) => c.is_active !== false)
+          : Array.isArray(data)
+          ? data.filter((c) => c.is_active !== false)
+          : []);
+      setActiveCities(citiesList);
+    };
+
+    const handleSyncConfig = (data) => {
+      console.log('🔄 Live App Config Sync received via Socket:', data);
+      if (data?.active_cities || data?.cities) {
+        handleCitiesUpdate(data);
       }
-    });
+      fetchActiveCities();
+    };
+
+    const handleConnect = () => {
+      console.log('⚡ Socket connected: Performing instant data sync...');
+      fetchActiveCities();
+    };
+
+    socket.on('admin:cities_updated', handleCitiesUpdate);
+    socket.on('admin:settings_updated', handleSyncConfig);
+    socket.on('app:sync_config', handleSyncConfig);
+    socket.on('connect', handleConnect);
 
     // 1. Rider: Captain Matched
     socket.on('ride:matched', ({ ride, driver }) => {
@@ -556,7 +621,10 @@ export function App() {
     });
 
     return () => {
-      socket.off('admin:cities_updated');
+      socket.off('admin:cities_updated', handleCitiesUpdate);
+      socket.off('admin:settings_updated', handleSyncConfig);
+      socket.off('app:sync_config', handleSyncConfig);
+      socket.off('connect', handleConnect);
       socket.off('ride:matched');
       socket.off('ride:driver_location');
       socket.off('driver:incoming_request');
@@ -693,16 +761,44 @@ export function App() {
     setSelectingMode(null);
   };
 
-  // CAPTAIN: Accept Incoming Ride
-  const handleAcceptRide = (rideId) => {
+  // CAPTAIN: Accept Incoming Ride (Dual-channel REST + Socket with instant state update)
+  const handleAcceptRide = async (rideId) => {
     if (!driverProfile) return;
     cancelRideAlertNotification(rideId);
-    socket.emit('driver:accept_ride', {
+    setIncomingRequest(null);
+
+    // 1. Socket emission for instant low-latency delivery
+    socket?.emit('driver:accept_ride', {
       rideId,
       driverId: driverProfile.id,
       lat: driverGpsLocation?.lat,
       lng: driverGpsLocation?.lng
     });
+
+    // 2. Guaranteed REST Fallback
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/rides/accept?_t=${Date.now()}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache'
+        },
+        cache: 'no-store',
+        body: JSON.stringify({
+          rideId,
+          driverId: driverProfile.id,
+          lat: driverGpsLocation?.lat,
+          lng: driverGpsLocation?.lng
+        })
+      });
+      const data = await res.json();
+      if (data && data.success && data.ride) {
+        setActiveRide(data.ride);
+      }
+    } catch (err) {
+      console.warn('REST accept ride fallback note:', err.message);
+    }
   };
 
   // CAPTAIN: Reject Incoming Ride

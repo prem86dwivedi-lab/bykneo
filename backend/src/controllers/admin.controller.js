@@ -290,7 +290,12 @@ export const addCity = (req, res) => {
   });
 
   const io = req.app.get('io');
-  if (io) io.emit('admin:cities_updated', { cities: db.get('cities') });
+  if (io) {
+    const allCities = db.get('cities') || [];
+    const active = allCities.filter(c => c.is_active !== false);
+    io.emit('admin:cities_updated', { cities: allCities, active_cities: active });
+    io.emit('app:sync_config', { type: 'cities', cities: allCities, active_cities: active });
+  }
 
   return res.json({ success: true, city: newCity });
 };
@@ -302,7 +307,12 @@ export const updateCity = (req, res) => {
   if (!updated) return res.status(404).json({ error: "City not found" });
 
   const io = req.app.get('io');
-  if (io) io.emit('admin:cities_updated', { cities: db.get('cities') });
+  if (io) {
+    const allCities = db.get('cities') || [];
+    const active = allCities.filter(c => c.is_active !== false);
+    io.emit('admin:cities_updated', { cities: allCities, active_cities: active });
+    io.emit('app:sync_config', { type: 'cities', cities: allCities, active_cities: active });
+  }
 
   return res.json({ success: true, city: updated });
 };
@@ -312,7 +322,12 @@ export const deleteCity = (req, res) => {
   db.delete('cities', id);
 
   const io = req.app.get('io');
-  if (io) io.emit('admin:cities_updated', { cities: db.get('cities') });
+  if (io) {
+    const allCities = db.get('cities') || [];
+    const active = allCities.filter(c => c.is_active !== false);
+    io.emit('admin:cities_updated', { cities: allCities, active_cities: active });
+    io.emit('app:sync_config', { type: 'cities', cities: allCities, active_cities: active });
+  }
 
   return res.json({ success: true });
 };
@@ -387,8 +402,11 @@ export const updateSettings = (req, res) => {
 
   const io = req.app.get('io');
   if (io) {
+    const allCities = db.get('cities') || [];
+    const active = allCities.filter(c => c.is_active !== false);
     io.emit('admin:settings_updated', { settings: db.data.settings });
-    io.emit('admin:cities_updated', { cities: db.get('cities') });
+    io.emit('admin:cities_updated', { cities: allCities, active_cities: active });
+    io.emit('app:sync_config', { type: 'settings', settings: db.data.settings, active_cities: active });
     io.emit('driver:subscription_activated', { updated_by_admin: true });
   }
 

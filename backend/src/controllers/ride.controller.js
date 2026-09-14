@@ -391,6 +391,80 @@ export const cancelRide = (req, res) => {
   return res.json({ success: true, ride: updated });
 };
 
+export const acceptRide = (req, res) => {
+  const { rideId, driverId, lat, lng } = req.body;
+  const ride = db.find('rides', r => r.id === rideId);
+  const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId);
+
+  if (!ride || !driver) {
+    return res.status(404).json({ success: false, error: 'Ride or Driver not found' });
+  }
+
+  if (ride.status !== 'REQUESTED') {
+    return res.status(400).json({ success: false, error: 'This ride was already accepted by another Captain.' });
+  }
+
+  // Update driver location
+  if (lat && lng) {
+    db.update('drivers', driver.id, {
+      lat: Number(lat),
+      lng: Number(lng),
+      last_ping: new Date().toISOString()
+    });
+    driver.lat = Number(lat);
+    driver.lng = Number(lng);
+  }
+
+  // Update ride details
+  const updatedRide = db.update('rides', rideId, {
+    driver_id: driver.id,
+    driver_name: driver.name,
+    driver_phone: driver.phone,
+    vehicle_model: driver.vehicle_model,
+    vehicle_number: driver.vehicle_number,
+    vehicle_category: driver.vehicle_category || ride.vehicle_category || 'BIKE',
+    vehicle_id: driver.vehicle_id || ride.vehicle_id || 'bike',
+    driver_avatar: driver.avatar || driver.selfie_photo || null,
+    driver_rating: driver.rating || 4.9,
+    status: 'ACCEPTED',
+    accepted_at: new Date().toISOString()
+  });
+
+  db.update('drivers', driver.id, { is_available: false });
+
+  const io = req.app.get('io');
+  if (io) {
+    // Notify passenger
+    io.to(`user:${ride.rider_id}`).emit('ride:matched', {
+      ride: updatedRide,
+      driver: {
+        id: driver.id,
+        name: driver.name,
+        phone: driver.phone,
+        vehicle_model: driver.vehicle_model,
+        vehicle_number: driver.vehicle_number,
+        vehicle_category: driver.vehicle_category || 'BIKE',
+        vehicle_id: driver.vehicle_id || 'bike',
+        avatar: driver.avatar || driver.selfie_photo,
+        rating: driver.rating || 4.9,
+        lat: driver.lat,
+        lng: driver.lng,
+        heading: driver.heading || 0
+      }
+    });
+
+    // Notify driver room & sender socket
+    io.to(`driver:${driver.id}`).emit('ride:assigned_success', { ride: updatedRide });
+    if (driver.user_id) {
+      io.to(`user:${driver.user_id}`).emit('ride:assigned_success', { ride: updatedRide });
+    }
+    io.emit('ride:assigned_success', { ride: updatedRide, driverId: driver.id });
+    io.to('drivers:online').emit('driver:dismiss_request', { rideId });
+  }
+
+  return res.json({ success: true, ride: updatedRide });
+};
+
 export const getRideById = (req, res) => {
   const { id } = req.params;
   const ride = db.find('rides', r => r.id === id);

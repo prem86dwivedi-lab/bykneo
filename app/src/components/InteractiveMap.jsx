@@ -1275,21 +1275,8 @@ export const InteractiveMap = ({
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-      {/* Floating Action Controls (Top Right: Recenter + Location + Layer Icon) */}
+      {/* Floating Action Controls (Top Right: Location + Layer + Recenter Icon) */}
       <div className="absolute top-24 right-3 z-30 flex flex-col items-end gap-2 pointer-events-auto">
-        {/* 0. Uber/Ola Style Floating "Recenter" Button (Appears when user zooms or pans during ride/view) */}
-        {isUserPanned && !selectingMode && (
-          <button
-            type="button"
-            onClick={handleRecenterRoute}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/95 backdrop-blur-md border border-brand-yellow/70 rounded-xl text-brand-yellow hover:text-white shadow-2xl active:scale-95 transition-all text-xs font-bold animate-in fade-in zoom-in-95 duration-150 cursor-pointer"
-            title="Recenter Map & Auto-Follow Ride"
-          >
-            <Navigation className="w-3.5 h-3.5 fill-brand-yellow text-brand-yellow" />
-            <span>Recenter</span>
-          </button>
-        )}
-
         {/* 1. GPS Locate Button */}
         <button
           onClick={handleLocateMe}
@@ -1299,7 +1286,7 @@ export const InteractiveMap = ({
           <Crosshair className="w-4 h-4" />
         </button>
 
-        {/* 2. 3-Way Map Layer Switcher Button (Just right side of location icon) */}
+        {/* 2. 3-Way Map Layer Switcher Button */}
         <div className="relative">
           <button
             onClick={() => setShowLayerMenu(!showLayerMenu)}
@@ -1377,6 +1364,20 @@ export const InteractiveMap = ({
             </div>
           )}
         </div>
+
+        {/* 3. Recenter Icon Button (Just below layer switcher without text) */}
+        {!selectingMode && (
+          <button
+            type="button"
+            onClick={handleRecenterRoute}
+            className={`w-8 h-8 bg-gray-900/95 backdrop-blur-md border border-gray-750 rounded-xl text-brand-yellow hover:text-white shadow-xl active:scale-90 transition flex items-center justify-center cursor-pointer ${
+              isUserPanned ? 'border-brand-yellow ring-2 ring-brand-yellow/30' : ''
+            }`}
+            title="Recenter Map & Auto-Follow Ride"
+          >
+            <Navigation className="w-4 h-4 fill-brand-yellow text-brand-yellow" />
+          </button>
+        )}
       </div>
 
       {/* Full Interactive "Pick from Map" Overlay (Rapido / Uber Parity) */}

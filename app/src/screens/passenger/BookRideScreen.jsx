@@ -175,17 +175,36 @@ export const BookRideScreen = ({
 
   // Recalculate Fare Estimate Instantly (0ms local calculation + background sync)
   useEffect(() => {
+    const isServiceableZone = zoneStatus?.isServiceable !== false && (activeCities && activeCities.length > 0);
+
+    if (!isServiceableZone) {
+      setEstimatedFare({
+        is_serviceable: false,
+        distance_km: 0,
+        duration_mins: 0,
+        fare: null,
+        vehicles: [],
+        message: 'RiderXO is launching soon in this area! Our fleet is currently offline in this zone.'
+      });
+      return;
+    }
+
     if (pickup?.lat && drop?.lat) {
       // 1. Instantly generate and display all vehicle options (0ms)
-      const instant = getInstantFareEstimate(pickup, drop);
+      const instant = getInstantFareEstimate(pickup, drop, true);
       if (instant) {
         setEstimatedFare(instant);
       }
 
-      // 2. Silently sync with backend in background without blocking UI
-      fetch(`${BACKEND_URL}/api/rides/estimate`, {
+      // 2. Silently sync with backend in background without blocking UI (zero-cache timestamped)
+      fetch(`${BACKEND_URL}/api/rides/estimate?_t=${Date.now()}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store',
         body: JSON.stringify({
           pickup_lat: pickup.lat,
           pickup_lng: pickup.lng,
@@ -195,7 +214,7 @@ export const BookRideScreen = ({
       })
         .then((res) => res.json())
         .then((data) => {
-          if (data && data.vehicles && data.vehicles.length > 0) {
+          if (data) {
             setEstimatedFare(data);
           }
         })
@@ -203,7 +222,7 @@ export const BookRideScreen = ({
           console.warn('Backend fare sync fallback to instant local estimate:', err);
         });
     }
-  }, [pickup?.lat, pickup?.lng, drop?.lat, drop?.lng]);
+  }, [pickup?.lat, pickup?.lng, drop?.lat, drop?.lng, zoneStatus?.isServiceable, activeCities]);
 
 // Global POI Category Map for Worldwide Locality & Sub-Area Search
 const POI_CATEGORY_MAP = [

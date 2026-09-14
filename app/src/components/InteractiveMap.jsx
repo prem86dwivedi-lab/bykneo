@@ -739,70 +739,209 @@ export const InteractiveMap = ({
     ];
     const models = {
       bike: ['Honda Activa 6G', 'Bajaj Pulsar 150', 'Hero Splendor Plus', 'TVS Jupiter', 'Honda Shine'],
+      bike_lite: ['Yamaha R15 V4', 'KTM Duke 200', 'Bajaj Pulsar NS200', 'TVS Apache RTR'],
       auto: ['Bajaj RE Compact Auto', 'Piaggio Ape City', 'Mahindra Treo Electric', 'Bajaj Maxima Z'],
+      auto_lite: ['Piaggio Ape E-City', 'Mahindra Alfa DX', 'Bajaj Compact Auto'],
       cab_economy: ['Maruti Suzuki WagonR', 'Swift Dzire', 'Hyundai Aura', 'Tata Tigor'],
       cab_premium: ['Honda City VX', 'Hyundai Verna SX', 'Toyota Urban Cruiser', 'Maruti Ciaz Alpha']
     };
     const d = drivers[index % drivers.length];
-    const catKey = category.includes('cab_premium')
-      ? 'cab_premium'
-      : category.includes('cab')
-      ? 'cab_economy'
-      : category.includes('auto')
-      ? 'auto'
-      : 'bike';
-    const modelList = models[catKey] || models.bike;
+    const modelList = models[category] || models.bike;
     const model = modelList[index % modelList.length];
     return { ...d, model };
   };
 
-  // Realistic Continuous Street Circuits (Closed loops around city blocks — NO ping-pong / NO snapping)
-  const getContinuousStreetCircuits = (pLat, pLng) => {
+  // Distinct Realistic Continuous Street Circuits per Vehicle Option
+  // (Each vehicle type has its own distinct road network, distance tier, and speed)
+  const getContinuousStreetCircuits = (pLat, pLng, vehicleId = 'bike') => {
+    if (vehicleId === 'bike') {
+      // 🏍️ Classic Bike: Close inner neighborhood streets (~150m to ~320m)
+      return [
+        [
+          [pLat + 0.0014, pLng + 0.0010],
+          [pLat + 0.0024, pLng + 0.0020],
+          [pLat + 0.0020, pLng + 0.0008],
+          [pLat + 0.0012, pLng + 0.0002],
+          [pLat + 0.0014, pLng + 0.0010]
+        ],
+        [
+          [pLat - 0.0008, pLng - 0.0012],
+          [pLat - 0.0018, pLng - 0.0024],
+          [pLat - 0.0024, pLng - 0.0012],
+          [pLat - 0.0014, pLng - 0.0004],
+          [pLat - 0.0008, pLng - 0.0012]
+        ],
+        [
+          [pLat + 0.0004, pLng + 0.0022],
+          [pLat + 0.0012, pLng + 0.0032],
+          [pLat + 0.0020, pLng + 0.0024],
+          [pLat + 0.0010, pLng + 0.0015],
+          [pLat + 0.0004, pLng + 0.0022]
+        ],
+        [
+          [pLat - 0.0015, pLng + 0.0012],
+          [pLat - 0.0025, pLng + 0.0022],
+          [pLat - 0.0020, pLng + 0.0008],
+          [pLat - 0.0015, pLng + 0.0012]
+        ]
+      ];
+    }
+
+    if (vehicleId === 'bike_lite') {
+      // 🏍️ Sports Bike: Fast inner diagonal corridors (~200m to ~400m)
+      return [
+        [
+          [pLat + 0.0018, pLng - 0.0015],
+          [pLat + 0.0030, pLng - 0.0028],
+          [pLat + 0.0038, pLng - 0.0018],
+          [pLat + 0.0026, pLng - 0.0005],
+          [pLat + 0.0018, pLng - 0.0015]
+        ],
+        [
+          [pLat - 0.0015, pLng + 0.0018],
+          [pLat - 0.0028, pLng + 0.0032],
+          [pLat - 0.0035, pLng + 0.0020],
+          [pLat - 0.0022, pLng + 0.0008],
+          [pLat - 0.0015, pLng + 0.0018]
+        ],
+        [
+          [pLat + 0.0022, pLng + 0.0020],
+          [pLat + 0.0035, pLng + 0.0035],
+          [pLat + 0.0042, pLng + 0.0022],
+          [pLat + 0.0022, pLng + 0.0020]
+        ],
+        [
+          [pLat - 0.0020, pLng - 0.0022],
+          [pLat - 0.0034, pLng - 0.0035],
+          [pLat - 0.0040, pLng - 0.0018],
+          [pLat - 0.0020, pLng - 0.0022]
+        ]
+      ];
+    }
+
+    if (vehicleId === 'auto') {
+      // 🛺 Green & Yellow Auto: Local market & auto stand intersections (~300m to ~550m)
+      return [
+        [
+          [pLat + 0.0025, pLng + 0.0028],
+          [pLat + 0.0042, pLng + 0.0045],
+          [pLat + 0.0050, pLng + 0.0030],
+          [pLat + 0.0035, pLng + 0.0012],
+          [pLat + 0.0025, pLng + 0.0028]
+        ],
+        [
+          [pLat - 0.0022, pLng - 0.0025],
+          [pLat - 0.0038, pLng - 0.0042],
+          [pLat - 0.0048, pLng - 0.0030],
+          [pLat - 0.0030, pLng - 0.0010],
+          [pLat - 0.0022, pLng - 0.0025]
+        ],
+        [
+          [pLat + 0.0032, pLng - 0.0020],
+          [pLat + 0.0048, pLng - 0.0038],
+          [pLat + 0.0055, pLng - 0.0022],
+          [pLat + 0.0032, pLng - 0.0020]
+        ],
+        [
+          [pLat - 0.0018, pLng + 0.0032],
+          [pLat - 0.0032, pLng + 0.0050],
+          [pLat - 0.0042, pLng + 0.0035],
+          [pLat - 0.0018, pLng + 0.0032]
+        ]
+      ];
+    }
+
+    if (vehicleId === 'auto_lite') {
+      // 🛺 White & Blue Auto: Commercial transit rings (~380m to ~680m)
+      return [
+        [
+          [pLat + 0.0035, pLng + 0.0032],
+          [pLat + 0.0052, pLng + 0.0050],
+          [pLat + 0.0062, pLng + 0.0032],
+          [pLat + 0.0045, pLng + 0.0015],
+          [pLat + 0.0035, pLng + 0.0032]
+        ],
+        [
+          [pLat - 0.0030, pLng - 0.0035],
+          [pLat - 0.0048, pLng - 0.0055],
+          [pLat - 0.0058, pLng - 0.0038],
+          [pLat - 0.0038, pLng - 0.0018],
+          [pLat - 0.0030, pLng - 0.0035]
+        ],
+        [
+          [pLat + 0.0015, pLng - 0.0040],
+          [pLat + 0.0030, pLng - 0.0062],
+          [pLat + 0.0045, pLng - 0.0045],
+          [pLat + 0.0015, pLng - 0.0040]
+        ],
+        [
+          [pLat - 0.0025, pLng + 0.0042],
+          [pLat - 0.0040, pLng + 0.0065],
+          [pLat - 0.0052, pLng + 0.0048],
+          [pLat - 0.0025, pLng + 0.0042]
+        ]
+      ];
+    }
+
+    if (vehicleId === 'cab_economy') {
+      // 🚗 Orange 4-Wheeler Car: Main avenue corridors & city blocks (~450m to ~850m)
+      return [
+        [
+          [pLat + 0.0042, pLng + 0.0038],
+          [pLat + 0.0065, pLng + 0.0058],
+          [pLat + 0.0078, pLng + 0.0038],
+          [pLat + 0.0055, pLng + 0.0018],
+          [pLat + 0.0042, pLng + 0.0038]
+        ],
+        [
+          [pLat - 0.0038, pLng - 0.0042],
+          [pLat - 0.0060, pLng - 0.0065],
+          [pLat - 0.0072, pLng - 0.0045],
+          [pLat - 0.0048, pLng - 0.0022],
+          [pLat - 0.0038, pLng - 0.0042]
+        ],
+        [
+          [pLat + 0.0028, pLng - 0.0050],
+          [pLat + 0.0048, pLng - 0.0075],
+          [pLat + 0.0065, pLng - 0.0055],
+          [pLat + 0.0028, pLng - 0.0050]
+        ],
+        [
+          [pLat - 0.0035, pLng + 0.0052],
+          [pLat - 0.0055, pLng + 0.0078],
+          [pLat - 0.0068, pLng + 0.0055],
+          [pLat - 0.0035, pLng + 0.0052]
+        ]
+      ];
+    }
+
+    // 🚗 Lime Green Cab Premium: Major arterial roads & outer expressways (~650m to ~1300m)
     return [
-      // Circuit 1: Northeast Urban Block (~200m to ~600m) - Continuous 6-waypoint loop
       [
-        [pLat + 0.0018, pLng + 0.0015],
-        [pLat + 0.0035, pLng + 0.0032],
-        [pLat + 0.0048, pLng + 0.0022],
-        [pLat + 0.0042, pLng + 0.0005],
-        [pLat + 0.0028, pLng + 0.0002],
-        [pLat + 0.0018, pLng + 0.0015]
+        [pLat + 0.0060, pLng + 0.0055],
+        [pLat + 0.0090, pLng + 0.0085],
+        [pLat + 0.0105, pLng + 0.0055],
+        [pLat + 0.0075, pLng + 0.0025],
+        [pLat + 0.0060, pLng + 0.0055]
       ],
-      // Circuit 2: Southwest Commercial Sector (~180m to ~550m) - Continuous 6-waypoint loop
       [
-        [pLat - 0.0012, pLng - 0.0015],
-        [pLat - 0.0028, pLng - 0.0038],
-        [pLat - 0.0045, pLng - 0.0032],
-        [pLat - 0.0040, pLng - 0.0010],
-        [pLat - 0.0025, pLng - 0.0002],
-        [pLat - 0.0012, pLng - 0.0015]
+        [pLat - 0.0055, pLng - 0.0060],
+        [pLat - 0.0085, pLng - 0.0090],
+        [pLat - 0.0100, pLng - 0.0065],
+        [pLat - 0.0068, pLng - 0.0032],
+        [pLat - 0.0055, pLng - 0.0060]
       ],
-      // Circuit 3: East Arterial Boulevard (~350m to ~800m) - Continuous 6-waypoint loop
       [
-        [pLat + 0.0005, pLng + 0.0030],
-        [pLat + 0.0015, pLng + 0.0060],
-        [pLat + 0.0028, pLng + 0.0055],
-        [pLat + 0.0022, pLng + 0.0025],
-        [pLat + 0.0012, pLng + 0.0018],
-        [pLat + 0.0005, pLng + 0.0030]
+        [pLat + 0.0045, pLng - 0.0075],
+        [pLat + 0.0072, pLng - 0.0110],
+        [pLat + 0.0095, pLng - 0.0080],
+        [pLat + 0.0045, pLng - 0.0075]
       ],
-      // Circuit 4: Northwest Residential Avenue (~300m to ~700m) - Continuous 6-waypoint loop
       [
-        [pLat + 0.0028, pLng - 0.0010],
-        [pLat + 0.0048, pLng - 0.0030],
-        [pLat + 0.0058, pLng - 0.0045],
-        [pLat + 0.0065, pLng - 0.0025],
-        [pLat + 0.0045, pLng - 0.0002],
-        [pLat + 0.0028, pLng - 0.0010]
-      ],
-      // Circuit 5: Southeast Transit Ring (~380m to ~850m) - Continuous 6-waypoint loop
-      [
-        [pLat - 0.0022, pLng + 0.0020],
-        [pLat - 0.0040, pLng + 0.0045],
-        [pLat - 0.0055, pLng + 0.0038],
-        [pLat - 0.0050, pLng + 0.0015],
-        [pLat - 0.0032, pLng + 0.0008],
-        [pLat - 0.0022, pLng + 0.0020]
+        [pLat - 0.0050, pLng + 0.0075],
+        [pLat - 0.0078, pLng + 0.0110],
+        [pLat - 0.0095, pLng + 0.0080],
+        [pLat - 0.0050, pLng + 0.0075]
       ]
     ];
   };
@@ -834,7 +973,6 @@ export const InteractiveMap = ({
       nearbyDrivers.forEach((d) => {
         if (!d.lat || !d.lng || d.is_online === false) return;
 
-        // ONLY show real drivers that match the currently selected vehicle category (Rapido / Uber parity)
         const driverCategory = getCategoryGroup(d.vehicle_category || d.vehicle_id || 'bike');
         if (driverCategory !== activeCategory) return;
 
@@ -875,7 +1013,6 @@ export const InteractiveMap = ({
       });
     }
 
-    // Remove any offline or non-matching category real drivers
     Object.keys(realMarkersRef.current).forEach((id) => {
       if (!currentDriverIds.has(id)) {
         map.removeLayer(realMarkersRef.current[id]);
@@ -884,37 +1021,20 @@ export const InteractiveMap = ({
     });
   }, [nearbyDrivers, isServiceable, isCaptain, activeRide, selectedVehicleId, pickup, center]);
 
-  // 2. Update Simulation Vehicle Icons & Popups when selected vehicle type changes
-  useEffect(() => {
-    if (simMarkersRef.current.length > 0 && simFleetRef.current.length > 0) {
-      simMarkersRef.current.forEach((marker, i) => {
-        const v = simFleetRef.current[i];
-        if (marker && v) {
-          const profile = getAuthenticDriverProfile(selectedVehicleId, i);
-          v.vehicleModel = profile.model;
-          marker.setIcon(createVehicleMarkerIcon(selectedVehicleId, v.heading || 0));
+  // Active Live Driver Smooth 60fps Road Driving Animation State
+  const activeDriverSimRef = useRef({
+    lat: 0,
+    lng: 0,
+    heading: 0,
+    segmentIndex: 0,
+    progress: 0.0,
+    speed: 0.000080, // ~30 km/h smooth cruising speed
+    lastUpdateTime: 0,
+    routeCoords: []
+  });
 
-          const etaMins = Math.max(2, Math.round(v.distM / 350) || 3);
-          marker.setPopupContent(`
-            <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 175px; padding: 2px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-                <b style="font-size: 12.5px; color: #111;">Captain ${v.name}</b>
-                <span style="font-size: 10.5px; font-weight: 800; color: #d97706; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">★ ${v.rating}</span>
-              </div>
-              <div style="font-size: 11px; color: #4b5563; margin-bottom: 3px;">${v.vehicleModel}</div>
-              <div style="font-size: 10px; color: #059669; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
-                Available • ${etaMins} min away
-              </div>
-            </div>
-          `);
-        }
-      });
-    }
-  }, [selectedVehicleId]);
-
-  // 3. Persistent, Organic Simulated Fleet & Smooth Continuous Animation Loop
-  // (VEHICLES DRIVE STRICTLY ON REAL ASPHALT ROADS & HIGHWAYS FETCHED VIA OSRM)
+  // 2. Persistent, Organic Simulated Fleet & Smooth Continuous Animation Loop
+  // (SPAWNS UNIQUE ROAD POSITIONS & REALISTIC DISTANCES FOR EACH VEHICLE OPTION)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -937,59 +1057,32 @@ export const InteractiveMap = ({
         }).length
       : 0;
 
-    // Target total fleet on screen = 4 of the selected vehicle type.
     const targetSimCount = Math.max(0, 4 - realDriversCount);
 
-    // If not serviceable, in Captain mode, actively on a ride, or full real drivers available, stop simulation
+    // If not serviceable, in Captain mode, or on an active ride, stop simulation
     if (!isServiceable || isCaptain || activeRide || targetSimCount === 0) {
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-        animFrameRef.current = null;
-      }
       simMarkersRef.current.forEach((m) => map.removeLayer(m));
       simMarkersRef.current = [];
       simFleetRef.current = [];
       lastAnchorRef.current = null;
-      return;
-    }
-
-    const pLat = pickup?.lat || center[0];
-    const pLng = pickup?.lng || center[1];
-
-    // Check if we need to initialize or re-anchor simulation (initial start or relocation > 2km or new road branches)
-    let needsReanchor = false;
-    if (!lastAnchorRef.current || simFleetRef.current.length !== targetSimCount) {
-      needsReanchor = true;
     } else {
-      const distFromAnchor = Math.hypot(
-        (pLat - lastAnchorRef.current.lat) * 111320,
-        (pLng - lastAnchorRef.current.lng) * 111320
-      );
-      if (distFromAnchor > 2000) {
-        needsReanchor = true;
-      }
-    }
+      const pLat = pickup?.lat || center[0];
+      const pLng = pickup?.lng || center[1];
 
-    // Prefer real OSRM road branches around the pickup point
-    const activeRoadBranches = roadBranches.length >= 2 ? roadBranches : localRoadsRef.current;
-
-    if (needsReanchor || (activeRoadBranches.length > 0 && simFleetRef.current.some(v => !v.isOsrmRoad))) {
-      // Clean previous simulation markers
+      // Always clear previous vehicle markers when switching vehicle type so new distinct positions appear
       simMarkersRef.current.forEach((m) => map.removeLayer(m));
       simMarkersRef.current = [];
 
-      lastAnchorRef.current = { lat: pLat, lng: pLng };
+      lastAnchorRef.current = { lat: pLat, lng: pLng, vehicleId: selectedVehicleId };
 
-      // Use real OSRM road branches or snap fallback
-      const availableRoads = activeRoadBranches.length > 0
-        ? activeRoadBranches
-        : getContinuousStreetCircuits(pLat, pLng);
+      // Dedicated road circuits specifically configured for this vehicle option
+      const vehicleCircuits = getContinuousStreetCircuits(pLat, pLng, selectedVehicleId);
 
       const newFleet = [];
       const newMarkers = [];
 
       for (let i = 0; i < targetSimCount; i++) {
-        const path = availableRoads[i % availableRoads.length];
+        const path = vehicleCircuits[i % vehicleCircuits.length];
         if (!path || path.length < 2) continue;
 
         const profile = getAuthenticDriverProfile(selectedVehicleId, i);
@@ -1000,14 +1093,14 @@ export const InteractiveMap = ({
         const dLng = p2[1] - p1[1];
         const initialHeading = ((Math.atan2(dLng, dLat) * 180) / Math.PI + 360) % 360;
 
-        const initialProgress = 0.2 + (i * 0.25) % 0.6;
+        const initialProgress = 0.15 + (i * 0.28) % 0.7;
         const initialLat = p1[0] + dLat * initialProgress;
         const initialLng = p1[1] + dLng * initialProgress;
         const distM = Math.hypot((initialLat - pLat) * 111320, (initialLng - pLng) * 111320 * Math.cos(((pLat + initialLat) / 2 * Math.PI) / 180));
         const etaMins = Math.max(2, Math.round(distM / 350) || 3);
 
         const vehicle = {
-          id: `driver_${profile.name.toLowerCase().replace(/\s+/g, '_')}_${i}`,
+          id: `driver_${selectedVehicleId}_${i}`,
           name: profile.name,
           rating: profile.rating,
           vehicleModel: profile.model,
@@ -1015,13 +1108,12 @@ export const InteractiveMap = ({
           segmentIndex: segIdx,
           progress: initialProgress,
           direction: i % 2 === 0 ? 1 : -1,
-          speed: 0.000055 + (i % 3) * 0.000012, // Realistic city cruising speed (~20-26 km/h)
+          speed: 0.000055 + (i % 3) * 0.000014, // Realistic road cruising speed
           pauseRemaining: 0,
           distM: distM,
           lat: initialLat,
           lng: initialLng,
-          heading: initialHeading,
-          isOsrmRoad: activeRoadBranches.length > 0
+          heading: initialHeading
         };
 
         const popupHtml = `
@@ -1052,7 +1144,7 @@ export const InteractiveMap = ({
       simMarkersRef.current = newMarkers;
     }
 
-    // Start continuous animation loop if not already running
+    // 3. Unified 60fps Animation Loop for Both Nearby Fleet AND Live Active Driver Driving Smoothly on the Road
     if (!animFrameRef.current) {
       let lastTime = performance.now();
 
@@ -1060,6 +1152,7 @@ export const InteractiveMap = ({
         const dt = Math.min((now - lastTime) / 1000, 0.05); // Capped delta-time for buttery smooth 60fps
         lastTime = now;
 
+        // A. Animate Simulated Nearby Fleet Vehicles (when idle / booking)
         const fleet = simFleetRef.current;
         const markers = simMarkersRef.current;
 
@@ -1067,7 +1160,6 @@ export const InteractiveMap = ({
           const path = v.path;
           if (!path || path.length < 2) return;
 
-          // If vehicle is paused at traffic signal / intersection
           if (v.pauseRemaining > 0) {
             v.pauseRemaining -= dt;
             return;
@@ -1085,27 +1177,25 @@ export const InteractiveMap = ({
 
           v.progress += (v.speed / segDist) * dt;
 
-          // Seamless transition along road waypoints
           if (v.progress >= 1.0) {
             v.progress = 0.0;
             if (v.direction > 0) {
               if (v.segmentIndex >= path.length - 2) {
-                v.direction = -1; // Smoothly reverse along the road
-                if (Math.random() < 0.30) v.pauseRemaining = 2.5 + Math.random() * 3.0;
+                v.direction = -1;
+                if (Math.random() < 0.25) v.pauseRemaining = 2.0 + Math.random() * 2.5;
               } else {
                 v.segmentIndex++;
               }
             } else {
               if (v.segmentIndex <= 0) {
-                v.direction = 1; // Smoothly forward along the road
-                if (Math.random() < 0.30) v.pauseRemaining = 2.5 + Math.random() * 3.0;
+                v.direction = 1;
+                if (Math.random() < 0.25) v.pauseRemaining = 2.0 + Math.random() * 2.5;
               } else {
                 v.segmentIndex--;
               }
             }
           }
 
-          // Smooth coordinate interpolation strictly on real road asphalt
           const activeFrom = v.direction > 0 ? path[v.segmentIndex] : path[v.segmentIndex + 1];
           const activeTo = v.direction > 0 ? path[v.segmentIndex + 1] : path[v.segmentIndex];
 
@@ -1113,40 +1203,90 @@ export const InteractiveMap = ({
             v.lat = activeFrom[0] + (activeTo[0] - activeFrom[0]) * v.progress;
             v.lng = activeFrom[1] + (activeTo[1] - activeFrom[1]) * v.progress;
 
-            // Smooth shortest-path heading calculation (NO 360-degree spins, natural steering)
             const curDLat = activeTo[0] - activeFrom[0];
             const curDLng = activeTo[1] - activeFrom[1];
             const targetHeading = ((Math.atan2(curDLng, curDLat) * 180) / Math.PI + 360) % 360;
 
-            // Shortest-turn angular difference (always between -180 and +180 deg)
             const diff = ((targetHeading - v.heading) % 360 + 540) % 360 - 180;
-
-            // Natural realistic steering rate (max 75 deg/sec turn rate)
-            const maxTurnStep = 75 * dt;
+            const maxTurnStep = 80 * dt;
             const turnDelta = Math.sign(diff) * Math.min(Math.abs(diff * 3.5 * dt), maxTurnStep);
             v.heading += turnDelta;
 
             const marker = markers[index];
             if (marker) {
               marker.setLatLng([v.lat, v.lng]);
-
               const iconEl = marker.getElement();
-              if (iconEl) {
-                const innerDiv = iconEl.firstElementChild;
-                if (innerDiv) {
-                  innerDiv.style.transform = `rotate(${v.heading.toFixed(1)}deg)`;
-                }
+              if (iconEl && iconEl.firstElementChild) {
+                iconEl.firstElementChild.style.transform = `rotate(${v.heading.toFixed(1)}deg)`;
               }
             }
           }
         });
+
+        // B. Animate Live Active Driver Smoothly Along the Road Geometry (Screenshot 4 Parity)
+        if (markersRef.current.driver && activeRide) {
+          const route = currentRouteCoordsRef.current;
+          const ad = activeDriverSimRef.current;
+
+          if (route && route.length >= 2) {
+            // Update route reference if changed
+            if (ad.routeCoords !== route) {
+              ad.routeCoords = route;
+              ad.segmentIndex = 0;
+              ad.progress = 0.0;
+              ad.lat = route[0][0];
+              ad.lng = route[0][1];
+            }
+
+            const p1 = route[ad.segmentIndex];
+            const p2 = route[Math.min(ad.segmentIndex + 1, route.length - 1)];
+
+            if (p1 && p2) {
+              const segDLat = p2[0] - p1[0];
+              const segDLng = p2[1] - p1[1];
+              const segDist = Math.max(0.00003, Math.hypot(segDLat, segDLng));
+
+              // Smoothly progress vehicle along road geometry
+              ad.progress += (ad.speed / segDist) * dt;
+
+              if (ad.progress >= 1.0) {
+                ad.progress = 0.0;
+                if (ad.segmentIndex < route.length - 2) {
+                  ad.segmentIndex++;
+                }
+              }
+
+              const curP1 = route[ad.segmentIndex];
+              const curP2 = route[Math.min(ad.segmentIndex + 1, route.length - 1)];
+
+              if (curP1 && curP2) {
+                ad.lat = curP1[0] + (curP2[0] - curP1[0]) * ad.progress;
+                ad.lng = curP1[1] + (curP2[1] - curP1[1]) * ad.progress;
+
+                const dLat = curP2[0] - curP1[0];
+                const dLng = curP2[1] - curP1[1];
+                const targetHeading = ((Math.atan2(dLng, dLat) * 180) / Math.PI + 360) % 360;
+
+                const diff = ((targetHeading - ad.heading) % 360 + 540) % 360 - 180;
+                const maxTurnStep = 90 * dt;
+                ad.heading += Math.sign(diff) * Math.min(Math.abs(diff * 4.0 * dt), maxTurnStep);
+
+                markersRef.current.driver.setLatLng([ad.lat, ad.lng]);
+                const driverEl = markersRef.current.driver.getElement();
+                if (driverEl && driverEl.firstElementChild) {
+                  driverEl.firstElementChild.style.transform = `rotate(${ad.heading.toFixed(1)}deg)`;
+                }
+              }
+            }
+          }
+        }
 
         animFrameRef.current = requestAnimationFrame(animateLoop);
       };
 
       animFrameRef.current = requestAnimationFrame(animateLoop);
     }
-  }, [isServiceable, isCaptain, activeRide, pickup, center, nearbyDrivers, roadBranches]);
+  }, [isServiceable, isCaptain, activeRide, pickup, center, nearbyDrivers, selectedVehicleId]);
 
   // Clean up animation on unmount
   useEffect(() => {

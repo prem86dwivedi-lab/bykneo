@@ -33,7 +33,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
     const accentColor = isWhiteBlue ? '#2563eb' : '#ca8a04';
 
     return `
-      <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 20px; height: 28px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+      <div style="transform: rotate(${heading}deg); transition: none; width: 20px; height: 28px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
         <svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.85));">
           <!-- Directional Road Shadow -->
           <ellipse cx="10" cy="15" rx="8" ry="11" fill="rgba(0,0,0,0.4)" />
@@ -79,7 +79,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
     const hoodColor = isPremium ? '#65A30D' : '#EA580C';
 
     return `
-      <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 22px; height: 36px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+      <div style="transform: rotate(${heading}deg); transition: none; width: 22px; height: 36px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
         <svg width="22" height="36" viewBox="0 0 22 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.85));">
           <!-- Directional Road Shadow -->
           <ellipse cx="11" cy="19" rx="9" ry="14" fill="rgba(0,0,0,0.4)" />
@@ -128,7 +128,7 @@ const getTopDownVehicleSvg = (vehicleId = 'bike', heading = 0) => {
   const accentColor = isClassic ? '#582F0E' : '#09090b';
 
   return `
-    <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease-out; width: 28px; height: 40px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
+    <div style="transform: rotate(${heading}deg); transition: none; width: 28px; height: 40px; display: flex; align-items: center; justify-content: center; pointer-events: auto; will-change: transform;">
       <svg width="28" height="40" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 7px rgba(0,0,0,0.85));">
         <!-- Directional Road Shadow -->
         <ellipse cx="14" cy="21" rx="7" ry="15" fill="rgba(0,0,0,0.35)" />
@@ -1075,14 +1075,18 @@ export const InteractiveMap = ({
 
       lastAnchorRef.current = { lat: pLat, lng: pLng, vehicleId: selectedVehicleId };
 
-      // Dedicated road circuits specifically configured for this vehicle option
-      const vehicleCircuits = getContinuousStreetCircuits(pLat, pLng, selectedVehicleId);
+      // Prefer real OSRM road branches snapped strictly to asphalt streets
+      const availableRoads = (roadBranches && roadBranches.length >= 2)
+        ? roadBranches
+        : (localRoadsRef.current && localRoadsRef.current.length >= 2)
+        ? localRoadsRef.current
+        : getContinuousStreetCircuits(pLat, pLng, selectedVehicleId);
 
       const newFleet = [];
       const newMarkers = [];
 
       for (let i = 0; i < targetSimCount; i++) {
-        const path = vehicleCircuits[i % vehicleCircuits.length];
+        const path = availableRoads[i % availableRoads.length];
         if (!path || path.length < 2) continue;
 
         const profile = getAuthenticDriverProfile(selectedVehicleId, i);

@@ -7,40 +7,26 @@ const resDir = path.join(__dirname, '../android/app/src/main/res');
 // SVG for Square App Icon
 const getSquareIconSvg = (size) => Buffer.from(`
 <svg width="${size}" height="${size}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="115" fill="#09090b"/>
-  <rect x="24" y="24" width="464" height="464" rx="95" fill="none" stroke="#27272a" stroke-width="4"/>
-  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="96" text-anchor="middle" letter-spacing="2">
-    <tspan fill="#FFFFFF">RIDER</tspan>
-    <tspan fill="#FFC800">XO</tspan>
-  </text>
-  <circle cx="390" cy="210" r="10" fill="#FFC800"/>
-  <path d="M120 355 L392 355" stroke="#FFC800" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+  <rect width="512" height="512" rx="115" fill="#FFC800"/>
+  <text x="256" y="230" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="110" text-anchor="middle" fill="#000000">Rider</text>
+  <text x="256" y="350" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="125" text-anchor="middle" letter-spacing="2" fill="#000000">XO</text>
 </svg>
 `);
 
 // SVG for Round App Icon
 const getRoundIconSvg = (size) => Buffer.from(`
 <svg width="${size}" height="${size}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="#09090b"/>
-  <circle cx="256" cy="256" r="240" fill="none" stroke="#27272a" stroke-width="4"/>
-  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="94" text-anchor="middle" letter-spacing="2">
-    <tspan fill="#FFFFFF">RIDER</tspan>
-    <tspan fill="#FFC800">XO</tspan>
-  </text>
-  <circle cx="385" cy="215" r="10" fill="#FFC800"/>
-  <path d="M130 355 L382 355" stroke="#FFC800" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="256" cy="256" r="256" fill="#FFC800"/>
+  <text x="256" y="230" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="110" text-anchor="middle" fill="#000000">Rider</text>
+  <text x="256" y="350" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="125" text-anchor="middle" letter-spacing="2" fill="#000000">XO</text>
 </svg>
 `);
 
-// SVG for Adaptive Foreground (Centered in safe zone)
+// SVG for Adaptive Foreground (Centered in safe zone for Android Adaptive Launcher)
 const getForegroundSvg = (size) => Buffer.from(`
 <svg width="${size}" height="${size}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <text x="256" y="295" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="88" text-anchor="middle" letter-spacing="2">
-    <tspan fill="#FFFFFF">RIDER</tspan>
-    <tspan fill="#FFC800">XO</tspan>
-  </text>
-  <circle cx="380" cy="220" r="9" fill="#FFC800"/>
-  <path d="M140 350 L372 350" stroke="#FFC800" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
+  <text x="256" y="230" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="110" text-anchor="middle" fill="#000000">Rider</text>
+  <text x="256" y="350" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="125" text-anchor="middle" letter-spacing="2" fill="#000000">XO</text>
 </svg>
 `);
 
@@ -50,11 +36,8 @@ const getSplashSvg = (w, h) => Buffer.from(`
   <rect width="${w}" height="${h}" fill="#09090b"/>
   <g transform="translate(${w/2 - 180}, ${h/2 - 75})">
     <rect width="360" height="150" rx="30" fill="#121622" stroke="#FFC800" stroke-width="2.5" stroke-opacity="0.4"/>
-    <text x="180" y="95" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="62" text-anchor="middle" letter-spacing="2">
-      <tspan fill="#FFFFFF">RIDER</tspan>
-      <tspan fill="#FFC800">XO</tspan>
-    </text>
-    <path d="M60 120 L300 120" stroke="#FFC800" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+    <text x="180" y="75" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="46" text-anchor="middle" fill="#FFFFFF">Rider</text>
+    <text x="180" y="125" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="52" text-anchor="middle" fill="#FFC800" letter-spacing="2">XO</text>
   </g>
 </svg>
 `);

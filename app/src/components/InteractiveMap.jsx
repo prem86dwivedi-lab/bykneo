@@ -375,6 +375,19 @@ export const InteractiveMap = ({
   const realMarkersRef = useRef({});
   const animFrameRef = useRef(null);
   const hasInitiallyCenteredRef = useRef(false);
+  const isUserInteractingRef = useRef(false);
+  const [isUserPanned, setIsUserPanned] = useState(false);
+  const lastActiveRideIdStatusRef = useRef('');
+
+  // Reset user interaction lock when trip status transitions (e.g. newly booked, accepted, in-progress)
+  useEffect(() => {
+    const currentStatusKey = activeRide ? `${activeRide.id || ''}_${activeRide.status || ''}` : '';
+    if (currentStatusKey !== lastActiveRideIdStatusRef.current) {
+      lastActiveRideIdStatusRef.current = currentStatusKey;
+      isUserInteractingRef.current = false;
+      setIsUserPanned(false);
+    }
+  }, [activeRide]);
 
   // Initialize Map Once
   useEffect(() => {
@@ -388,6 +401,12 @@ export const InteractiveMap = ({
         attributionControl: false,
         minZoom: 4,
         maxBoundsViscosity: 1.0
+      });
+
+      // User manual pan/zoom detection (Uber / Ola parity: lock camera so GPS updates do not override user zoom)
+      map.on('dragstart zoomstart', () => {
+        isUserInteractingRef.current = true;
+        setIsUserPanned(true);
       });
 
       // Default to Google Hybrid Layer
@@ -789,7 +808,9 @@ export const InteractiveMap = ({
             }
 
             const bounds = L.latLngBounds(coordinates);
-            map.fitBounds(bounds, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
+            if (!isUserInteractingRef.current) {
+              map.fitBounds(bounds, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
+            }
           } else {
             const fallback = [[routeOrigin.lat, routeOrigin.lng], [routeDestination.lat, routeDestination.lng]];
             currentRouteCoordsRef.current = fallback;
@@ -799,7 +820,9 @@ export const InteractiveMap = ({
             } else {
               markersRef.current.polyline = L.polyline(fallback, { color: routeColor, weight: 4 }).addTo(map);
             }
-            map.fitBounds(fallback, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
+            if (!isUserInteractingRef.current) {
+              map.fitBounds(fallback, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
+            }
           }
         })
         .catch(() => {
@@ -811,7 +834,9 @@ export const InteractiveMap = ({
           } else {
             markersRef.current.polyline = L.polyline(fallback, { color: routeColor, weight: 4 }).addTo(map);
           }
-          map.fitBounds(fallback, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
+          if (!isUserInteractingRef.current) {
+            map.fitBounds(fallback, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
+          }
         });
     } else if (markersRef.current.polyline) {
       map.removeLayer(markersRef.current.polyline);
@@ -868,11 +893,12 @@ export const InteractiveMap = ({
       }
 
       // If in Captain mode and no active destination, center map on Captain GPS location
-      if (isCaptain && (!drop || !drop.lat)) {
+      if (isCaptain && (!drop || !drop.lat) && !isUserInteractingRef.current) {
         const currentCenter = map.getCenter();
         const distFromCenter = currentCenter ? currentCenter.distanceTo([driverLocation.lat, driverLocation.lng]) : 999;
         if (distFromCenter > 20) {
-          map.flyTo([driverLocation.lat, driverLocation.lng], 19, { duration: 1.0, easeLinearity: 0.25 });
+          const currentZoom = map.getZoom() || 18;
+          map.flyTo([driverLocation.lat, driverLocation.lng], currentZoom, { duration: 1.0, easeLinearity: 0.25 });
         }
       }
     } else if (markersRef.current.driver) {
@@ -1227,12 +1253,43 @@ export const InteractiveMap = ({
     }
   };
 
+  // Uber / Ola Style Recenter Handler: Re-aligns map to active route or vehicle position smoothly
+  const handleRecenterRoute = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    isUserInteractingRef.current = false;
+    setIsUserPanned(false);
+
+    if (currentRouteCoordsRef.current && currentRouteCoordsRef.current.length >= 2) {
+      const bounds = L.latLngBounds(currentRouteCoordsRef.current);
+      map.fitBounds(bounds, { paddingTopLeft: [35, 35], paddingBottomRight: [35, 270], maxZoom: 17 });
+    } else {
+      const targetLat = driverLocation?.lat || pickup?.lat || center[0];
+      const targetLng = driverLocation?.lng || pickup?.lng || center[1];
+      map.flyTo([targetLat, targetLng], 17, { duration: 0.8, easeLinearity: 0.25 });
+    }
+  };
+
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-      {/* Floating Action Controls (Top Right: Location Icon + Layer Icon vertically stacked) */}
+      {/* Floating Action Controls (Top Right: Recenter + Location + Layer Icon) */}
       <div className="absolute top-24 right-3 z-30 flex flex-col items-end gap-2 pointer-events-auto">
+        {/* 0. Uber/Ola Style Floating "Recenter" Button (Appears when user zooms or pans during ride/view) */}
+        {isUserPanned && !selectingMode && (
+          <button
+            type="button"
+            onClick={handleRecenterRoute}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/95 backdrop-blur-md border border-brand-yellow/70 rounded-xl text-brand-yellow hover:text-white shadow-2xl active:scale-95 transition-all text-xs font-bold animate-in fade-in zoom-in-95 duration-150 cursor-pointer"
+            title="Recenter Map & Auto-Follow Ride"
+          >
+            <Navigation className="w-3.5 h-3.5 fill-brand-yellow text-brand-yellow" />
+            <span>Recenter</span>
+          </button>
+        )}
+
         {/* 1. GPS Locate Button */}
         <button
           onClick={handleLocateMe}

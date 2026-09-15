@@ -175,19 +175,6 @@ export const BookRideScreen = ({
 
   // Recalculate Fare Estimate Instantly (0ms local calculation + background sync)
   useEffect(() => {
-    const isServiceableZone = zoneStatus?.isServiceable !== false;
-
-    if (!isServiceableZone && activeCities && activeCities.length > 0) {
-      setEstimatedFare({
-        is_serviceable: false,
-        distance_km: 0,
-        duration_mins: 0,
-        fare: null,
-        vehicles: [],
-        message: 'RiderXO is launching soon in this area! Our fleet is currently offline in this zone.'
-      });
-      return;
-    }
 
     if (pickup?.lat && drop?.lat) {
       // 1. Instantly generate and display all vehicle options (0ms)
@@ -1042,31 +1029,8 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
           </div>
         )}
 
-        {/* Geofence Out-of-Service Alert */}
-        {((estimatedFare && estimatedFare.is_serviceable === false) || (zoneStatus && zoneStatus.isServiceable === false) || !activeCities?.length) && (
-          <div className="bg-red-100 border-2 border-red-300 p-2.5 rounded-xl space-y-1 animate-in fade-in-50 shrink-0">
-            <div className="flex items-center gap-1.5 text-red-700 font-black text-[11.5px]">
-              <MapPin className="w-3.5 h-3.5 shrink-0" />
-              <span>RiderXO is launching soon in this area!</span>
-            </div>
-            <p className="text-[10.5px] font-bold text-gray-800">
-              Our fleet is currently offline or not operating in this zone. Driver availability is turned OFF.
-            </p>
-            {activeCities && activeCities.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                <span className="text-[9.5px] text-gray-700 font-bold">Active Zones:</span>
-                {activeCities.map((c, i) => (
-                  <span key={i} className="text-[9.5px] bg-amber-200 text-amber-950 border border-amber-400 px-1.5 py-0.2 rounded font-black">
-                    📍 {c.name}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Rapido-Style Multi-Vehicle Selector (All Vehicles in Single Compact View) */}
-        {zoneStatus?.isServiceable !== false && activeCities?.length > 0 && estimatedFare && estimatedFare.is_serviceable !== false && Array.isArray(estimatedFare.vehicles) && estimatedFare.vehicles.length > 0 && (
+        {estimatedFare && Array.isArray(estimatedFare.vehicles) && estimatedFare.vehicles.length > 0 && (
           <div className="space-y-1.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between">
             {/* Serving Zone Tag & Stats */}
             <div className="flex items-center justify-between px-1 text-[10px] shrink-0 font-black">

@@ -14,6 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useDeviceCompass } from '../utils/useDeviceCompass';
+import { BACKEND_URL } from '../context/SocketContext';
 
 // Fix default Leaflet icon paths
 delete L.Icon.Default.prototype._getIconUrl;
@@ -295,6 +296,20 @@ export const InteractiveMap = ({
 
         if (timer) clearTimeout(timer);
         timer = setTimeout(async () => {
+          try {
+            const res = await fetch(
+              `${BACKEND_URL}/api/maps/reverse-geocode?lat=${centerCoords.lat}&lng=${centerCoords.lng}`
+            );
+            const json = await res.json();
+            if (json && json.success && json.data && json.data.formatted_address) {
+              setPickerAddress(json.data.formatted_address.split(',').slice(0, 3).join(', '));
+              setIsResolvingAddress(false);
+              return;
+            }
+          } catch (e) {
+            // fallback to Nominatim
+          }
+
           try {
             const res = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${centerCoords.lat}&lon=${centerCoords.lng}&zoom=18&addressdetails=1`,

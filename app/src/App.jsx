@@ -158,6 +158,18 @@ export function App() {
   // Fast non-blocking reverse geocoding with timeout
   const reverseGeocodeFast = async (lat, lng) => {
     try {
+      const res = await fetch(`${BACKEND_URL}/api/maps/reverse-geocode?lat=${lat}&lng=${lng}`, {
+        signal: AbortSignal.timeout(4000)
+      });
+      const json = await res.json();
+      if (json && json.success && json.data && json.data.formatted_address) {
+        return json.data.name || json.data.formatted_address.split(',').slice(0, 3).join(', ');
+      }
+    } catch (e) {
+      // Non-blocking fallback
+    }
+
+    try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
         { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3000) }

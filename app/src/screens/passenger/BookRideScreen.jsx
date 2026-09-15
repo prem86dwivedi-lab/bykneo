@@ -403,12 +403,8 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
       const cityLng = Number(currentCity?.lng || pickup?.lng || 77.4126);
       const radiusKm = currentCityRadius;
 
-      const addResult = (title, subtitle, fullName, lat, lng, typeTag, isSynthesized = false) => {
+      const addResult = (title, subtitle, fullName, lat, lng, typeTag, isHighPriority = false) => {
         if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
-        const distFromCity = calculateDistance(cityLat, cityLng, lat, lng);
-
-        // Geofence check (Operational zone + 50% buffer)
-        if (distFromCity > radiusKm * 1.5) return;
 
         const titleKey = (title || '').toLowerCase().trim();
         const coordKey = `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)}`;
@@ -416,24 +412,48 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
         if (seenKeys.has(uniqueKey)) return;
         seenKeys.add(uniqueKey);
 
-        const distFromPickup = pickup?.lat
-          ? calculateDistance(pickup.lat, pickup.lng, lat, lng)
-          : distFromCity;
+        const userRefLat = pickup?.lat || cityLat;
+        const userRefLng = pickup?.lng || cityLng;
+        const distKm = calculateDistance(userRefLat, userRefLng, Number(lat), Number(lng));
+
         combined.push({
           title: title || 'Location',
-          subtitle: subtitle || `${cityName} (${distFromPickup.toFixed(1)} km away)`,
+          subtitle: subtitle || `${distKm.toFixed(1)} km away`,
           full_name: fullName || title,
           lat: Number(lat),
           lng: Number(lng),
           type: typeTag || 'locality',
-          distanceKm: Number(distFromPickup.toFixed(1)),
-          isSynthesized
+          distanceKm: Number(distKm.toFixed(1)),
+          isSynthesized: isHighPriority
         });
       };
 
       try {
         const qClean = query.trim();
         const qNormalized = normalizeSpelling(qClean);
+
+        const promises = [];
+
+        // 0. Primary: Ola Maps Real-time Autocomplete (India POIs, Temples, Localities, Railway Stations)
+        promises.push(
+          safeFetchJson(
+            `${BACKEND_URL}/api/maps/autocomplete?input=${encodeURIComponent(qClean)}&lat=${cityLat}&lng=${cityLng}&radius=${radiusKm * 1000}`
+          ).then((data) => {
+            if (data && data.predictions && Array.isArray(data.predictions)) {
+              data.predictions.forEach((p) => {
+                addResult(
+                  p.name,
+                  p.secondary_name || p.full_address,
+                  p.full_address,
+                  p.lat,
+                  p.lng,
+                  p.types?.[0] || 'place',
+                  true
+                );
+              });
+            }
+          })
+        );
 
         // 1. Detect Category & Landmark Keyword Pattern
         let detectedCategory = null;
@@ -460,14 +480,12 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
           queriesToRun.add(`${localityCandidate} ${cityName}`);
         }
 
-        // First token fallback for multi-word queries (e.g. "bhel" from "bhel gate")
+        // First token fallback for multi-word queries
         const words = qClean.split(/\s+/).filter(Boolean);
         if (words.length > 1 && words[0].length >= 3) {
           queriesToRun.add(words[0]);
           queriesToRun.add(`${words[0]} ${cityName}`);
         }
-
-        const promises = [];
 
         // 2. Multi-variant Photon Proximity Queries
         for (const q of queriesToRun) {

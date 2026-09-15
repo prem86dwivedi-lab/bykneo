@@ -17,6 +17,7 @@ import rideRoutes from './routes/ride.routes.js';
 import driverRoutes from './routes/driver.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import pushRoutes from './routes/push.routes.js';
+import mapsRoutes from './routes/maps.routes.js';
 import { registerSocketHandlers } from './sockets/ride.socket.js';
 import { db } from './db/index.js';
 import { initPush } from './services/push.service.js';
@@ -121,6 +122,7 @@ app.use('/api/rides', rideRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/maps', mapsRoutes);
 
 // Initialise Web Push notification service (generates VAPID keys if not present)
 initPush();

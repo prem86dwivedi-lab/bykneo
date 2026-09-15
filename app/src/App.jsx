@@ -96,8 +96,23 @@ export function App() {
   // null = GPS not yet resolved; never emit hardcoded fake coords
   const [driverGpsLocation, setDriverGpsLocation] = useState(null);
   const [gpsReady, setGpsReady] = useState(false);
-  // Active Serviceable Cities & Geofencing State
-  const [activeCities, setActiveCities] = useState([]);
+  // Active Serviceable Cities & Geofencing State (Initialized with Local Cache + Fallback for 0ms startup)
+  const [activeCities, setActiveCities] = useState(() => {
+    try {
+      const cached = localStorage.getItem('riderxo_cached_cities');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [
+      { id: 'city_bhopal', name: 'Bhopal, MP', lat: 23.2599, lng: 77.4126, radius_km: 50, is_active: true },
+      { id: 'city_satna', name: 'Satna, MP', lat: 24.5800, lng: 80.8300, radius_km: 50, is_active: true },
+      { id: 'city_indore', name: 'Indore, MP', lat: 22.7196, lng: 75.8577, radius_km: 50, is_active: true },
+      { id: 'city_sidhi', name: 'Sidhi MP', lat: 24.4100, lng: 81.8800, radius_km: 50, is_active: true },
+      { id: 'city_mumbai', name: 'MUMBAI, MAHARASHTRA', lat: 19.0760, lng: 72.8777, radius_km: 50, is_active: true }
+    ];
+  });
   const [nearbyDrivers, setNearbyDrivers] = useState([]);
 
   // Calculate distance in KM
@@ -119,14 +134,14 @@ export function App() {
   const getZoneStatus = (lat, lng) => {
     const active = (activeCities || []).filter((c) => c.is_active !== false);
     if (!active || active.length === 0) {
-      return { isServiceable: false, matchedCity: null, activeCities: [] };
+      return { isServiceable: true, matchedCity: null, activeCities: [] };
     }
     if (!lat || !lng) {
       return { isServiceable: true, matchedCity: active[0] || null, activeCities: active };
     }
     const matched = active.find((c) => {
       const dist = calculateDistance(lat, lng, Number(c.lat), Number(c.lng));
-      return dist <= (Number(c.radius_km) || 30);
+      return dist <= (Number(c.radius_km) || 50);
     });
     return {
       isServiceable: !!matched,
@@ -135,7 +150,35 @@ export function App() {
     };
   };
 
-  // Fetch active serviceable cities from backend (Zero-cache guaranteed)
+  // Real-time WebSocket Synchronization for Riders (Instant Geofence & Serviceable Cities updates)
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleSyncConfig = (data) => {
+      if (data && data.active_cities) {
+        setActiveCities(data.active_cities);
+        try {
+          localStorage.setItem('riderxo_cached_cities', JSON.stringify(data.active_cities));
+        } catch (e) {}
+      } else if (data && data.cities) {
+        const active = data.cities.filter(c => c.is_active !== false);
+        setActiveCities(active);
+        try {
+          localStorage.setItem('riderxo_cached_cities', JSON.stringify(active));
+        } catch (e) {}
+      }
+    };
+
+    socket.on('app:sync_config', handleSyncConfig);
+    socket.on('admin:cities_updated', handleSyncConfig);
+
+    return () => {
+      socket.off('app:sync_config', handleSyncConfig);
+      socket.off('admin:cities_updated', handleSyncConfig);
+    };
+  }, [socket]);
+
+  // Fetch active serviceable cities from backend (Zero-cache guaranteed with local cache sync)
   const fetchActiveCities = () => {
     fetch(`${BACKEND_URL}/api/cities/active?_t=${Date.now()}`, {
       cache: 'no-store',
@@ -150,6 +193,9 @@ export function App() {
         if (data && data.cities) {
           const active = data.cities.filter(c => c.is_active !== false);
           setActiveCities(active);
+          try {
+            localStorage.setItem('riderxo_cached_cities', JSON.stringify(active));
+          } catch (e) {}
         }
       })
       .catch((err) => console.warn('Active cities fetch notice:', err.message));

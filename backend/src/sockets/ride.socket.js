@@ -7,6 +7,21 @@ export const registerSocketHandlers = (io) => {
   io.on('connection', (socket) => {
     console.log(`⚡ Socket connected: ${socket.id}`);
 
+    // Immediately sync real-time active cities & geofencing configuration to Riders, Drivers, Admins
+    try {
+      const allCities = db.get('cities') || [];
+      const active = allCities.filter(c => c.is_active !== false);
+      const settings = db.data?.settings || {};
+      socket.emit('app:sync_config', {
+        type: 'initial_state',
+        cities: allCities,
+        active_cities: active,
+        settings: settings
+      });
+    } catch (e) {
+      console.warn('Config sync emit notice:', e.message);
+    }
+
     // 1. Join Rooms based on role
     socket.on('join_user', ({ userId }) => {
       socket.join(`user:${userId}`);

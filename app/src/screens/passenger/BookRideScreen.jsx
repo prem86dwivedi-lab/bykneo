@@ -175,9 +175,9 @@ export const BookRideScreen = ({
 
   // Recalculate Fare Estimate Instantly (0ms local calculation + background sync)
   useEffect(() => {
-    const isServiceableZone = zoneStatus?.isServiceable !== false && (activeCities && activeCities.length > 0);
+    const isServiceableZone = zoneStatus?.isServiceable !== false;
 
-    if (!isServiceableZone) {
+    if (!isServiceableZone && activeCities && activeCities.length > 0) {
       setEstimatedFare({
         is_serviceable: false,
         distance_km: 0,

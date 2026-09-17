@@ -766,29 +766,30 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                     <span>Pick from map</span>
                   </button>
                 </div>
-                <input
-                  type="text"
-                  value={pickupQuery}
-                  onChange={(e) => handleSearchAddress(e.target.value, 'pickup')}
-                  onFocus={() => handleSearchAddress(pickupQuery, 'pickup')}
-                  placeholder="Enter pickup location (default: GPS)"
-                  className="w-full bg-transparent text-[12px] font-black text-black placeholder-gray-500 focus:outline-none focus:text-black transition"
-                />
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={pickupQuery}
+                    onChange={(e) => handleSearchAddress(e.target.value, 'pickup')}
+                    onFocus={() => handleSearchAddress(pickupQuery, 'pickup')}
+                    placeholder="Enter pickup location (default: GPS)"
+                    className="flex-1 min-w-0 bg-transparent text-[12px] font-black text-black placeholder-gray-500 focus:outline-none focus:text-black transition"
+                  />
+                  {pickupQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPickupQuery('');
+                        setPickup(null);
+                      }}
+                      className="p-0.5 text-gray-500 hover:text-black rounded-md shrink-0 cursor-pointer"
+                      title="Clear Pickup"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-
-              {pickupQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPickupQuery('');
-                    setPickup(null);
-                  }}
-                  className="p-1 text-gray-500 hover:text-black rounded-md shrink-0"
-                  title="Clear Pickup"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
 
             {/* Divider with Reverse / Swap Button */}
@@ -812,7 +813,7 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1 mb-0.5">
-                  <span className="text-[9.5px] uppercase font-black text-amber-950 block leading-none tracking-wider">
+                  <span className="text-[9.5px] uppercase font-black text-amber-950 block leading-none tracking-wider flex-1">
                     Drop Destination
                   </span>
                   {/* Pick from Map Option for Drop */}
@@ -823,36 +824,37 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                       setActiveInput(null);
                       setSuggestions([]);
                     }}
-                    className="inline-flex items-center gap-1 text-[9px] font-black text-amber-950 hover:text-black transition active:scale-95 py-0.5 px-1.5 rounded bg-amber-200 hover:bg-amber-300 border border-amber-400 cursor-pointer shrink-0"
+                    className="inline-flex items-center gap-0.5 text-[8px] font-black text-amber-950 hover:text-black transition active:scale-95 py-[2px] px-2 rounded bg-amber-200 hover:bg-amber-300 border border-amber-400 cursor-pointer shrink-0"
                   >
-                    <MapPin className="w-2.5 h-2.5 text-amber-800" />
+                    <MapPin className="w-2 h-2 text-amber-800" />
                     <span>Pick from map</span>
                   </button>
                 </div>
-                <input
-                  type="text"
-                  value={dropQuery}
-                  onChange={(e) => handleSearchAddress(e.target.value, 'drop')}
-                  onFocus={() => handleSearchAddress(dropQuery, 'drop')}
-                  placeholder="Enter drop destination"
-                  className="w-full bg-transparent text-[12px] font-black text-black placeholder-gray-500 focus:outline-none focus:text-black transition"
-                />
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={dropQuery}
+                    onChange={(e) => handleSearchAddress(e.target.value, 'drop')}
+                    onFocus={() => handleSearchAddress(dropQuery, 'drop')}
+                    placeholder="Enter drop destination"
+                    className="flex-1 min-w-0 bg-transparent text-[12px] font-black text-black placeholder-gray-500 focus:outline-none focus:text-black transition"
+                  />
+                  {dropQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropQuery('');
+                        setDrop(null);
+                        setEstimatedFare(null);
+                      }}
+                      className="p-0.5 text-gray-500 hover:text-black rounded-md shrink-0 cursor-pointer"
+                      title="Clear Destination"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-
-              {dropQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDropQuery('');
-                    setDrop(null);
-                    setEstimatedFare(null);
-                  }}
-                  className="p-1 text-gray-500 hover:text-black rounded-md shrink-0"
-                  title="Clear Destination"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
 
             {/* If user is editing addresses in detailed mode */}

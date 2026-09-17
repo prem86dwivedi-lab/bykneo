@@ -810,9 +810,24 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-[9.5px] uppercase font-black text-emerald-900 block leading-none mb-0.5 tracking-wider">
-                  Pickup Location
-                </span>
+                <div className="flex items-center justify-between gap-1 mb-0.5">
+                  <span className="text-[9.5px] uppercase font-black text-emerald-900 block leading-none tracking-wider">
+                    Pickup Location
+                  </span>
+                  {/* Pick from Map Option for Pickup */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onStartSearchMode) onStartSearchMode('pickup');
+                      setActiveInput(null);
+                      setSuggestions([]);
+                    }}
+                    className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-900 hover:text-emerald-950 transition active:scale-95 py-0.5 px-1.5 rounded bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 cursor-pointer shrink-0"
+                  >
+                    <MapPin className="w-2.5 h-2.5 text-emerald-700" />
+                    <span>Pick from map</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={pickupQuery}
@@ -821,21 +836,6 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   placeholder="Enter pickup location (default: GPS)"
                   className="w-full bg-transparent text-[12px] font-black text-black placeholder-gray-500 focus:outline-none focus:text-black transition"
                 />
-                {/* Pick from Map Option for Pickup */}
-                <div className="flex items-center pt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onStartSearchMode) onStartSearchMode('pickup');
-                      setActiveInput(null);
-                      setSuggestions([]);
-                    }}
-                    className="inline-flex items-center gap-1 text-[9.5px] font-black text-emerald-900 hover:text-emerald-950 transition active:scale-95 py-0.5 px-1.5 rounded bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 cursor-pointer"
-                  >
-                    <MapPin className="w-2.5 h-2.5 text-emerald-700" />
-                    <span>Pick from map</span>
-                  </button>
-                </div>
               </div>
 
               {pickupQuery && (
@@ -884,9 +884,24 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 <MapPin className="w-3.5 h-3.5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-[9.5px] uppercase font-black text-amber-950 block leading-none mb-0.5 tracking-wider">
-                  Drop Destination
-                </span>
+                <div className="flex items-center justify-between gap-1 mb-0.5">
+                  <span className="text-[9.5px] uppercase font-black text-amber-950 block leading-none tracking-wider">
+                    Drop Destination
+                  </span>
+                  {/* Pick from Map Option for Drop */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onStartSearchMode) onStartSearchMode('drop');
+                      setActiveInput(null);
+                      setSuggestions([]);
+                    }}
+                    className="inline-flex items-center gap-1 text-[9px] font-black text-amber-950 hover:text-black transition active:scale-95 py-0.5 px-1.5 rounded bg-amber-200 hover:bg-amber-300 border border-amber-400 cursor-pointer shrink-0"
+                  >
+                    <MapPin className="w-2.5 h-2.5 text-amber-800" />
+                    <span>Pick from map</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={dropQuery}
@@ -895,21 +910,6 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   placeholder="Enter drop destination"
                   className="w-full bg-transparent text-[12px] font-black text-black placeholder-gray-500 focus:outline-none focus:text-black transition"
                 />
-                {/* Pick from Map Option for Drop */}
-                <div className="flex items-center pt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onStartSearchMode) onStartSearchMode('drop');
-                      setActiveInput(null);
-                      setSuggestions([]);
-                    }}
-                    className="inline-flex items-center gap-1 text-[9.5px] font-black text-amber-950 hover:text-black transition active:scale-95 py-0.5 px-1.5 rounded bg-amber-200 hover:bg-amber-300 border border-amber-400 cursor-pointer"
-                  >
-                    <MapPin className="w-2.5 h-2.5 text-amber-800" />
-                    <span>Pick from map</span>
-                  </button>
-                </div>
               </div>
 
               {dropQuery && (
@@ -1157,14 +1157,12 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 };
               onRequestRide(paymentMode, chosen);
             }}
-            disabled={loadingEstimate || zoneStatus?.isServiceable === false || estimatedFare?.is_serviceable === false || !activeCities?.length || !estimatedFare?.vehicles?.length}
+            disabled={loadingEstimate || !estimatedFare?.vehicles?.length}
             className="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-gray-950 py-2.5 rounded-xl font-black text-[13.5px] flex items-center justify-center gap-1.5 shadow-md shadow-amber-400/30 transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer border-2 border-amber-500"
           >
             <Zap className="w-4 h-4 fill-current text-gray-950" />
             {loadingEstimate
               ? 'Calculating Route & Fares...'
-              : (zoneStatus?.isServiceable === false || estimatedFare?.is_serviceable === false || !activeCities?.length)
-              ? 'Service Unavailable in this Area (No Drivers)'
               : `Book ${
                   (estimatedFare?.vehicles || []).find((v) => v.id === selectedVehicleId)?.name ||
                   'RiderXO Ride'

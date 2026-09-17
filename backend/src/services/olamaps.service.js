@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 let cachedToken = null;
 let tokenExpiresAt = 0;
 
@@ -30,7 +28,7 @@ async function getAccessToken() {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params,
-      timeout: 8000
+      signal: AbortSignal.timeout(8000)
     });
 
     if (!response.ok) {
@@ -72,7 +70,7 @@ export async function searchPlaces({ input, location, radius = 50000 }) {
           Authorization: `Bearer ${token}`,
           'X-Request-Id': reqId
         },
-        timeout: 6000
+        signal: AbortSignal.timeout(6000)
       });
 
       if (response.ok) {
@@ -105,7 +103,7 @@ export async function searchPlaces({ input, location, radius = 50000 }) {
     )}&limit=10&addressdetails=1`;
     const nomRes = await fetch(nomUrl, {
       headers: { 'User-Agent': 'RiderXO-Mobility-Platform/2.0' },
-      timeout: 6000
+      signal: AbortSignal.timeout(6000)
     });
     if (nomRes.ok) {
       const data = await nomRes.json();
@@ -149,7 +147,7 @@ export async function reverseGeocode({ lat, lng }) {
           Authorization: `Bearer ${token}`,
           'X-Request-Id': reqId
         },
-        timeout: 6000
+        signal: AbortSignal.timeout(6000)
       });
 
       if (response.ok) {
@@ -174,7 +172,7 @@ export async function reverseGeocode({ lat, lng }) {
     const nomUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
     const nomRes = await fetch(nomUrl, {
       headers: { 'User-Agent': 'RiderXO-Mobility-Platform/2.0' },
-      timeout: 6000
+      signal: AbortSignal.timeout(6000)
     });
     if (nomRes.ok) {
       const data = await nomRes.json();

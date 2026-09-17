@@ -716,25 +716,28 @@ export function App() {
       return;
     }
 
-    // 1. Immediately set coordinates and clear selection mode (0ms instant response)
-    const initialName = name || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+    // 1. Check if name is generic/placeholder or needs reverse geocoding
+    const isGeneric =
+      !name ||
+      name === 'Current Location' ||
+      name === 'My Current Location' ||
+      name === 'Locating GPS...' ||
+      name.startsWith('Custom Location') ||
+      name.startsWith('Location (');
+
+    const initialName = isGeneric ? (name || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`) : name;
     const initialLoc = { name: initialName, lat, lng };
 
     if (type === 'pickup') setPickup(initialLoc);
     else if (type === 'drop') setDrop(initialLoc);
     setSelectingMode(null);
 
-    // 2. Fetch descriptive address label in background without blocking vehicle display
-    if ((!name || name.startsWith('Custom Location') || name.startsWith('Location (')) && lat && lng) {
-      fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en,hi' } }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.display_name) {
-            const shortName = data.display_name.split(',').slice(0, 3).join(', ');
-            const updatedLoc = { name: shortName, lat, lng };
+    // 2. Fetch descriptive address label in background via Ola Maps + OpenStreetMap fallback
+    if (isGeneric && lat && lng) {
+      reverseGeocodeFast(lat, lng)
+        .then((resolvedName) => {
+          if (resolvedName) {
+            const updatedLoc = { name: resolvedName, lat, lng };
             if (type === 'pickup') setPickup(updatedLoc);
             else if (type === 'drop') setDrop(updatedLoc);
           }

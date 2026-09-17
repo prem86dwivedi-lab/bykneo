@@ -12,7 +12,6 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
-  Crosshair,
   ArrowUpDown,
   Search,
   Loader2,
@@ -665,67 +664,6 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
     setActiveInput(null);
   };
 
-  // Auto detect current GPS with instant non-blocking reverse geocoding
-  const handleUseCurrentLocation = () => {
-    if ('geolocation' in navigator) {
-      // Step 1: Fast cached / network fix immediately (< 100ms)
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = Number(pos.coords.latitude.toFixed(6));
-          const lng = Number(pos.coords.longitude.toFixed(6));
-          setPickup({ name: 'Current GPS Location', lat, lng });
-          setPickupQuery('Current GPS Location');
-          setSuggestions([]);
-          setActiveInput(null);
-
-          // Background reverse geocoding
-          fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-            { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3000) }
-          )
-            .then((res) => res.json())
-            .then((data) => {
-              if (data && data.display_name) {
-                const locName = data.display_name.split(',').slice(0, 3).join(', ');
-                setPickup((prev) => ({ ...prev, name: locName, lat, lng }));
-                setPickupQuery(locName);
-              }
-            })
-            .catch(() => {});
-        },
-        null,
-        { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 }
-      );
-
-      // Step 2: High precision GPS fix
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = Number(pos.coords.latitude.toFixed(6));
-          const lng = Number(pos.coords.longitude.toFixed(6));
-          setPickup((prev) => ({ ...prev, lat, lng }));
-
-          fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-            { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3000) }
-          )
-            .then((res) => res.json())
-            .then((data) => {
-              if (data && data.display_name) {
-                const locName = data.display_name.split(',').slice(0, 3).join(', ');
-                setPickup({ name: locName, lat, lng });
-                setPickupQuery(locName);
-              }
-            })
-            .catch(() => {});
-        },
-        (err) => {
-          console.warn('GPS location error:', err);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-      );
-    }
-  };
-
   // Swap / Reverse pickup & drop locations
   const handleSwap = () => {
     const tempPickup = pickup;
@@ -770,7 +708,7 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 setActiveInput(null);
                 setSuggestions([]);
               }}
-              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 px-2.5 rounded-full bg-amber-200 hover:bg-amber-300 text-gray-950 border border-amber-400 transition active:scale-90 flex items-center gap-1 shadow-sm cursor-pointer"
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 px-2.5 rounded bg-amber-200 hover:bg-amber-300 text-gray-950 border border-amber-400 transition active:scale-90 flex items-center gap-1 shadow-sm cursor-pointer"
               title="Close & Go to Main Screen"
             >
               <span className="text-[10px] font-black text-gray-950">Close</span>
@@ -810,11 +748,11 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                 <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-1 mb-0.5">
-                  <span className="text-[9.5px] uppercase font-black text-emerald-900 block leading-none tracking-wider">
+                <div className="flex items-center gap-1 mb-0.5">
+                  <span className="text-[9.5px] uppercase font-black text-emerald-900 leading-none tracking-wider flex-1">
                     Pickup Location
                   </span>
-                  {/* Pick from Map Option for Pickup */}
+                  {/* Pick from Map — compact, slight-rounded corners */}
                   <button
                     type="button"
                     onClick={() => {
@@ -822,9 +760,9 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                       setActiveInput(null);
                       setSuggestions([]);
                     }}
-                    className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-900 hover:text-emerald-950 transition active:scale-95 py-0.5 px-1.5 rounded bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 cursor-pointer shrink-0"
+                    className="inline-flex items-center gap-0.5 text-[8px] font-black text-emerald-900 hover:text-emerald-950 transition active:scale-95 py-[2px] px-2 rounded bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 cursor-pointer shrink-0"
                   >
-                    <MapPin className="w-2.5 h-2.5 text-emerald-700" />
+                    <MapPin className="w-2 h-2 text-emerald-700" />
                     <span>Pick from map</span>
                   </button>
                 </div>
@@ -851,17 +789,6 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
-
-              {/* Quick Locate Me Icon */}
-              <button
-                type="button"
-                onClick={handleUseCurrentLocation}
-                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black flex items-center gap-1 transition active:scale-95 shrink-0 border border-emerald-700 shadow-sm"
-                title="Use Current Device GPS"
-              >
-                <Crosshair className="w-3.5 h-3.5 text-white" />
-                <span className="text-[10px] font-black">GPS</span>
-              </button>
             </div>
 
             {/* Divider with Reverse / Swap Button */}
@@ -870,11 +797,11 @@ const safeFetchJson = async (url, options = {}, timeoutMs = 4000) => {
               <button
                 type="button"
                 onClick={handleSwap}
-                className="absolute right-2 p-1.5 px-2 rounded-full bg-amber-400 hover:bg-amber-500 text-gray-950 transition active:scale-90 border-2 border-amber-500 flex items-center gap-1 shadow-md cursor-pointer"
+                className="absolute right-2 py-[2px] px-2 rounded bg-amber-400 hover:bg-amber-500 text-gray-950 transition active:scale-90 border border-amber-500 inline-flex items-center gap-0.5 shadow-sm cursor-pointer"
                 title="Swap / Reverse Pickup & Drop"
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-gray-950 font-black" />
-                <span className="text-[9px] font-black text-gray-950">Swap</span>
+                <ArrowUpDown className="w-2 h-2 text-gray-950" />
+                <span className="text-[8px] font-black text-gray-950">Swap</span>
               </button>
             </div>
 

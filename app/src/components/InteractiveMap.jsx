@@ -1224,34 +1224,68 @@ export const InteractiveMap = ({
     };
   }, []);
 
-  // GPS Locate Me Button Handler - Zooms to 50-meter street-level precision (Zoom 19)
+  // GPS Locate Me Button Handler - Recenters map + resets pickup to current GPS with real address
   const handleLocateMe = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
+    const resolveAddress = async (lat, lng) => {
+      // Try Ola Maps reverse geocode first
+      try {
+        const res = await fetch(
+          `${BACKEND_URL}/api/maps/reverse-geocode?lat=${lat}&lng=${lng}`,
+          { signal: AbortSignal.timeout(4000) }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.success && json.data) {
+            const formatted = json.data.formatted_address
+              ? json.data.formatted_address.split(',').slice(0, 3).join(', ')
+              : json.data.name;
+            if (formatted) return formatted;
+          }
+        }
+      } catch (_) {}
+
+      // Fallback: Nominatim
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en,hi' }, signal: AbortSignal.timeout(3000) }
+        );
+        const data = await res.json();
+        if (data?.display_name) return data.display_name.split(',').slice(0, 3).join(', ');
+      } catch (_) {}
+
+      return 'Current Location';
+    };
+
     if ('geolocation' in navigator) {
-      // Tier 1: Fast fix immediately (< 100ms)
+      // Tier 1: Fast cached fix — instantly recenter map and set pickup
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = Number(position.coords.latitude.toFixed(6));
           const lng = Number(position.coords.longitude.toFixed(6));
           map.flyTo([lat, lng], 19, { duration: 0.8, easeLinearity: 0.25 });
           if (onLocationSelect) {
-            onLocationSelect({ lat, lng, type: isCaptain ? 'driver' : 'pickup', name: 'My Current Location' });
+            onLocationSelect({ lat, lng, type: isCaptain ? 'driver' : 'pickup', name: 'Current Location' });
           }
         },
         null,
         { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 }
       );
 
-      // Tier 2: Refined High Accuracy Fix
+      // Tier 2: High-accuracy fix + real address via reverse geocoding
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const lat = Number(position.coords.latitude.toFixed(6));
           const lng = Number(position.coords.longitude.toFixed(6));
           map.flyTo([lat, lng], 19, { duration: 0.6, easeLinearity: 0.25 });
+
+          // Resolve real address in background, then update pickup name
+          const addressName = await resolveAddress(lat, lng);
           if (onLocationSelect) {
-            onLocationSelect({ lat, lng, type: isCaptain ? 'driver' : 'pickup', name: 'My Current Location' });
+            onLocationSelect({ lat, lng, type: isCaptain ? 'driver' : 'pickup', name: addressName });
           }
         },
         (err) => {

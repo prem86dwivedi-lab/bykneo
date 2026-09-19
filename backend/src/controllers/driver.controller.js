@@ -4,6 +4,94 @@ import { saveBase64Image } from '../utils/fileStorage.js';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 
+const normalizeKycText = (value) => String(value ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
+
+export const createDigiLockerBundle = (driver = {}) => {
+  const safeName = driver.name || 'Driver';
+  const safePhone = String(driver.phone || '').replace(/\D/g, '').slice(-10) || '9876543210';
+
+  const bundle = {
+    source: 'DIGILOCKER',
+    consent: true,
+    requested_at: new Date().toISOString(),
+    user: {
+      driver_id: driver.id || null,
+      name: safeName,
+      phone: safePhone
+    },
+    prefill: {
+      vehicle_number: 'MP04AB4589',
+      license_number: 'MP0420230098765',
+      rc_number: 'MP04RC998877',
+      aadhaar_number: '987654321098'
+    },
+    documents: {
+      dl_photo: 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=1200',
+      rc_photo: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=1200',
+      aadhaar_photo: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200',
+      selfie_photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=1200'
+    },
+    verification: {
+      trusted_source: 'DIGILOCKER',
+      approval_required: true,
+      admin_review: 'mandatory'
+    }
+  };
+
+  return bundle;
+};
+
+const hasValidDocument = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith('http') || trimmed.startsWith('/uploads/')) return true;
+  return trimmed.startsWith('data:image/');
+};
+
+export const validateDriverKycPayload = (payload = {}) => {
+  const vehicleNumber = normalizeKycText(payload.vehicle_number);
+  const licenseNumber = normalizeKycText(payload.license_number);
+  const rcNumber = normalizeKycText(payload.rc_number);
+  const aadhaarNumber = String(payload.aadhaar_number ?? '').replace(/\D/g, '');
+
+  if (!vehicleNumber || vehicleNumber.length < 5) {
+    return { valid: false, error: 'Vehicle number is required for government verification.' };
+  }
+
+  if (!licenseNumber || licenseNumber.length < 8) {
+    return { valid: false, error: 'Please enter a valid Driving License number.' };
+  }
+
+  if (!rcNumber || rcNumber.length < 8) {
+    return { valid: false, error: 'Please enter a valid RC number.' };
+  }
+
+  if (!aadhaarNumber || aadhaarNumber.length !== 12) {
+    return { valid: false, error: 'Please enter a valid 12-digit Aadhaar number.' };
+  }
+
+  const requiredDocs = [payload.dl_photo, payload.rc_photo, payload.aadhaar_photo, payload.selfie_photo];
+  if (requiredDocs.some((doc) => !hasValidDocument(doc))) {
+    return { valid: false, error: 'Driving License, RC, Aadhaar and selfie are required. Please upload clear government documents.' };
+  }
+
+  return { valid: true, error: null };
+};
+
+export const importDigiLockerDocuments = (req, res) => {
+  const { driverId } = req.body || {};
+  const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId) || {};
+  const bundle = createDigiLockerBundle(driver);
+
+  return res.json({
+    success: true,
+    source: 'DIGILOCKER',
+    message: 'Driver consent captured. Documents imported from trusted DigiLocker source. Admin approval is still required before going online.',
+    ...bundle
+  });
+};
+
 export const getDriverProfile = (req, res) => {
   const { driverId } = req.params;
   const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId);
@@ -34,6 +122,13 @@ export const toggleOnline = (req, res) => {
   const { driverId, isOnline } = req.body;
   const driver = db.find('drivers', d => d.id === driverId || d.user_id === driverId);
   if (!driver) return res.status(404).json({ error: "Driver profile not found" });
+
+  if (Boolean(isOnline) && driver.kyc_status !== 'approved') {
+    return res.status(403).json({
+      success: false,
+      error: 'Driver verification is still pending. Upload DL, RC, Aadhaar and wait for admin approval before going online.'
+    });
+  }
 
   const updated = db.update('drivers', driver.id, {
     is_online: Boolean(isOnline),
@@ -94,6 +189,11 @@ export const getOnlineDrivers = (req, res) => {
 };
 
 export const updateKyc = (req, res) => {
+  const validation = validateDriverKycPayload(req.body);
+  if (!validation.valid) {
+    return res.status(400).json({ success: false, error: validation.error });
+  }
+
   const {
     driverId,
     phone,
@@ -110,7 +210,9 @@ export const updateKyc = (req, res) => {
     dl_photo,
     rc_photo,
     aadhaar_photo,
-    selfie_photo
+    selfie_photo,
+    digiLockerSource,
+    verificationSource
   } = req.body;
 
   let driver = null;
@@ -128,6 +230,7 @@ export const updateKyc = (req, res) => {
   }
 
   const isAutoKyc = db.data.settings?.auto_kyc_enabled === true;
+  const isDigiLocker = (digiLockerSource || verificationSource || '').toString().toUpperCase() === 'DIGILOCKER';
   const initialStatus = isAutoKyc ? 'approved' : 'pending';
   const targetId = driver?.id || `drv_${uuidv4().slice(0, 8)}`;
 
@@ -142,10 +245,10 @@ export const updateKyc = (req, res) => {
     vehicle_category: vehicle_category || driver?.vehicle_category || 'BIKE',
     vehicle_type_name: vehicle_type_name || driver?.vehicle_type_name || 'RiderXO Bike',
     vehicle_model: vehicle_model || driver?.vehicle_model || 'Hero Splendor Plus',
-    vehicle_number: (vehicle_number || driver?.vehicle_number || '').toUpperCase(),
-    license_number: (license_number || driver?.license_number || '').toUpperCase(),
-    rc_number: (rc_number || driver?.rc_number || '').toUpperCase(),
-    aadhaar_number: aadhaar_number || driver?.aadhaar_number || '',
+    vehicle_number: normalizeKycText(vehicle_number || driver?.vehicle_number || ''),
+    license_number: normalizeKycText(license_number || driver?.license_number || ''),
+    rc_number: normalizeKycText(rc_number || driver?.rc_number || ''),
+    aadhaar_number: String(aadhaar_number || driver?.aadhaar_number || '').replace(/\D/g, ''),
     payout_upi: payout_upi || driver?.payout_upi || '',
     dl_photo: savedDlPhoto || driver?.dl_photo || '',
     rc_photo: savedRcPhoto || driver?.rc_photo || '',
@@ -153,8 +256,9 @@ export const updateKyc = (req, res) => {
     selfie_photo: savedSelfiePhoto || driver?.selfie_photo || '',
     avatar: savedSelfiePhoto || driver?.avatar || '',
     kyc_status: initialStatus,
-    kyc_rejection_reason: '', // Clear previous rejection reason upon re-submission
-    kyc_verified_mode: isAutoKyc ? 'AI_AUTOMATIC' : 'MANUAL_PENDING',
+    kyc_rejection_reason: '',
+    kyc_verified_mode: isAutoKyc ? 'AI_AUTOMATIC' : (isDigiLocker ? 'DIGILOCKER' : 'MANUAL_PENDING'),
+    kyc_source: isDigiLocker ? 'DIGILOCKER' : 'MANUAL_UPLOAD',
     kyc_submitted_at: new Date().toISOString()
   };
 

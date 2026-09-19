@@ -93,6 +93,14 @@ export function App() {
     }
   }, [driverProfile?.is_online]);
 
+  useEffect(() => {
+    if (!user || activeRole !== 'driver' || !driverProfile) return;
+    const needsKyc = !['approved'].includes(driverProfile.kyc_status || '');
+    if (needsKyc && currentScreen !== 'driver_kyc' && currentScreen !== 'driver_profile') {
+      setCurrentScreen('driver_kyc');
+    }
+  }, [user, activeRole, driverProfile, currentScreen]);
+
   // null = GPS not yet resolved; never emit hardcoded fake coords
   const [driverGpsLocation, setDriverGpsLocation] = useState(null);
   const [gpsReady, setGpsReady] = useState(false);
@@ -132,9 +140,9 @@ export function App() {
 
   // Helper to check if coordinates are within an active geofence
   const getZoneStatus = (lat, lng) => {
-    const active = (activeCities || []).filter((c) => c.is_active !== false);
+    const active = Array.isArray(activeCities) ? activeCities.filter((c) => c.is_active !== false) : [];
     if (!active || active.length === 0) {
-      return { isServiceable: true, matchedCity: null, activeCities: [] };
+      return { isServiceable: false, matchedCity: null, activeCities: [] };
     }
     if (!lat || !lng) {
       return { isServiceable: true, matchedCity: active[0] || null, activeCities: active };
@@ -190,12 +198,14 @@ export function App() {
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.cities) {
-          const active = data.cities.filter(c => c.is_active !== false);
+        if (data && Array.isArray(data.cities)) {
+          const active = data.cities.filter((c) => c.is_active !== false);
           setActiveCities(active);
           try {
             localStorage.setItem('riderxo_cached_cities', JSON.stringify(active));
           } catch (e) {}
+        } else {
+          setActiveCities([]);
         }
       })
       .catch((err) => console.warn('Active cities fetch notice:', err.message));
@@ -1181,6 +1191,7 @@ export function App() {
               setDriverLocation={setDriverGpsLocation}
               zoneStatus={currentZoneStatus}
               onOpenKyc={() => setCurrentScreen('driver_kyc')}
+              activeCities={activeCities}
             />
           )}
 

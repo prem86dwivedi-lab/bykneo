@@ -28,10 +28,9 @@ export const Navbar = ({
     Math.round(Number(driverProfile?.today_earnings || 0))
   );
   const [subData, setSubData] = useState(null);
-  const [remainingPassTime, setRemainingPassTime] = useState('');
   const [showSubModal, setShowSubModal] = useState(false);
-
-  const kycStatus = driverProfile?.kyc_status || 'approved';
+  const [remainingPassTime, setRemainingPassTime] = useState('');
+  const kycStatus = driverProfile?.kyc_status || 'pending';
   const driverId = driverProfile?.id || user?.id;
 
   const fetchSubscription = () => {

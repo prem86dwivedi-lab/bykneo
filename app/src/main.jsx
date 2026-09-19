@@ -5,6 +5,7 @@ import './index.css';
 import 'leaflet/dist/leaflet.css';
 import { SocketProvider } from './context/SocketContext';
 import { AuthProvider } from './context/AuthContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { listenForSwMessages } from './utils/pushNotification.js';
 
 // Register Service Worker (handles caching + Web Push background notifications)
@@ -24,10 +25,12 @@ listenForSwMessages(({ rideId }) => {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <SocketProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </SocketProvider>
+    <ErrorBoundary>
+      <SocketProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </SocketProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

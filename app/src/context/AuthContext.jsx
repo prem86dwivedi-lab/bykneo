@@ -10,6 +10,22 @@ export const AuthProvider = ({ children }) => {
   const [activeRole, setActiveRole] = useState('passenger'); // 'passenger' | 'driver'
   const [loading, setLoading] = useState(true);
 
+  const refreshDriverProfile = async (driverId) => {
+    if (!driverId) return null;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/drivers/profile/${driverId}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data?.success && data.driver) {
+        setDriverProfile(data.driver);
+        localStorage.setItem('bykneo_driver', JSON.stringify(data.driver));
+        return data.driver;
+      }
+    } catch (err) {
+      console.warn('Failed to refresh driver profile:', err);
+    }
+    return null;
+  };
+
   // Initialize from localStorage and sync latest driver status from server
   useEffect(() => {
     try {
@@ -26,15 +42,7 @@ export const AuthProvider = ({ children }) => {
           setDriverProfile(parsedDriver);
 
           // Fetch fresh status from backend server
-          fetch(`${BACKEND_URL}/api/drivers/profile/${parsedDriver.id}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.success && data.driver) {
-                setDriverProfile(data.driver);
-                localStorage.setItem('bykneo_driver', JSON.stringify(data.driver));
-              }
-            })
-            .catch(() => {});
+          refreshDriverProfile(parsedDriver.id);
         }
       }
     } catch (e) {
@@ -131,7 +139,13 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('bykneo_driver', JSON.stringify(data.driverProfile));
         }
 
-        if (role === 'driver' || data.user.role === 'driver') {
+        if ((role === 'driver' || data.user.role === 'driver') && data.driverProfile?.id) {
+          await refreshDriverProfile(data.driverProfile.id);
+        }
+
+        const isDriverUser = role === 'driver' || data.user.role === 'driver';
+        const isApprovedDriver = (data.driverProfile?.kyc_status || '').toLowerCase() === 'approved';
+        if (isDriverUser && isApprovedDriver) {
           triggerWelcomeCelebration({
             isDemo: false,
             driverName: data.user?.name || 'Captain',
@@ -190,7 +204,12 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('bykneo_driver', JSON.stringify(data.driverProfile));
         }
 
-        if (profileData.role === 'driver' || data.is_new_welcome) {
+        if (data.user.role === 'driver' && data.driverProfile?.id) {
+          await refreshDriverProfile(data.driverProfile.id);
+        }
+
+        const isApprovedDriver = (data.driverProfile?.kyc_status || '').toLowerCase() === 'approved';
+        if ((data.is_new_welcome || isApprovedDriver) && data.user.role === 'driver') {
           triggerWelcomeCelebration({
             isDemo: false,
             driverName: data.user.name || profileData.name || 'Captain',
@@ -227,7 +246,11 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('bykneo_driver', JSON.stringify(data.driverProfile));
         }
 
-        if (role === 'driver') {
+        if (role === 'driver' && data.driverProfile?.id) {
+          await refreshDriverProfile(data.driverProfile.id);
+        }
+
+        if (role === 'driver' && (data.driverProfile?.kyc_status || '').toLowerCase() === 'approved') {
           triggerWelcomeCelebration({
             isDemo: true,
             driverName: data.user?.name || 'Vikram Singh (Demo)',

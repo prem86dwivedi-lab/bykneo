@@ -637,6 +637,15 @@ export const DriversPage = ({
                     ● {d.kyc_status || 'PENDING'}
                   </span>
                 </div>
+
+                <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-gray-800/60">
+                  <span className="text-[8.5px] font-bold text-gray-400 uppercase tracking-wider shrink-0">
+                    SOURCE:
+                  </span>
+                  <span className="text-[8.5px] font-black uppercase text-sky-300">
+                    {d.kyc_source || d.kyc_verified_mode || 'MANUAL_UPLOAD'}
+                  </span>
+                </div>
               </div>
 
               {/* Footer Action Buttons */}
@@ -763,6 +772,9 @@ export const DriversPage = ({
                       >
                         {d.kyc_status}
                       </span>
+                      <div className="mt-1 text-[8.5px] text-sky-300 font-bold uppercase">
+                        {d.kyc_source || d.kyc_verified_mode || 'MANUAL_UPLOAD'}
+                      </div>
                     </td>
                     <td className="p-3 sm:p-4 text-right space-x-1 sm:space-x-1.5 whitespace-nowrap">
                       <button

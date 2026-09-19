@@ -2,6 +2,7 @@ import { db } from '../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { sendOtpToPhone, resendOtpToPhone, verifyOtpCode, cleanPhoneNumber } from '../services/msg91.service.js';
 import { saveBase64Image } from '../utils/fileStorage.js';
+import { verifyDriverKycAutomated } from '../services/mlVerification.service.js';
 
 // Format phone for standard presentation: e.g. "917974704918" -> "+91 79747 04918"
 function formatDisplayPhone(raw) {
@@ -277,7 +278,34 @@ export const completeProfile = async (req, res) => {
 
     if (role === 'driver') {
       const isAutoKyc = db.data?.settings?.auto_kyc_enabled === true;
-      const initialStatus = isAutoKyc ? 'approved' : 'pending';
+      let initialStatus = 'pending';
+      let mlResult = null;
+
+      if (isAutoKyc) {
+        mlResult = await verifyDriverKycAutomated({
+          name: finalName,
+          phone: formattedPhone,
+          vehicle_id,
+          vehicle_category,
+          vehicle_model,
+          vehicle_number,
+          license_number,
+          rc_number,
+          aadhaar_number,
+          selfie_photo,
+          dl_photo,
+          rc_photo,
+          aadhaar_photo
+        });
+
+        if (mlResult.autoApproved) {
+          initialStatus = 'approved';
+          console.log(`🤖 [ML VERIFICATION SUCCESS] Captain ${finalName} auto-approved with confidence score ${mlResult.confidenceScore}%`);
+        } else {
+          initialStatus = 'pending';
+          console.log(`⚠️ [ML VERIFICATION FLAGGED] Captain ${finalName} flagged for Admin manual review. Issues:`, mlResult.issues);
+        }
+      }
 
       driverProfile = findDriverProfile(user.id, phone);
       const targetDriverId = driverProfile?.id || `drv_${uuidv4().slice(0, 8)}`;
@@ -291,6 +319,8 @@ export const completeProfile = async (req, res) => {
       const settings = db.data?.settings || {};
       const welcomeOfferEnabled = settings.welcome_offer_enabled !== false;
       const welcomeOfferDays = Math.max(1, Number(settings.welcome_offer_days || 60));
+
+      const isApproved = initialStatus === 'approved';
 
       const driverData = {
         name: finalName,
@@ -309,7 +339,7 @@ export const completeProfile = async (req, res) => {
         rc_photo: savedRcPhoto || driverProfile?.rc_photo || '',
         aadhaar_photo: savedAadhaarPhoto || driverProfile?.aadhaar_photo || '',
         selfie_photo: savedSelfiePhoto || driverProfile?.selfie_photo || '',
-        is_online: isAutoKyc, // Only online if auto-approved
+        is_online: isApproved, // Only online if approved
         is_available: true,
         lat: 28.6139,
         lng: 77.2090,
@@ -318,6 +348,8 @@ export const completeProfile = async (req, res) => {
         total_rides: 0,
         today_earnings: 0.00,
         kyc_status: initialStatus,
+        kyc_verification_type: isApproved ? 'ml_automated' : 'manual_review',
+        kyc_ml_score: mlResult ? mlResult.confidenceScore : null,
         kyc_submitted_at: new Date().toISOString()
       };
 
@@ -351,7 +383,7 @@ export const completeProfile = async (req, res) => {
       // Real-time broadcast to Admin Dashboard
       const io = req.app.get('io');
       if (io) {
-        if (!isAutoKyc) {
+        if (!isApproved) {
           console.log(`📢 [ADMIN ALERT] Emitting admin:kyc_submitted for Captain ${driverProfile.name}`);
           io.to('admins').emit('admin:kyc_submitted', {
             driverId: driverProfile.id,
@@ -374,7 +406,8 @@ export const completeProfile = async (req, res) => {
       success: true,
       user,
       driverProfile,
-      is_new_welcome: role === 'driver',
+      kyc_status: driverProfile ? driverProfile.kyc_status : null,
+      is_new_welcome: role === 'driver' && driverProfile?.kyc_status === 'approved',
       token: `bykneo_token_${user.id}`,
       message: `${role === 'driver' ? 'Captain' : 'Rider'} registration saved successfully!`
     });

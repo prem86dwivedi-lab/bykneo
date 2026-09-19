@@ -6,6 +6,7 @@ import {
   getEarnings,
   getOnlineDrivers,
   updateKyc,
+  importDigiLockerDocuments,
   getSubscriptionStatus,
   createSubscriptionOrder,
   getOrderStatus,
@@ -22,6 +23,7 @@ router.get('/earnings/:driverId', getEarnings);
 router.get('/online', getOnlineDrivers);
 router.post('/kyc', updateKyc);
 router.post('/kyc/submit', updateKyc);
+router.post('/kyc/digilocker', importDigiLockerDocuments);
 router.get('/subscription/:driverId', getSubscriptionStatus);
 router.post('/subscription/create-order', createSubscriptionOrder);
 router.get('/subscription/order-status/:orderId', getOrderStatus);

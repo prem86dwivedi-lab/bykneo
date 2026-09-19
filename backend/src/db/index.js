@@ -54,7 +54,7 @@ const DEFAULT_DATA = {
     surge_multiplier: 1.0,
     platform_commission_pct: 15.0, // RiderXO takes 15%
     cancellation_fee: 15.00,
-    auto_kyc_enabled: true,
+    auto_kyc_enabled: false,
     subscription_enabled: true,
     admin_upi_id: "riderxo@okhdfcbank",
     admin_merchant_name: "RIDERXO",

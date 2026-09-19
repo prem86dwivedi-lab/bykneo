@@ -145,6 +145,9 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
 
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [digiLockerStatus, setDigiLockerStatus] = useState(
+    driverProfile?.kyc_source === 'DIGILOCKER' ? 'connected' : 'not_connected'
+  );
 
   const kycStatus = driverProfile?.kyc_status || 'unsubmitted';
   const currentVehicle = VEHICLE_TYPES.find((v) => v.id === selectedVehicleId) || VEHICLE_TYPES[1];
@@ -292,6 +295,44 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
     }
   };
 
+  const handleDigiLockerImport = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/drivers/kyc/digilocker`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driverId: driverProfile?.id || user?.id,
+          phone: driverProfile?.phone || user?.phone || ''
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'DigiLocker import failed.');
+      }
+
+      setDigiLockerStatus('connected');
+      if (data.prefill?.license_number) setLicenseNumber(data.prefill.license_number);
+      if (data.prefill?.rc_number) setRcNumber(data.prefill.rc_number);
+      if (data.prefill?.aadhaar_number) setAadhaarNumber(data.prefill.aadhaar_number);
+      if (data.prefill?.vehicle_number) setVehicleNumber(data.prefill.vehicle_number);
+      if (data.documents?.dl_photo) setDlPhoto(data.documents.dl_photo);
+      if (data.documents?.rc_photo) setRcPhoto(data.documents.rc_photo);
+      if (data.documents?.aadhaar_photo) setAadhaarPhoto(data.documents.aadhaar_photo);
+      if (data.documents?.selfie_photo) setSelfiePhoto(data.documents.selfie_photo);
+
+      setStatusMessage({
+        type: 'info',
+        text: 'DigiLocker consent accepted. Trusted documents imported. Admin approval is still required before going online.'
+      });
+    } catch (err) {
+      setStatusMessage({
+        type: 'error',
+        text: err.message || 'Unable to import DigiLocker documents.'
+      });
+    }
+  };
+
   const handleContinueToStep2 = (e) => {
     if (e) e.preventDefault();
     if (!vehicleModel?.trim() || !vehicleNumber?.trim() || !licenseNumber?.trim() || !rcNumber?.trim() || !aadhaarNumber?.trim()) {
@@ -344,7 +385,9 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
         dl_photo: optDl || dlPhoto,
         rc_photo: optRc || rcPhoto,
         aadhaar_photo: optAadhaar || aadhaarPhoto,
-        selfie_photo: optSelfie || selfiePhoto
+        selfie_photo: optSelfie || selfiePhoto,
+        digiLockerSource: digiLockerStatus === 'connected' ? 'DIGILOCKER' : 'MANUAL_UPLOAD',
+        verificationSource: digiLockerStatus === 'connected' ? 'DIGILOCKER' : 'MANUAL_UPLOAD'
       };
 
       const res = await fetch(`${BACKEND_URL}/api/drivers/kyc/submit`, {
@@ -467,6 +510,22 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
           </div>
         </div>
 
+        <div className="rounded-2xl border border-sky-500/30 bg-sky-900/20 p-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-sky-300">DigiLocker optional</div>
+              <div className="text-[9px] text-sky-100/80">Use trusted docs if available. Final approval still stays with admin.</div>
+            </div>
+            <button
+              type="button"
+              onClick={handleDigiLockerImport}
+              className="px-2.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-black text-[9px] transition active:scale-95"
+            >
+              {digiLockerStatus === 'connected' ? 'Imported' : 'Import docs'}
+            </button>
+          </div>
+        </div>
+
         {/* 2-STEP PROGRESS INDICATOR DOTS / PILLS (Requested by User) */}
         <div className="grid grid-cols-2 gap-2 bg-gray-900/90 p-1 rounded-2xl border border-gray-800 shadow-lg">
           {/* Step 1 Dot */}
@@ -537,6 +596,8 @@ export const CaptainKycScreen = ({ driverProfile, onBack, onKycSubmitted }) => {
             className={`p-2 rounded-xl text-[10px] font-bold text-center ${
               statusMessage.type === 'success'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                : statusMessage.type === 'info'
+                ? 'bg-sky-500/20 text-sky-200 border border-sky-500/40'
                 : 'bg-red-500/20 text-red-300 border border-red-500/40'
             }`}
           >

@@ -31,8 +31,10 @@ import { isNativeApp } from '../../utils/nativeLocation.js';
 const VEHICLE_CATEGORIES = [
   { id: 'bike_lite', category: 'BIKE', name: 'Bike Lite', tag: '100cc • Lite', defaultModel: 'Hero Splendor / HF Deluxe', icon: Bike },
   { id: 'bike', category: 'BIKE', name: 'RiderXO Bike', tag: '125cc • Moto', defaultModel: 'Honda Shine 125', icon: Bike },
-  { id: 'auto', category: 'AUTO', name: 'Auto Rickshaw', tag: '3-Seater Auto', defaultModel: 'Bajaj Compact / Maxima', icon: Car },
-  { id: 'cab_economy', category: 'CAB', name: 'Cab Economy', tag: 'AC Hatchback', defaultModel: 'Maruti WagonR / Swift', icon: Car }
+  { id: 'auto_lite', category: 'AUTO', name: 'Auto Lite', tag: 'Budget Auto', defaultModel: 'Bajaj Compact / Piaggio', icon: Car },
+  { id: 'auto', category: 'AUTO', name: 'Auto Rickshaw', tag: '3-Seater Auto', defaultModel: 'Bajaj RE / TVS King', icon: Car },
+  { id: 'cab_economy', category: 'CAB', name: 'Cab Economy', tag: 'AC Hatchback', defaultModel: 'Maruti WagonR / Swift', icon: Car },
+  { id: 'cab_premium', category: 'CAB', name: 'Cab Premium', tag: 'AC Sedan / SUV', defaultModel: 'Maruti Dzire / Ertiga', icon: Car }
 ];
 
 export const LoginScreen = () => {
@@ -520,8 +522,16 @@ export const LoginScreen = () => {
         setError('Please enter your driving license number');
         return;
       }
-      if (!formData.aadhaar_number?.trim() || formData.aadhaar_number.trim().length < 4) {
-        setError('Please enter your Aadhaar card number');
+      if (!formData.selfie_photo) {
+        setError('Live driver selfie is required. Please tap "Open Front Camera" to take your selfie photo.');
+        return;
+      }
+      if (!formData.dl_photo) {
+        setError('Please attach your Driving License (DL) photo.');
+        return;
+      }
+      if (!formData.rc_photo) {
+        setError('Please attach your Vehicle RC photo.');
         return;
       }
     }
@@ -1118,23 +1128,17 @@ export const LoginScreen = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex gap-2">
+                    <div className="space-y-1.5">
                       <button
                         type="button"
                         onClick={startCamera}
-                        className="flex-1 py-2 bg-gray-900 hover:bg-gray-850 border border-gray-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5"
+                        className="w-full py-3 bg-gradient-to-r from-brand-yellow via-amber-400 to-brand-yellow hover:opacity-95 text-gray-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"
                       >
-                        <Camera className="w-3.5 h-3.5 text-brand-yellow" /> Open Front Camera
+                        <Camera className="w-4 h-4 fill-current" /> Open Front Camera for Live Selfie
                       </button>
-                      <label className="px-3 py-2 bg-gray-900 hover:bg-gray-850 border border-gray-800 text-gray-300 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1">
-                        <Upload className="w-3.5 h-3.5" /> Upload
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleFileUpload('selfie_photo', e)}
-                        />
-                      </label>
+                      <p className="text-[9.5px] text-gray-400 text-center flex items-center justify-center gap-1">
+                        <Lock className="w-2.5 h-2.5 text-brand-yellow inline" /> Live device camera capture only. Gallery upload not allowed.
+                      </p>
                     </div>
                   )}
                 </div>

@@ -11,7 +11,8 @@ export const DriverHomeScreen = ({
   driverLocation,
   setDriverLocation,
   zoneStatus,
-  onOpenKyc
+  onOpenKyc,
+  activeCities = []
 }) => {
   const { user, driverProfile } = useAuth();
   const { socket } = useSocket();
@@ -100,8 +101,8 @@ export const DriverHomeScreen = ({
 
   const isServiceable = zoneStatus?.isServiceable !== false && !!zoneStatus?.matchedCity;
   const matchedCity = zoneStatus?.matchedCity;
-  const activeCities = zoneStatus?.activeCities || [];
-  const kycStatus = driverProfile?.kyc_status || 'approved'; // default approved for demo, checked strictly
+  const visibleCities = Array.isArray(activeCities) ? activeCities : [];
+  const kycStatus = driverProfile?.kyc_status || 'pending';
 
   // Note: GPS location pinging to backend is handled centrally in App.jsx
   // with a gpsReady guard to prevent emitting stale/null coordinates.
@@ -227,17 +228,23 @@ export const DriverHomeScreen = ({
             </p>
 
             <div className="space-y-1.5 max-h-48 overflow-y-auto">
-              {activeCities.map((c) => (
-                <div
-                  key={c.id || c.name}
-                  className="w-full p-2.5 rounded-xl bg-gray-850 border border-gray-750 flex items-center justify-between"
-                >
-                  <div className="text-[11px] font-bold text-white">📍 {c.name}</div>
-                  <span className="text-[9px] bg-gray-800 text-gray-300 font-bold px-1.5 py-0.5 rounded">
-                    Active Zone
-                  </span>
+              {visibleCities.length === 0 ? (
+                <div className="w-full p-2.5 rounded-xl bg-gray-850 border border-gray-750 text-[11px] font-bold text-amber-200">
+                  No active city is currently available. Please wait for admin reactivation.
                 </div>
-              ))}
+              ) : (
+                visibleCities.map((c) => (
+                  <div
+                    key={c.id || c.name}
+                    className="w-full p-2.5 rounded-xl bg-gray-850 border border-gray-750 flex items-center justify-between"
+                  >
+                    <div className="text-[11px] font-bold text-white">📍 {c.name}</div>
+                    <span className="text-[9px] bg-gray-800 text-gray-300 font-bold px-1.5 py-0.5 rounded">
+                      Active Zone
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
 
             <button
